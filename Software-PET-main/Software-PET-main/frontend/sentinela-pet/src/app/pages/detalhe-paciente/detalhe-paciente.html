@@ -1,0 +1,172 @@
+<main class="container">
+
+  <div class="loading-message" *ngIf="carregando">
+    Carregando dados do paciente...
+  </div>
+
+  <div class="alert-erro" *ngIf="erro">
+    {{ erro }}
+  </div>
+
+  <ng-container *ngIf="paciente && !carregando">
+
+    <section class="page-header">
+      <div class="page-title">
+        <div class="title-row">
+          <h1>{{ paciente.nome }}</h1>
+          <span class="status-badge" [class.status-inativo]="!pacienteAtivo">
+            {{ pacienteAtivo ? 'Ativo' : 'Inativo' }}
+          </span>
+        </div>
+        <p>Detalhes completos do paciente cadastrado.</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-voltar" (click)="voltar()">
+          Voltar
+        </button>
+
+        <button class="btn btn-edit" (click)="editarPaciente()">
+          Editar
+        </button>
+
+        <button class="btn" [class.btn-inativar]="pacienteAtivo" [class.btn-ativar]="!pacienteAtivo"
+          (click)="pedirConfirmacaoInativacao()" [disabled]="inativando || !pacienteAtivo">
+          {{ pacienteAtivo ? 'Inativar Paciente' : 'Paciente Inativo' }}
+        </button>
+      </div>
+    </section>
+
+    <div class="confirm-box" *ngIf="confirmandoInativacao">
+      <p>
+        Tem certeza que deseja inativar este paciente? Ele deixará de aparecer na
+        lista principal de pacientes até ser reativado.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn btn-voltar" (click)="cancelarInativacao()" [disabled]="inativando">
+          Cancelar
+        </button>
+        <button class="btn btn-inativar" (click)="confirmarInativacao()" [disabled]="inativando">
+          {{ inativando ? 'Inativando...' : 'Confirmar Inativação' }}
+        </button>
+      </div>
+    </div>
+
+    <section class="detail-card">
+      <h2 class="detail-card-title">Dados Pessoais</h2>
+
+      <div class="patient-data detail-grid">
+        <div class="data-item">
+          <span class="data-label">Nome</span>
+          <span class="data-value">{{ paciente.nome }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Nome da mãe</span>
+          <span class="data-value">{{ paciente.nomeMae }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Data de nascimento</span>
+          <span class="data-value">{{ formatarData(paciente.dataNascimento) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Sexo</span>
+          <span class="data-value">{{ labelEnum(paciente.sexo) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Raça/Cor</span>
+          <span class="data-value">{{ labelEnum(paciente.racacor) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Situação de rua</span>
+          <span class="data-value">{{ paciente.situacaoRua ? 'Sim' : 'Não' }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-card">
+      <h2 class="detail-card-title">Documentos e Contato</h2>
+
+      <div class="patient-data detail-grid">
+        <div class="data-item">
+          <span class="data-label">CNS</span>
+          <span class="data-value">{{ paciente.cns }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">CPF</span>
+          <span class="data-value">{{ formatarCpf(paciente.cpf) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Telefone</span>
+          <span class="data-value">{{ formatarTelefone(paciente.telefone) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Unidade de Saúde</span>
+          <span class="data-value">{{ paciente.usfReferencia?.nomeUsf ?? '-' }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Tipo de acompanhamento</span>
+          <span class="data-value">{{ labelEnum(paciente.tipoAcompanhamento) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Faltas</span>
+          <span class="data-value" [class.faltas-alerta]="(paciente.countFaltas ?? 0) >= 3">
+            {{ paciente.countFaltas ?? 0 }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-card">
+      <h2 class="detail-card-title">Endereço</h2>
+
+      <div class="patient-data detail-grid">
+        <div class="data-item">
+          <span class="data-label">CEP</span>
+          <span class="data-value">{{ formatarCep(paciente.endereco?.cep) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Estado</span>
+          <span class="data-value">{{ paciente.endereco?.estado ?? '-' }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Cidade</span>
+          <span class="data-value">{{ paciente.endereco?.cidade ?? '-' }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Bairro</span>
+          <span class="data-value">{{ paciente.endereco?.bairro ?? '-' }}</span>
+        </div>
+
+        <div class="data-item data-item-large">
+          <span class="data-label">Logradouro</span>
+          <span class="data-value">{{ paciente.endereco?.logradouro ?? '-' }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Número</span>
+          <span class="data-value">{{ paciente.endereco?.numero ?? '-' }}</span>
+        </div>
+
+        <div class="data-item data-item-large">
+          <span class="data-label">Complemento</span>
+          <span class="data-value">{{ paciente.endereco?.complemento || '-' }}</span>
+        </div>
+      </div>
+    </section>
+
+  </ng-container>
+
+</main>

@@ -1,0 +1,76 @@
+<main class="container">
+
+  <div class="loading-message" *ngIf="carregando">
+    Carregando dados do profissional...
+  </div>
+
+  <div class="alert-erro" *ngIf="erro">
+    {{ erro }}
+  </div>
+
+  <ng-container *ngIf="profissional && !carregando">
+
+    <section class="page-header">
+      <div class="page-title">
+        <h1>{{ profissional.nome }}</h1>
+        <p>Detalhes completos do profissional cadastrado.</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-voltar" (click)="voltar()">
+          Voltar
+        </button>
+
+        <button class="btn btn-edit" (click)="editarProfissional()">
+          Editar
+        </button>
+
+        <button class="btn btn-excluir" (click)="pedirConfirmacaoExclusao()" [disabled]="excluindo">
+          Excluir Profissional
+        </button>
+      </div>
+    </section>
+
+    <div class="confirm-box" *ngIf="confirmandoExclusao">
+      <p>
+        Tem certeza que deseja excluir este profissional? Essa ação não pode ser desfeita.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn btn-voltar" (click)="cancelarExclusao()" [disabled]="excluindo">
+          Cancelar
+        </button>
+        <button class="btn btn-excluir" (click)="confirmarExclusao()" [disabled]="excluindo">
+          {{ excluindo ? 'Excluindo...' : 'Confirmar Exclusão' }}
+        </button>
+      </div>
+    </div>
+
+    <section class="detail-card">
+      <h2 class="detail-card-title">Dados do Profissional</h2>
+
+      <div class="patient-data detail-grid">
+        <div class="data-item">
+          <span class="data-label">Nome</span>
+          <span class="data-value">{{ profissional.nome }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">E-mail</span>
+          <span class="data-value">{{ profissional.email }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Cargo / Função</span>
+          <span class="data-value">{{ labelEnum(profissional.tipoUsuario) }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Unidade de atuação</span>
+          <span class="data-value">{{ labelEnum(profissional.unidadeAtuacao) }}</span>
+        </div>
+      </div>
+    </section>
+
+  </ng-container>
+
+</main>

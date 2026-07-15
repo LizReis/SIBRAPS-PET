@@ -1,0 +1,26 @@
+<div class="app-container">
+
+  <!-- Overlay escurece o fundo quando sidebar abre no mobile -->
+  @if (isSidebarOpen()) {
+  <div (click)="toggleSidebar()" (keydown.enter)="toggleSidebar()" class="sidebar-overlay" role="button" tabindex="0">
+  </div>
+  }
+
+  <!-- Sidebar recebe a classe 'open' quando aberta -->
+  <app-sidebar [class.open]="isSidebarOpen()" class="app-sidebar"></app-sidebar>
+
+  <!-- Área principal -->
+  <div class="main-content">
+    <app-header (click)="isSidebarOpen() && toggleSidebar()"></app-header>
+
+    <!-- Botão hamburguer -->
+    <button (click)="toggleSidebar()" class="mobile-toggle" aria-label="Toggle Menu">
+      <span class="toggle-text">{{ isSidebarOpen() ? '✕ Fechar' : '☰ Menu' }}</span>
+    </button>
+
+    <main class="content-area">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+</div>

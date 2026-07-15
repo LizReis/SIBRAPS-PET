@@ -1,0 +1,54 @@
+### LOGIN ADMIN
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@pet.com",
+  "senha": "123456"
+}
+
+### Variáveis
+@adminToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJidXNjYWF0aXZhLWFwaSIsInN1YiI6ImFkbWluQHBldC5jb20iLCJleHAiOjE3ODM4MzE1OTJ9.OcWY80QNXTvMmxnrFV8QsTx2m1Xjpgg4wxO5VhzG2QM
+
+### LOGIN PROFISSIONAL
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao.profissional@pet.com",
+  "senha": "senha123456"
+}
+
+### Variáveis
+@profissionalToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJidXNjYWF0aXZhLWFwaSIsInN1YiI6ImpvYW8ucHJvZmlzc2lvbmFsQHBldC5jb20iLCJleHAiOjE3ODM4MzA5ODZ9.dGzxFKtfr-G1YOU2W9mMNRMR9oYYKAuU55dHccFJwAI
+@profissionalId = 3
+
+@profissionalIdUUID = 1bca93de-7c1f-4f4b-a697-b1a39ed78be9
+
+@pacienteId = c1d1ca8b-52ab-4309-8b7c-31c9f8eaf751
+
+
+
+POST http://localhost:8080/api/agendamentos
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "id": null,
+  "usuario": {
+    "id": {{profissionalId}},
+    "idPublico": "{{profissionalIdUUID}}",
+    "nome": "Dr. João Profissional",
+    "email": "joao.profissional@pet.com",
+    "tipoUsuario": 2,
+    "unidadeAtuacao": 1
+  },
+  "paciente": {
+    "idPublico": "{{pacienteId}}"
+  },
+  "dataAgendamento": "2026-07-13",
+  "turnoAgendamento": 1,
+  "horaAtendimento": "09:00",
+  "situacaoAtendimento": 2,
+  "version": null
+}

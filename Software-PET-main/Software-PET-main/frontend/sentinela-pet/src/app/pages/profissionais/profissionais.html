@@ -1,0 +1,77 @@
+<main class="container">
+
+  <section class="page-header">
+    <div class="page-title">
+      <h1>Profissionais</h1>
+      <p>Visualize, pesquise e gerencie os profissionais cadastrados no sistema.</p>
+    </div>
+
+    <button class="btn-new" (click)="cadastrarNovoProfissional()">
+      + Cadastrar Novo Profissional
+    </button>
+  </section>
+
+  <section class="search-area">
+
+    <input type="text" class="search-input" placeholder="Digite o nome do profissional" [(ngModel)]="termoPesquisa">
+
+    <select class="search-select" [(ngModel)]="tipoUsuarioSelecionado">
+      <option value="">Todos os cargos</option>
+
+      <option *ngFor="let tipo of tipoUsuarioOptions" [value]="tipo">
+        {{ labelEnum(tipo) }}
+      </option>
+    </select>
+
+  </section>
+
+  <div class="alert-erro" *ngIf="erro">
+    {{ erro }}
+  </div>
+
+  <section class="patients-list" *ngIf="!carregando && profissionaisFiltrados.length > 0; else semProfissionais">
+
+    <div class="patient-card" *ngFor="let profissional of profissionaisFiltrados">
+
+      <div class="patient-info">
+        <h2 class="patient-name">{{ profissional.nome }}</h2>
+
+        <div class="patient-data">
+          <div class="data-item">
+            <span class="data-label">Cargo / Função</span>
+            <span class="data-value">{{ labelEnum(profissional.tipoUsuario) }}</span>
+          </div>
+
+          <div class="data-item">
+            <span class="data-label">Unidade</span>
+            <span class="data-value">{{ labelEnum(profissional.unidadeAtuacao) }}</span>
+          </div>
+
+          <div class="data-item">
+            <span class="data-label">E-mail</span>
+            <span class="data-value">{{ profissional.email }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn btn-details" (click)="verDetalhes(profissional.idPublico!)">
+          Detalhes
+        </button>
+
+        <button class="btn btn-edit" (click)="editarProfissional(profissional.idPublico!)">
+          Editar
+        </button>
+      </div>
+
+    </div>
+
+  </section>
+
+  <ng-template #semProfissionais>
+    <div class="empty-message" *ngIf="!carregando">
+      Nenhum profissional encontrado.
+    </div>
+  </ng-template>
+
+</main>
