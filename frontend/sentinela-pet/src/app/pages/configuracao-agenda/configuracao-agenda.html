@@ -1,0 +1,109 @@
+<main class="container">
+
+  <section class="page-header">
+    <div class="page-title">
+      <h1>Configurar Agenda</h1>
+      <p>Defina seus dias, turnos e capacidade de atendimento, além de bloqueios de agenda.</p>
+    </div>
+  </section>
+
+  <div class="loading-message" *ngIf="carregandoUsuarioLogado">
+    Carregando...
+  </div>
+
+  <div class="alert-erro" *ngIf="erroGeral">
+    {{ erroGeral }}
+  </div>
+
+  <ng-container *ngIf="!carregandoUsuarioLogado">
+
+    <section class="search-area" *ngIf="isAdmin">
+      <label class="select-label">Selecione o profissional</label>
+
+      <select class="search-select" [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalSelecionado()">
+        <option [ngValue]="null" disabled>Selecione um profissional</option>
+        <option *ngFor="let profissional of profissionais" [value]="profissional.idPublico">
+          {{ profissional.nome }}
+        </option>
+      </select>
+    </section>
+
+    <ng-container *ngIf="podeGerenciar; else selecioneProfissional">
+
+      <!-- SEÇÃO: DISPONIBILIDADE -->
+      <section class="detail-card">
+        <h2 class="detail-card-title">Horários Disponíveis</h2>
+
+        <div class="form-inline">
+          <select [(ngModel)]="novaDisponibilidade.diaSemana">
+            <option value="" disabled>Dia da semana</option>
+            <option *ngFor="let dia of diasSemana" [value]="dia.valor">{{ dia.label }}</option>
+          </select>
+
+          <select [(ngModel)]="novaDisponibilidade.turno">
+            <option value="" disabled>Turno</option>
+            <option *ngFor="let turno of turnos" [value]="turno">{{ labelTurno(turno) }}</option>
+          </select>
+
+          <input type="number" min="1" placeholder="Capacidade" [(ngModel)]="novaDisponibilidade.capacidade" />
+
+          <button class="btn btn-new" (click)="adicionarDisponibilidade()" [disabled]="salvandoDisponibilidade">
+            {{ salvandoDisponibilidade ? 'Salvando...' : '+ Adicionar' }}
+          </button>
+        </div>
+
+        <div class="lista-itens" *ngIf="disponibilidades.length > 0; else semDisponibilidade">
+          <div class="item-linha" *ngFor="let d of disponibilidades">
+            <span class="item-info">
+              <strong>{{ labelDiaSemana(d.diaSemana) }}</strong> — {{ labelTurno(d.turno) }} —
+              {{ d.capacidade }} vaga(s)
+            </span>
+            <button class="btn-remover" (click)="removerDisponibilidade(d.id)">Remover</button>
+          </div>
+        </div>
+
+        <ng-template #semDisponibilidade>
+          <p class="empty-inline" *ngIf="!carregandoDados">Nenhum horário cadastrado ainda.</p>
+        </ng-template>
+      </section>
+
+      <!-- SEÇÃO: BLOQUEIOS -->
+      <section class="detail-card">
+        <h2 class="detail-card-title">Bloqueios de Agenda</h2>
+
+        <div class="form-inline">
+          <input type="date" [(ngModel)]="novoBloqueio.dataInicio" />
+          <input type="date" [(ngModel)]="novoBloqueio.dataFim" />
+          <input type="text" placeholder="Motivo (opcional)" [(ngModel)]="novoBloqueio.motivoBloqueio" />
+
+          <button class="btn btn-new" (click)="adicionarBloqueio()" [disabled]="salvandoBloqueio">
+            {{ salvandoBloqueio ? 'Salvando...' : '+ Bloquear' }}
+          </button>
+        </div>
+
+        <div class="lista-itens" *ngIf="bloqueios.length > 0; else semBloqueio">
+          <div class="item-linha" *ngFor="let b of bloqueios">
+            <span class="item-info">
+              {{ formatarData(b.dataInicio) }} até {{ formatarData(b.dataFim) }}
+              <em *ngIf="b.motivoBloqueio">— {{ b.motivoBloqueio }}</em>
+            </span>
+            <button class="btn-remover" (click)="removerBloqueio(b.id)">Remover</button>
+          </div>
+        </div>
+
+        <ng-template #semBloqueio>
+          <p class="empty-inline" *ngIf="!carregandoDados">Nenhum bloqueio cadastrado.</p>
+        </ng-template>
+      </section>
+
+    </ng-container>
+
+    <ng-template #selecioneProfissional>
+      <div class="empty-message">
+        Selecione um profissional acima para gerenciar a agenda.
+      </div>
+    </ng-template>
+
+  </ng-container>
+
+</main>

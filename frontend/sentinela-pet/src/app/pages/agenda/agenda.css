@@ -1,0 +1,274 @@
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title h1 {
+  font-size: 28px;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.page-title p {
+  color: #64748b;
+  font-size: 15px;
+}
+
+.search-area {
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 14px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filtro-data {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filtro-data input[type='date'] {
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+}
+
+.btn-nav {
+  background: #f1f5f9;
+  color: #334155;
+  border: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-nav:hover {
+  background: #e2e8f0;
+}
+
+.btn-hoje {
+  background: #e0f2fe;
+  color: #003fa3;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-hoje:hover {
+  background: #bae6fd;
+}
+
+.filtro-profissional select {
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 14px;
+  min-width: 220px;
+  outline: none;
+}
+
+.detail-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  border-left: 5px solid #003fa3;
+}
+
+.detail-card-title {
+  font-size: 18px;
+  color: #0f172a;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.lista-agendamentos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agendamento-linha {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #f8fafc;
+  padding: 14px 16px;
+  border-radius: 10px;
+  flex-wrap: wrap;
+}
+
+.agendamento-hora {
+  font-size: 15px;
+  font-weight: bold;
+  color: #003fa3;
+  min-width: 55px;
+}
+
+.agendamento-info {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agendamento-info strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.agendamento-detalhe {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge-agendado {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-presente {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge-faltou {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.badge-remarcado,
+.badge-remarcado-origem {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-cancelado {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.agendamento-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-presenca,
+.btn-falta {
+  border: none;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  white-space: nowrap;
+}
+
+.btn-presenca:disabled,
+.btn-falta:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-presenca {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.btn-presenca:hover:not(:disabled) {
+  background: #bbf7d0;
+}
+
+.btn-falta {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-falta:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.alert-erro {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-left: 5px solid #dc2626;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.loading-message,
+.empty-message {
+  text-align: center;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 14px;
+  color: #64748b;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 700px) {
+  .search-area {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtro-profissional select {
+    width: 100%;
+  }
+
+  .agendamento-linha {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .agendamento-acoes {
+    width: 100%;
+  }
+
+  .btn-presenca,
+  .btn-falta {
+    flex: 1;
+  }
+}

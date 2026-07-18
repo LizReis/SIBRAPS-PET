@@ -1,0 +1,123 @@
+<main class="container">
+
+  <section class="page-header">
+    <div class="page-title">
+      <h1>Agenda do Dia</h1>
+      <p>Acompanhe os atendimentos agendados e registre presença ou falta.</p>
+    </div>
+  </section>
+
+  <div class="loading-message" *ngIf="carregandoUsuarioLogado">
+    Carregando...
+  </div>
+
+  <div class="alert-erro" *ngIf="erroGeral">
+    {{ erroGeral }}
+  </div>
+
+  <ng-container *ngIf="!carregandoUsuarioLogado">
+
+    <section class="search-area">
+
+      <div class="filtro-data">
+        <button class="btn-nav" (click)="mudarDia(-1)">‹</button>
+
+        <input type="date" [(ngModel)]="dataSelecionada" (change)="onDataAlterada()" />
+
+        <button class="btn-nav" (click)="mudarDia(1)">›</button>
+
+        <button class="btn-hoje" (click)="irParaHoje()">Hoje</button>
+      </div>
+
+      <div class="filtro-profissional" *ngIf="podeFiltrarProfissional">
+        <select [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalAlterado()">
+          <option [ngValue]="null">Todos os profissionais</option>
+          <option *ngFor="let profissional of profissionais" [value]="profissional.idPublico">
+            {{ profissional.nome }}
+          </option>
+        </select>
+      </div>
+
+    </section>
+
+    <div class="loading-message" *ngIf="carregando">
+      Carregando agenda...
+    </div>
+
+    <ng-container *ngIf="!carregando">
+
+      <div class="empty-message" *ngIf="agendamentos.length === 0">
+        Nenhum atendimento agendado para esta data.
+      </div>
+
+      <section class="detail-card" *ngIf="agendamentosManha.length > 0">
+        <h2 class="detail-card-title">Manhã</h2>
+
+        <div class="lista-agendamentos">
+          <div class="agendamento-linha" *ngFor="let a of agendamentosManha">
+
+            <div class="agendamento-hora">{{ formatarHora(a.horaAtendimento) }}</div>
+
+            <div class="agendamento-info">
+              <strong>{{ a.nomePaciente }}</strong>
+              <span class="agendamento-detalhe">
+                {{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}
+                <ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container>
+              </span>
+            </div>
+
+            <span class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">
+              {{ labelSituacao(a.situacaoAtendimento) }}
+            </span>
+
+            <div class="agendamento-acoes" *ngIf="podeRegistrarFrequencia(a)">
+              <button class="btn-presenca" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">
+                Presente
+              </button>
+              <button class="btn-falta" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">
+                Faltou
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <section class="detail-card" *ngIf="agendamentosTarde.length > 0">
+        <h2 class="detail-card-title">Tarde</h2>
+
+        <div class="lista-agendamentos">
+          <div class="agendamento-linha" *ngFor="let a of agendamentosTarde">
+
+            <div class="agendamento-hora">{{ formatarHora(a.horaAtendimento) }}</div>
+
+            <div class="agendamento-info">
+              <strong>{{ a.nomePaciente }}</strong>
+              <span class="agendamento-detalhe">
+                {{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}
+                <ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container>
+              </span>
+            </div>
+
+            <span class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">
+              {{ labelSituacao(a.situacaoAtendimento) }}
+            </span>
+
+            <div class="agendamento-acoes" *ngIf="podeRegistrarFrequencia(a)">
+              <button class="btn-presenca" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">
+                Presente
+              </button>
+              <button class="btn-falta" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">
+                Faltou
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </ng-container>
+
+  </ng-container>
+
+</main>

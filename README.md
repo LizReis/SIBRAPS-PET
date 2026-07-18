@@ -1,1 +1,1 @@
-# SIBRAPS-PET
+# Software-PET
