@@ -4,11 +4,18 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.pet.buscaativa.entities.Endereco;
 import com.pet.buscaativa.entities.Paciente;
+import com.pet.buscaativa.entities.dto.AlertaBuscaAtivaDTO;
+import com.pet.buscaativa.entities.dto.EncerramentoPacienteDTO;
 import com.pet.buscaativa.entities.dto.PacienteDTO;
+import com.pet.buscaativa.entities.dto.ReativacaoPacienteDTO;
 import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
+import com.pet.buscaativa.entities.enums.MotivoEncerramento;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
@@ -18,8 +25,10 @@ import com.pet.buscaativa.services.PacienteService;
 import com.pet.buscaativa.services.exceptions.DatabaseException;
 import com.pet.buscaativa.services.exceptions.RecursoDuplicadoException;
 import com.pet.buscaativa.services.exceptions.ResourceNotFoundException;
+import com.pet.buscaativa.services.exceptions.ValidationException;
 import com.pet.buscaativa.utils.DocumentoUtil;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -161,7 +170,7 @@ public class PacienteServiceImpl implements PacienteService{
     @Override
     public void atualizarAssiduidadePaciente(Paciente paciente, SituacaoAtendimento statusAnterior, SituacaoAtendimento novoStatus) {
         if (novoStatus == SituacaoAtendimento.FALTOU && statusAnterior != SituacaoAtendimento.FALTOU) {
-            paciente.setCountFaltas(paciente.getCountFaltas() + 1);
+            paciente.setCountFaltas(faltasConsecutivas(paciente) + 1);
         }
         if (novoStatus == SituacaoAtendimento.PRESENTE) {
             paciente.setCountFaltas(0);
@@ -169,10 +178,13 @@ public class PacienteServiceImpl implements PacienteService{
             paciente.setGatilhoVisitaAcionado(false);
         }
         if (statusAnterior == SituacaoAtendimento.FALTOU && novoStatus != SituacaoAtendimento.FALTOU) {
-            paciente.setCountFaltas(Math.max(0, paciente.getCountFaltas() - 1));
+            paciente.setCountFaltas(Math.max(0, faltasConsecutivas(paciente) - 1));
         }
 
         calcularEAtualizarRisco(paciente);
+        if (paciente.getIdPublico() != null) {
+            pacienteRepository.save(paciente);
+        }
     }
     @Override
     public void calcularEAtualizarRisco(Paciente paciente) {
@@ -196,11 +208,13 @@ public class PacienteServiceImpl implements PacienteService{
         }
 
         // Verifica primeiro o risco máximo (Vermelho)
-        if (paciente.getCountFaltas() >= limiteVermelhoFaltas || diasAusente >= limiteVermelhoDias) {
+        int faltasConsecutivas = faltasConsecutivas(paciente);
+
+        if (faltasConsecutivas >= limiteVermelhoFaltas || diasAusente > limiteVermelhoDias) {
             paciente.setClassificacaoRisco(ClassificacaoRisco.VERMELHO);
-        } 
+        }  
         // Depois o risco médio (Amarelo)
-        else if (paciente.getCountFaltas() >= limiteAmareloFaltas || diasAusente >= limiteAmareloDias) {
+        else if (faltasConsecutivas >= limiteAmareloFaltas || diasAusente > limiteAmareloDias) {
             paciente.setClassificacaoRisco(ClassificacaoRisco.AMARELO);
         } 
         // Caso contrário, está tudo bem (Verde)
@@ -209,5 +223,119 @@ public class PacienteServiceImpl implements PacienteService{
         }
     }
 
+
+    @Override
+    @Transactional
+    public void encerrarAcompanhamento(UUID idPublico, EncerramentoPacienteDTO encerramento) {
+        Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(idPublico)
+                .orElseThrow(() -> new ResourceNotFoundException(idPublico));
+
+        if (encerramento.motivo() == MotivoEncerramento.OUTRO
+                && (encerramento.descricao() == null || encerramento.descricao().isBlank())) {
+            throw new ValidationException("Descrição obrigatória quando o motivo do encerramento for OUTRO.");
+        }else if(paciente.getStatusPaciente() == encerramento.statusPaciente()){
+            throw new ValidationException("Paciente para encerramento não deve ter o mesmo status ou status ATIVO.");
+        }
+
+        paciente.setStatusPaciente(encerramento.statusPaciente());
+        paciente.setMotivoEncerramento(encerramento.motivo());
+        paciente.setDescricaoMotivoEncerramento(encerramento.descricao());
+        paciente.setDataEncerramento(LocalDate.now());
+        paciente.setProfissionalEncerramento(usuarioAuditoria());
+        paciente.setClassificacaoRisco(ClassificacaoRisco.VERDE);
+        paciente.setGatilhoVisitaAcionado(false);
+        pacienteRepository.save(paciente);
+    }
+
+    @Override
+    @Transactional
+    public void reativarAcompanhamento(UUID idPublico, ReativacaoPacienteDTO reativacao) {
+        Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(idPublico)
+                .orElseThrow(() -> new ResourceNotFoundException(idPublico));
+
+        paciente.setStatusPaciente(StatusPaciente.ATIVO);
+        paciente.setDataReativacao(LocalDate.now());
+        paciente.setMotivoReativacao(reativacao.motivo());
+        paciente.setProfissionalReativacao(usuarioAuditoria());
+        calcularEAtualizarRisco(paciente);
+        pacienteRepository.save(paciente);
+    }
+
+    @Override
+    public List<AlertaBuscaAtivaDTO> listarPacientesEmBuscaAtiva() {
+        return pacienteRepository
+                .findByStatusPacienteAndClassificacaoRisco(StatusPaciente.ATIVO, ClassificacaoRisco.VERMELHO)
+                .stream()
+                .map(this::montarAlertaBuscaAtiva)
+                .toList();
+    }
+
+    private AlertaBuscaAtivaDTO montarAlertaBuscaAtiva(Paciente paciente) {
+        boolean alertaDeVisita = Boolean.TRUE.equals(paciente.getGatilhoVisitaAcionado())
+                || faltasConsecutivas(paciente) >= 2;
+
+        String alerta = null;
+        String localBusca = null;
+        String avisoAdicional = null;
+
+        if (alertaDeVisita) {
+            if (paciente.isSituacaoRua()) {
+                alerta = "Busca em ponto de referência necessária";
+                localBusca = formatarPontoReferencia(paciente.getEndereco());
+                if (localBusca == null) {
+                    avisoAdicional = "Nenhum ponto de referência cadastrado — verificar com a equipe antes de acionar a busca.";
+                }
+            } else {
+                alerta = "Visita domiciliar necessária";
+                localBusca = formatarEndereco(paciente.getEndereco());
+            }
+        }
+
+        return new AlertaBuscaAtivaDTO(
+                paciente.getIdPublico(),
+                paciente.getNome(),
+                paciente.getClassificacaoRisco(),
+                faltasConsecutivas(paciente),
+                alerta,
+                localBusca,
+                avisoAdicional);
+    }
+
+    private int faltasConsecutivas(Paciente paciente) {
+        return paciente.getCountFaltas();
+    }
+
+    private String formatarPontoReferencia(Endereco endereco) {
+        if (endereco == null || endereco.getComplemento() == null || endereco.getComplemento().isBlank()) {
+            return null;
+        }
+        return endereco.getComplemento();
+    }
+
+    private String formatarEndereco(Endereco endereco) {
+        if (endereco == null) {
+            return null;
+        }
+        return String.join(", ", List.of(
+                valor(endereco.getLogradouro()),
+                valor(endereco.getNumero()),
+                valor(endereco.getBairro()),
+                valor(endereco.getCidade()),
+                valor(endereco.getEstado())))
+                .replaceAll("(, )+", ", ")
+                .replaceAll("^, |, $", "");
+    }
+
+    private String valor(String valor) {
+        return valor == null ? "" : valor;
+    }
+
+    private String usuarioAuditoria() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "SISTEMA";
+        }
+        return authentication.getName();
+    }
     
 }

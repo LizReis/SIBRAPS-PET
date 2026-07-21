@@ -18,7 +18,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.pet.buscaativa.entities.dto.AlertaBuscaAtivaDTO;
+import com.pet.buscaativa.entities.dto.EncerramentoPacienteDTO;
 import com.pet.buscaativa.entities.dto.PacienteDTO;
+import com.pet.buscaativa.entities.dto.ReativacaoPacienteDTO;
 import com.pet.buscaativa.services.PacienteService;
 
 import jakarta.validation.Valid;
@@ -90,21 +93,25 @@ public class PacienteController {
 
     }
 
+
+    @GetMapping("/busca-ativa")
+    public ResponseEntity<List<AlertaBuscaAtivaDTO>> listarBuscaAtiva(){
+        return ResponseEntity.ok(pacienteService.listarPacientesEmBuscaAtiva());
+    }
+
+
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
-    @PatchMapping("/{idPublico}/encerrar-acompanhamento")
-    public ResponseEntity<Void> encerrarAcompanhamento(
-            @PathVariable UUID idPublico, 
-            @RequestParam String motivoEncerramento, 
-            @RequestParam(required = false) String descricaoMotivoEncerramento) {
+    @PatchMapping("/{idPublico}/encerrar")
+    public ResponseEntity<Void> encerrarAcompanhamento(@PathVariable UUID idPublico, @Valid @RequestBody EncerramentoPacienteDTO encerramento) {
         
-        pacienteService.encerrarAcompanhamento(idPublico, motivoEncerramento, descricaoMotivoEncerramento);
+        pacienteService.encerrarAcompanhamento(idPublico, encerramento);
         return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @PatchMapping("/{idPublico}/reativar")
-    public ResponseEntity<Void> reativarAcompanhamento(@PathVariable UUID idPublico) {
-        pacienteService.reativarAcompanhamento(idPublico);
+    public ResponseEntity<Void> reativarAcompanhamento(@PathVariable UUID idPublico, @Valid @RequestBody ReativacaoPacienteDTO reativacao) {
+        pacienteService.reativarAcompanhamento(idPublico, reativacao);
         return ResponseEntity.noContent().build();
     }
 }

@@ -9,6 +9,7 @@ import org.hibernate.envers.Audited;
 
 import com.pet.buscaativa.entities.enums.CapsEnum;
 import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
+import com.pet.buscaativa.entities.enums.MotivoEncerramento;
 import com.pet.buscaativa.entities.enums.RacaCorEnum;
 import com.pet.buscaativa.entities.enums.SexoEnum;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
@@ -18,6 +19,8 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -93,12 +96,14 @@ public class Paciente extends AbstractEntities implements Serializable{
     private ClassificacaoRisco classificacaoRisco = ClassificacaoRisco.VERDE;
 
     private LocalDate dataEncerramento;
-    private String motivoEncerramento;
+    @Enumerated(EnumType.STRING)
+    private MotivoEncerramento motivoEncerramento;
     private String descricaoMotivoEncerramento;
     private String profissionalEncerramento;
 
     private LocalDate dataReativacao;
     private String motivoReativacao;
+    private String profissionalReativacao;
 
     @Column(name = "gatilho_visita")
     private Boolean gatilhoVisitaAcionado = false;

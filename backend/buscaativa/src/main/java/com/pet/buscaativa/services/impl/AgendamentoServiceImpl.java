@@ -303,15 +303,18 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
         agendamento.setSituacaoAtendimento(novoStatus);
 
-        Paciente paciente = agendamento.getPaciente();
-        if (paciente != null) {
-    
+        Paciente pacienteAgendado = agendamento.getPaciente();
+        if (pacienteAgendado != null) {
+            Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(pacienteAgendado.getIdPublico())
+                    .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado"));
+
             pacienteService.atualizarAssiduidadePaciente(paciente, statusAnterior, novoStatus);
 
             // 6. RF08: Gatilho de Visita Domiciliar Automático
             // Se o status virou FALTOU e este agendamento é uma remarcação (tem um original vinculado):
             if (novoStatus == SituacaoAtendimento.FALTOU && agendamento.getAgendamentoOriginal() != null) {
                 paciente.setGatilhoVisitaAcionado(true);
+                pacienteRepository.save(paciente);
             }
 
             // O Paciente já será salvo automaticamente ao final do método por causa do @Transactional,
