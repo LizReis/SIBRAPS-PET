@@ -2,6 +2,7 @@ package com.pet.buscaativa.services.impl;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.mapping.PacienteMapper;
 import com.pet.buscaativa.repositories.PacienteRepository;
+import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
 import com.pet.buscaativa.services.exceptions.DatabaseException;
 import com.pet.buscaativa.services.exceptions.RecursoDuplicadoException;
@@ -37,6 +39,7 @@ public class PacienteServiceImpl implements PacienteService{
 
     private final PacienteRepository pacienteRepository;
     private final PacienteMapper pacienteMapper;
+    private final HistoricoPacienteService historicoPacienteService;
 
 
     @Override
@@ -56,6 +59,13 @@ public class PacienteServiceImpl implements PacienteService{
             pacienteSalvar.setStatusPaciente(StatusPaciente.ATIVO);
         }
 
+        pacienteSalvar.setCpf(
+        DocumentoUtil.normalizarCPF(pacienteDTO.cpf()));
+
+        pacienteSalvar.setCns(
+        DocumentoUtil.normalizarCNS(pacienteDTO.cns()));
+
+
         pacienteSalvar = pacienteRepository.save(pacienteSalvar);
 
         return pacienteMapper.toPacienteDTO(pacienteSalvar);
@@ -69,6 +79,7 @@ public class PacienteServiceImpl implements PacienteService{
         paciente.setStatusPaciente(StatusPaciente.INATIVO);
 
         pacienteRepository.save(paciente);
+        historicoPacienteService.registrarSituacaoAtual(paciente, "Situação atualizada para INATIVO.");
     }
 
     @Override
@@ -86,43 +97,70 @@ public class PacienteServiceImpl implements PacienteService{
                 .toList();
     }
     @Override
-    public void validarPacienteDuplicado(PacienteDTO pacienteDTO, boolean ignorarSimilaridade) {
+    public void validarPacienteDuplicado(
+            PacienteDTO pacienteDTO,
+            boolean ignorarSimilaridade
+    ) {
         boolean possuiDoc = false;
 
         if (pacienteDTO.cpf() != null && !pacienteDTO.cpf().isBlank()) {
             possuiDoc = true;
-            String cpfNormalizado = DocumentoUtil.normalizarCPF(pacienteDTO.cpf());
+
+            String cpfNormalizado =
+                    DocumentoUtil.normalizarCPF(pacienteDTO.cpf());
+
             pacienteRepository.findByCpf(cpfNormalizado).ifPresent(p -> {
-                if (!p.getId().equals(pacienteDTO.idPublico())) {
-                    throw new RecursoDuplicadoException("Já existe um paciente com este CPF.");
+                if (!Objects.equals(
+                        p.getIdPublico(),
+                        pacienteDTO.idPublico()
+                )) {
+                    throw new RecursoDuplicadoException(
+                            "Já existe um paciente com este CPF."
+                    );
                 }
             });
         }
 
         if (pacienteDTO.cns() != null && !pacienteDTO.cns().isBlank()) {
             possuiDoc = true;
-            String cnsNormalizado = DocumentoUtil.normalizarCNS(pacienteDTO.cns());
+
+            String cnsNormalizado =
+                    DocumentoUtil.normalizarCNS(pacienteDTO.cns());
+
             pacienteRepository.findByCns(cnsNormalizado).ifPresent(p -> {
-                if (!p.getId().equals(pacienteDTO.idPublico())) {
-                    throw new RecursoDuplicadoException("Já existe um paciente com este CNS.");
+                if (!Objects.equals(
+                        p.getIdPublico(),
+                        pacienteDTO.idPublico()
+                )) {
+                    throw new RecursoDuplicadoException(
+                            "Já existe um paciente com este CNS."
+                    );
                 }
             });
         }
 
-        //REGRA RF15: CPF/CNS ausentes -> Busca por similaridade
         if (!possuiDoc && !ignorarSimilaridade) {
             List<Paciente> similares = pacienteRepository
-                .findByNomeIgnoreCaseAndNomeMaeIgnoreCaseAndDataNascimento(
-                    pacienteDTO.nome(), pacienteDTO.nomeMae(), pacienteDTO.dataNascimento()
-                );
+                    .findByNomeIgnoreCaseAndNomeMaeIgnoreCaseAndDataNascimento(
+                            pacienteDTO.nome(),
+                            pacienteDTO.nomeMae(),
+                            pacienteDTO.dataNascimento()
+                    );
 
-                similares.removeIf(p -> p.getId().equals(pacienteDTO.idPublico()));
+            similares.removeIf(p -> Objects.equals(
+                    p.getIdPublico(),
+                    pacienteDTO.idPublico()
+            ));
 
             if (!similares.isEmpty()) {
-                List<PacienteDTO> similaresDTO = similares.stream().map(pacienteMapper::toPacienteDTO).toList();
-                
+                List<PacienteDTO> similaresDTO = similares.stream()
+                        .map(pacienteMapper::toPacienteDTO)
+                        .toList();
+
                 throw new DatabaseException(
-                    "Registros similares encontrados. Confirme para prosseguir." + similaresDTO
+                        "Registros similares encontrados. " +
+                        "Confirme para prosseguir. " +
+                        similaresDTO
                 );
             }
         }
@@ -245,6 +283,7 @@ public class PacienteServiceImpl implements PacienteService{
         paciente.setClassificacaoRisco(ClassificacaoRisco.VERDE);
         paciente.setGatilhoVisitaAcionado(false);
         pacienteRepository.save(paciente);
+        historicoPacienteService.registrarSituacaoAtual(paciente, "Acompanhamento encerrado. Situação atual: " + paciente.getStatusPaciente() + ".");
     }
 
     @Override
@@ -259,6 +298,7 @@ public class PacienteServiceImpl implements PacienteService{
         paciente.setProfissionalReativacao(usuarioAuditoria());
         calcularEAtualizarRisco(paciente);
         pacienteRepository.save(paciente);
+        historicoPacienteService.registrarSituacaoAtual(paciente, "Acompanhamento reativado. Situação atual: ATIVO.");
     }
 
     @Override

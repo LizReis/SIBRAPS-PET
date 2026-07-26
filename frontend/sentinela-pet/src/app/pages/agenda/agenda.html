@@ -5,6 +5,16 @@
       <h1>Agenda do Dia</h1>
       <p>Acompanhe os atendimentos agendados e registre presença ou falta.</p>
     </div>
+
+    <div class="header-actions">
+      <button class="btn btn-config" routerLink="/agenda/configuracoes" *ngIf="podeConfigurarAgenda">
+        Configurar Agenda
+      </button>
+
+      <button class="btn btn-new" routerLink="/agenda/novo" *ngIf="podeCriarAgendamento">
+        + Novo Agendamento
+      </button>
+    </div>
   </section>
 
   <div class="loading-message" *ngIf="carregandoUsuarioLogado">

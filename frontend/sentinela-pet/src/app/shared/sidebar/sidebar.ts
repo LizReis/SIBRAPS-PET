@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { UsuarioLogadoService } from '../../services/usuario-logado-service';
 
 @Component({
   selector: 'app-sidebar',
@@ -9,7 +10,10 @@ import { Router, RouterModule } from '@angular/router';
   styleUrl: './sidebar.css',
 })
 export class Sidebar {
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private usuarioLogadoService: UsuarioLogadoService,
+  ) {}
 
   menuItems = [
     { label: 'Início', route: '/inicio', icon: 'home' },
@@ -23,6 +27,7 @@ export class Sidebar {
     const confirmado = confirm('Deseja realmente sair?');
     if (confirmado) {
       localStorage.removeItem('token');
+      this.usuarioLogadoService.limparCache();
       this.router.navigate(['/login']);
     }
   }

@@ -30,6 +30,7 @@ import com.pet.buscaativa.repositories.DisponibilidadeRepository;
 import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.repositories.UsuarioRepository;
 import com.pet.buscaativa.services.AgendamentoService;
+import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
 import com.pet.buscaativa.services.exceptions.ResourceNotFoundException;
 import com.pet.buscaativa.services.exceptions.ValidationException;
@@ -51,8 +52,10 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     private final AgendamentoMapper agendamentoMapper;
 
     private final PacienteService pacienteService;
+    private final HistoricoPacienteService historicoPacienteService;
 
     @Override
+    @Transactional
     public AgendamentoDTO save(AgendamentoDTO agendamentoDTO) {
         Usuario usuario = usuarioRepository.findByIdPublico(agendamentoDTO.usuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
@@ -76,7 +79,10 @@ public class AgendamentoServiceImpl implements AgendamentoService {
                         "Remarcação individual não permitida para atendimentos de Grupo Terapêutico.");
             }
 
+            SituacaoAtendimento statusAnterior = original.getSituacaoAtendimento();
             original.setSituacaoAtendimento(SituacaoAtendimento.REMARCADO_ORIGEM);
+            agendamentoRepository.save(original);
+            historicoPacienteService.registrarAlteracaoDeAtendimento(original, statusAnterior);
             agendamento.setAgendamentoOriginal(original);
             agendamento.setSituacaoAtendimento(SituacaoAtendimento.REMARCADO);
         } else {
@@ -84,6 +90,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         }
 
         agendamento = agendamentoRepository.save(agendamento);
+        historicoPacienteService.registrarAgendamento(agendamento);
         return agendamentoMapper.toAgendamentoDTO(agendamento);
     }
 
@@ -322,6 +329,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         }
 
         agendamento = agendamentoRepository.save(agendamento);
+        historicoPacienteService.registrarAlteracaoDeAtendimento(agendamento, statusAnterior);
 
         return agendamentoMapper.toAgendamentoDTO(agendamento);
     }

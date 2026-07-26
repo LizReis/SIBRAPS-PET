@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import {
   ProfissionalPayload,
@@ -17,7 +18,7 @@ import { UsuarioLogadoService } from '../../services/usuario-logado-service';
 @Component({
   selector: 'app-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './agenda.html',
   styleUrl: './agenda.css',
 })
@@ -25,6 +26,8 @@ export class Agenda implements OnInit {
   dataSelecionada: string = this.formatarDataISO(new Date());
 
   podeFiltrarProfissional = false;
+  podeConfigurarAgenda = false;
+  podeCriarAgendamento = false;
   carregandoUsuarioLogado = true;
 
   profissionais: ProfissionalPayload[] = [];
@@ -47,6 +50,10 @@ export class Agenda implements OnInit {
     this.usuarioLogadoService.obterUsuarioLogado().subscribe({
       next: (usuario) => {
         this.podeFiltrarProfissional = usuario.tipoUsuario !== 'PROFISSIONAL';
+        this.podeConfigurarAgenda =
+          usuario.tipoUsuario === 'ADMINISTRADOR' || usuario.tipoUsuario === 'PROFISSIONAL';
+        this.podeCriarAgendamento =
+          usuario.tipoUsuario === 'ADMINISTRADOR' || usuario.tipoUsuario === 'RECEPCAO';
         this.carregandoUsuarioLogado = false;
 
         if (this.podeFiltrarProfissional) {

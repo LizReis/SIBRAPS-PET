@@ -47,6 +47,8 @@ export interface PacientePayload {
   statusPaciente?: string;
 
   usfReferencia: UsfReferencia;
+
+  capsReferencia: string;
 }
 
 export interface FieldMessage {

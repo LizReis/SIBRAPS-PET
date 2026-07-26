@@ -36,6 +36,12 @@ enum TipoAcompanhamento {
   AMBOS = 'AMBOS',
 }
 
+enum CapsEnum {
+  CAPS_AD = 'CAPS_AD',
+  CAPS_I = 'CAPS_I',
+  CAPS_II = 'CAPS_II',
+}
+
 @Component({
   selector: 'app-cadastro-paciente',
   standalone: true,
@@ -47,6 +53,7 @@ export class CadastroPaciente implements OnInit {
   sexoOptions = Object.values(SexoEnum);
   racaCorOptions = Object.values(RacaCorEnum);
   tipoAcompanhamentoOptions = Object.values(TipoAcompanhamento);
+  capsOptions = Object.values(CapsEnum);
 
   unidadesSaude: UnidadeSaude[] = [];
 
@@ -79,6 +86,8 @@ export class CadastroPaciente implements OnInit {
     telefone: new FormControl('', Validators.required),
 
     usfReferencia: new FormControl<UnidadeSaude | null>(null, Validators.required),
+
+    capsReferencia: new FormControl('', Validators.required),
 
     situacaoRua: new FormControl(false, Validators.required),
 
@@ -158,6 +167,7 @@ export class CadastroPaciente implements OnInit {
           cpf: paciente.cpf,
           telefone: paciente.telefone,
           usfReferencia: unidadeCorrespondente,
+          capsReferencia: paciente.capsReferencia,
           situacaoRua: paciente.situacaoRua,
           tipoAcompanhamento: paciente.tipoAcompanhamento,
           endereco: {
@@ -218,6 +228,8 @@ export class CadastroPaciente implements OnInit {
       telefone: this.somenteNumeros(formValue.telefone),
 
       usfReferencia: formValue.usfReferencia!,
+
+      capsReferencia: formValue.capsReferencia ?? '',
 
       situacaoRua: formValue.situacaoRua ?? false,
 

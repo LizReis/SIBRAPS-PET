@@ -17,12 +17,35 @@ export interface AgendamentoDTO {
   version: number;
 }
 
+export interface NovoAgendamentoPayload {
+  id?: number;
+  usuarioId: string;
+  pacienteId: string;
+  dataAgendamento: string;
+  turnoAgendamento: string;
+  horaAtendimento: string;
+}
+
+export interface VagasPorTurno {
+  MANHA: number;
+  TARDE: number;
+}
+
+export interface FieldMessage {
+  fieldName: string;
+  message: string;
+}
+
 export interface StandardError {
   timestamp: string;
   status: number;
   error: string;
   message: string;
   path: string;
+}
+
+export interface ValidationError extends StandardError {
+  errors: FieldMessage[];
 }
 
 @Injectable({
@@ -45,5 +68,14 @@ export class AgendamentoService {
     const params = new HttpParams().set('novoStatus', novoStatus).set('version', String(version));
 
     return this.http.patch<AgendamentoDTO>(`${this.apiUrl}/${id}/status`, null, { params });
+  }
+
+  consultarVagas(usuarioId: string, data: string): Observable<VagasPorTurno> {
+    const params = new HttpParams().set('usuarioId', usuarioId).set('data', data);
+    return this.http.get<VagasPorTurno>(`${this.apiUrl}/vagas`, { params });
+  }
+
+  criarAgendamento(payload: NovoAgendamentoPayload): Observable<AgendamentoDTO> {
+    return this.http.post<AgendamentoDTO>(this.apiUrl, payload);
   }
 }

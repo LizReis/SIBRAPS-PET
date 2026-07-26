@@ -20,8 +20,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.pet.buscaativa.entities.dto.AlertaBuscaAtivaDTO;
 import com.pet.buscaativa.entities.dto.EncerramentoPacienteDTO;
+import com.pet.buscaativa.entities.dto.HistoricoPacienteDTO;
 import com.pet.buscaativa.entities.dto.PacienteDTO;
 import com.pet.buscaativa.entities.dto.ReativacaoPacienteDTO;
+import com.pet.buscaativa.entities.dto.RegistroHistoricoPacienteDTO;
+import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
 
 import jakarta.validation.Valid;
@@ -33,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 public class PacienteController {
 
     private final PacienteService pacienteService;
+    private final HistoricoPacienteService historicoPacienteService;
 
     @GetMapping
     public ResponseEntity<List<PacienteDTO>> listaPacientes(){
@@ -112,6 +116,20 @@ public class PacienteController {
     @PatchMapping("/{idPublico}/reativar")
     public ResponseEntity<Void> reativarAcompanhamento(@PathVariable UUID idPublico, @Valid @RequestBody ReativacaoPacienteDTO reativacao) {
         pacienteService.reativarAcompanhamento(idPublico, reativacao);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
+    @GetMapping("/{idPublico}/historico")
+    public ResponseEntity<HistoricoPacienteDTO> consultarHistorico(@PathVariable UUID idPublico) {
+        return ResponseEntity.ok(historicoPacienteService.consultar(idPublico));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PostMapping("/{idPublico}/historico")
+    public ResponseEntity<Void> registrarNoHistorico(@PathVariable UUID idPublico,
+            @Valid @RequestBody RegistroHistoricoPacienteDTO registro) {
+        historicoPacienteService.registrarManual(idPublico, registro);
         return ResponseEntity.noContent().build();
     }
 }

@@ -14,6 +14,7 @@ import { CadastroProfissional } from './pages/cadastro-profissional/cadastro-pro
 import { DetalhePaciente } from './pages/detalhe-paciente/detalhe-paciente';
 import { DetalheProfissional } from './pages/detalhe-profissional/detalhe-profissional';
 import { ConfiguracaoAgenda } from './pages/configuracao-agenda/configuracao-agenda';
+import { NovoAgendamento } from './pages/novo-agendamento/novo-agendamento';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -33,6 +34,7 @@ export const routes: Routes = [
       { path: 'painel', component: Painel },
       { path: 'agenda', component: Agenda },
       { path: 'agenda/configuracoes', component: ConfiguracaoAgenda },
+      { path: 'agenda/novo', component: NovoAgendamento },
       { path: 'pacientes', component: Pacientes },
       { path: 'pacientes/detalhes/:id', component: DetalhePaciente },
       { path: 'pacientes/novo', component: CadastroPaciente },

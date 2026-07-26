@@ -157,6 +157,22 @@
         </div>
 
         <div class="form-group">
+          <label>CAPS de Referência</label>
+
+          <select formControlName="capsReferencia">
+            <option value="" disabled>Selecione</option>
+
+            <option *ngFor="let caps of capsOptions" [value]="caps">
+              {{ labelEnum(caps) }}
+            </option>
+          </select>
+
+          <small *ngIf="campoInvalido('capsReferencia') || errosPorCampo['capsReferencia']">
+            {{ mensagemErro('capsReferencia', 'CAPS de referência é obrigatório.') }}
+          </small>
+        </div>
+
+        <div class="form-group">
           <label>Tipo de acompanhamento</label>
 
           <select formControlName="tipoAcompanhamento">

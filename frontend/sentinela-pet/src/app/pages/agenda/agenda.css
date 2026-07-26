@@ -9,7 +9,13 @@
   padding: 24px;
 }
 
+/* CABEÇALHO */
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 24px;
 }
 
@@ -24,6 +30,49 @@
   font-size: 15px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* BOTÃO BASE */
+.btn {
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-config {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.btn-config:hover {
+  background: #e2e8f0;
+}
+
+.btn-new {
+  background: #003fa3;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 63, 163, 0.25);
+}
+
+.btn-new:hover {
+  background: #001f52;
+}
+
+/* ÁREA DE FILTROS */
 .search-area {
   background: #ffffff;
   padding: 18px;
@@ -93,6 +142,7 @@
   outline: none;
 }
 
+/* CARDS DE AGENDA */
 .detail-card {
   background: #ffffff;
   border-radius: 14px;
@@ -150,6 +200,7 @@
   color: #64748b;
 }
 
+/* BADGES DE SITUAÇÃO */
 .badge {
   padding: 6px 12px;
   border-radius: 999px;
@@ -185,6 +236,7 @@
   color: #64748b;
 }
 
+/* AÇÕES DE PRESENÇA/FALTA */
 .agendamento-acoes {
   display: flex;
   gap: 8px;
@@ -226,6 +278,7 @@
   background: #fecaca;
 }
 
+/* ALERTAS E ESTADOS */
 .alert-erro {
   background: #fee2e2;
   color: #991b1b;
@@ -248,7 +301,17 @@
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
+/* RESPONSIVO */
 @media (max-width: 700px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    flex-direction: column;
+  }
+
   .search-area {
     flex-direction: column;
     align-items: stretch;
