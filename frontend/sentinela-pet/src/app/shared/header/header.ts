@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { take } from 'rxjs';
+import { UsuarioLogadoDTO, UsuarioLogadoService } from '../../services/usuario-logado-service';
 
 @Component({
   selector: 'app-header',
@@ -7,7 +9,9 @@ import { Component, OnInit } from '@angular/core';
   styleUrl: './header.css',
 })
 export class Header implements OnInit {
-  userName = 'Nome do Usuário'; // futuramente virá do serviço de auth
+  private usuarioLogadoService = inject(UsuarioLogadoService);
+
+  userName = 'Carregando...';
   userInitials = '';
   avatarColor = '';
 
@@ -23,9 +27,24 @@ export class Header implements OnInit {
     '#3b82f6',
   ];
 
-  ngOnInit() {
-    this.userInitials = this.getInitials(this.userName);
-    this.avatarColor = this.getColor(this.userName);
+  ngOnInit(): void {
+    this.usuarioLogadoService
+      .obterUsuarioLogado()
+      .pipe(take(1))
+      .subscribe({
+        next: (usuario: UsuarioLogadoDTO) => {
+          this.userName = usuario.nome;
+          this.userInitials = this.getInitials(usuario.nome);
+          this.avatarColor = this.getColor(usuario.nome);
+        },
+        error: (erro) => {
+          console.error('Erro ao carregar usuário logado:', erro);
+
+          this.userName = 'Usuário';
+          this.userInitials = this.getInitials(this.userName);
+          this.avatarColor = this.getColor(this.userName);
+        },
+      });
   }
 
   private getInitials(name: string): string {
@@ -39,6 +58,7 @@ export class Header implements OnInit {
 
   private getColor(name: string): string {
     const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % this.colors.length;
+
     return this.colors[index];
   }
 }

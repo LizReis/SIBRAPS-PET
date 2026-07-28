@@ -38,7 +38,7 @@ public class DisponibilidadeController {
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
     @DeleteMapping("/disponibilidade/{id}")
     public ResponseEntity<Void> deletarDisponibilidade(@PathVariable Long id) {
-        disponibilidadeService.deletarDisponibilidade(id);
+        disponibilidadeService.deletarDisponibilidade(id, getEmailLogado());
         return ResponseEntity.noContent().build();
     }
 }

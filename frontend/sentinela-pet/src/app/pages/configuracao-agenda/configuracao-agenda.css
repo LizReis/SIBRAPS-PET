@@ -80,6 +80,13 @@ input:focus {
   margin-bottom: 16px;
 }
 
+.section-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
 .form-inline {
   display: flex;
   gap: 10px;
@@ -143,6 +150,11 @@ input:focus {
 .item-info em {
   color: #64748b;
   font-style: normal;
+}
+
+.tag-fechado {
+  color: #dc2626;
+  font-weight: bold;
 }
 
 .btn-remover {

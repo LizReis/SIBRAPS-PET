@@ -28,9 +28,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<TokenDTO> login(@RequestBody LoginDTO loginDTO) {
 
-        System.out.println("EMAIL: " + loginDTO.email());
-        System.out.println("SENHA: " + loginDTO.senha());
-
         UsernamePasswordAuthenticationToken usernamePassword = new UsernamePasswordAuthenticationToken(loginDTO.email(), loginDTO.senha());
 
         Authentication auth = authenticationManager.authenticate(usernamePassword);

@@ -1,5 +1,6 @@
 package com.pet.buscaativa.services.impl;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,12 +18,19 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.UUID;
 
+import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
+import com.pet.buscaativa.repositories.AgendamentoRepository;
+import com.pet.buscaativa.services.exceptions.ConflictException;
+
+import jakarta.transaction.Transactional;
+
 @Service
 @RequiredArgsConstructor
 public class DisponibilidadeServiceImpl implements DisponibilidadeService {
 
     private final DisponibilidadeRepository disponibilidadeRepository;
     private final UsuarioContextService usuarioContextService;
+    private final AgendamentoRepository agendamentoRepository;
 
     @Override
     public DisponibilidadeDTO save(DisponibilidadeDTO disponibilidadeDTO, String emailLogado) {
@@ -42,6 +50,7 @@ public class DisponibilidadeServiceImpl implements DisponibilidadeService {
         if (disponibilidadeDTO.id() != null) {
             disponibilidade = disponibilidadeRepository.findById(disponibilidadeDTO.id())
                     .orElseThrow(() -> new ResourceNotFoundException("Disponibilidade não encontrada."));
+            usuarioContextService.validarAlteracao(disponibilidade.getUsuario(), emailLogado);
         }
 
         disponibilidade.setUsuario(usuario);
@@ -64,8 +73,19 @@ public class DisponibilidadeServiceImpl implements DisponibilidadeService {
     }
 
     @Override
-    public void deletarDisponibilidade(Long id) {
-        disponibilidadeRepository.deleteById(id);
+    @Transactional
+    public void deletarDisponibilidade(Long id, String emailLogado) {
+        Disponibilidade disponibilidade = disponibilidadeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Disponibilidade não encontrada."));
+        usuarioContextService.validarAlteracao(disponibilidade.getUsuario(), emailLogado);
+        int diaBanco = disponibilidade.getDiaDaSemana().getValue() % 7 + 1;
+        long conflitos = agendamentoRepository.contarConflitosDisponibilidade(disponibilidade.getUsuario(),
+                LocalDate.now(), diaBanco, disponibilidade.getTurno(),
+                List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO));
+        if (conflitos > 0) {
+            throw new ConflictException("Existem agendamentos ativos vinculados; cancele ou remarque antes da exclusão.");
+        }
+        disponibilidadeRepository.delete(disponibilidade);
     }
 
     private DisponibilidadeDTO toDTO(Disponibilidade d) {

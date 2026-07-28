@@ -1,6 +1,7 @@
 package com.pet.buscaativa.services.exceptions;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.time.Instant;
+import jakarta.servlet.http.HttpServletRequest;
 
 @ControllerAdvice
 public class ResourceExceptionHandler {
@@ -45,6 +46,15 @@ public class ResourceExceptionHandler {
         StandardError sterr = new StandardError(Instant.now(), status.value(), error, e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(status).body(sterr);
     }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<StandardError> conflict(ConflictException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.CONFLICT;
+        StandardError error = new StandardError(Instant.now(), status.value(), "Conflito de regra de negócio.",
+                e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(status).body(error);
+    }
+
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<StandardError> accessDenied(AccessDeniedException e, HttpServletRequest request) {

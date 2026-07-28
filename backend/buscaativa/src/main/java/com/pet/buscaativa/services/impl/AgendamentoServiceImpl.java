@@ -11,27 +11,21 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import com.pet.buscaativa.entities.*;
+import com.pet.buscaativa.repositories.*;
 import org.springframework.stereotype.Service;
 
-import com.pet.buscaativa.entities.Agendamento;
-import com.pet.buscaativa.entities.BloqueioAgenda;
-import com.pet.buscaativa.entities.Disponibilidade;
-import com.pet.buscaativa.entities.Paciente;
-import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.dto.AgendamentoDTO;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
+import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.entities.enums.TipoUsuario;
 import com.pet.buscaativa.entities.enums.TurnoEnum;
 import com.pet.buscaativa.mapping.AgendamentoMapper;
-import com.pet.buscaativa.repositories.AgendamentoRepository;
-import com.pet.buscaativa.repositories.BloqueioAgendaRepository;
-import com.pet.buscaativa.repositories.DisponibilidadeRepository;
-import com.pet.buscaativa.repositories.PacienteRepository;
-import com.pet.buscaativa.repositories.UsuarioRepository;
 import com.pet.buscaativa.services.AgendamentoService;
 import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
+import com.pet.buscaativa.services.exceptions.ConflictException;
 import com.pet.buscaativa.services.exceptions.ResourceNotFoundException;
 import com.pet.buscaativa.services.exceptions.ValidationException;
 
@@ -48,6 +42,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     private final UsuarioRepository usuarioRepository;
     private final DisponibilidadeRepository disponibilidadeRepository;
     private final PacienteRepository pacienteRepository;
+    private final DisponibilidadeExcecaoRepository disponibilidadeExcecaoRepository;
 
     private final AgendamentoMapper agendamentoMapper;
 
@@ -60,8 +55,39 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         Usuario usuario = usuarioRepository.findByIdPublico(agendamentoDTO.usuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
+        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL) {
+            throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
+        }
+
         Paciente paciente = pacienteRepository.findByIdPublico(agendamentoDTO.pacienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado"));
+
+        if (paciente.getStatusPaciente() != StatusPaciente.ATIVO) {
+            throw new ValidationException("Somente pacientes ativos podem ser agendados.");
+        }
+        if (agendamentoDTO.dataAgendamento().isBefore(LocalDate.now())) {
+            throw new ValidationException("Não é permitido criar agendamento em data passada.");
+        }
+
+        if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, agendamentoDTO.dataAgendamento())) {
+            throw new ConflictException("A agenda do profissional está bloqueada na data informada.");
+        }
+
+        // Resolve a capacidade considerando exceção de data específica (prioridade)
+        // e, na ausência dela, o padrão semanal.
+        Integer capacidade = resolverCapacidade(usuario, agendamentoDTO.dataAgendamento(),
+                agendamentoDTO.dataAgendamento().getDayOfWeek(), agendamentoDTO.turnoAgendamento());
+
+        if (capacidade == null || capacidade <= 0) {
+            throw new ConflictException("Não existe disponibilidade para a data e turno informados.");
+        }
+
+        int ocupadas = agendamentoRepository.contarVagasOcupadasBySituacoes(usuario, agendamentoDTO.dataAgendamento(),
+                agendamentoDTO.turnoAgendamento(), List.of(SituacaoAtendimento.AGENDADO,
+                        SituacaoAtendimento.REMARCADO, SituacaoAtendimento.PRESENTE));
+        if (ocupadas >= capacidade) {
+            throw new ConflictException("Não há vagas disponíveis para a data e turno informados.");
+        }
 
         Agendamento agendamento = new Agendamento();
         agendamento.setUsuario(usuario);
@@ -70,9 +96,17 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         agendamento.setTurnoAgendamento(agendamentoDTO.turnoAgendamento());
         agendamento.setHoraAtendimento(agendamentoDTO.horaAtendimento());
 
-        if (agendamentoDTO.id() != null) {
-            var original = agendamentoRepository.findById(agendamentoDTO.id())
+        if (agendamentoDTO.agendamentoOriginalId() != null) {
+            var original = agendamentoRepository.findById(agendamentoDTO.agendamentoOriginalId())
                     .orElseThrow(() -> new ResourceNotFoundException("Agendamento original não encontrado"));
+
+            if (agendamentoDTO.id() != null && agendamentoDTO.id().equals(agendamentoDTO.agendamentoOriginalId())) {
+                throw new ValidationException("Um agendamento não pode ser vinculado a ele mesmo.");
+            }
+            if (!List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO)
+                    .contains(original.getSituacaoAtendimento())) {
+                throw new ConflictException("O agendamento original não está em situação compatível com remarcação.");
+            }
 
             if (paciente.getTipoAcompanhamento() == TipoAcompanhamento.GRUPO_TERAPEUTICO) {
                 throw new ValidationException(
@@ -130,26 +164,40 @@ public class AgendamentoServiceImpl implements AgendamentoService {
                 SituacaoAtendimento.REMARCADO,
                 SituacaoAtendimento.PRESENTE);
 
-        Optional<Disponibilidade> manhaOpt = disponibilidadeRepository.findByUsuarioAndDiaDaSemanaAndTurno(usuario,
-                diaSemana, TurnoEnum.MANHA);
-        Optional<Disponibilidade> tardeOpt = disponibilidadeRepository.findByUsuarioAndDiaDaSemanaAndTurno(usuario,
-                diaSemana, TurnoEnum.TARDE);
+        for (TurnoEnum turno : List.of(TurnoEnum.MANHA, TurnoEnum.TARDE)) {
 
-        if (manhaOpt.isPresent()) {
-            Disponibilidade manha = manhaOpt.get();
-            int ocupadas = agendamentoRepository.contarVagasOcupadasBySituacoes(usuario, data, TurnoEnum.MANHA,
-                    ocupantesVaga);
-            vagasPorTurno.put(TurnoEnum.MANHA, Math.max(0, manha.getCapacidade() - ocupadas));
-        }
+            Integer capacidade = resolverCapacidade(usuario, data, diaSemana, turno);
 
-        if (tardeOpt.isPresent()) {
-            Disponibilidade tarde = tardeOpt.get();
-            int ocupadas = agendamentoRepository.contarVagasOcupadasBySituacoes(usuario, data, TurnoEnum.TARDE,
-                    ocupantesVaga);
-            vagasPorTurno.put(TurnoEnum.TARDE, Math.max(0, tarde.getCapacidade() - ocupadas));
+            if (capacidade == null) {
+                // Sem exceção e sem padrão semanal cadastrado para esse turno -> indisponível
+                continue;
+            }
+
+            int ocupadas = agendamentoRepository.contarVagasOcupadasBySituacoes(usuario, data, turno, ocupantesVaga);
+            vagasPorTurno.put(turno, Math.max(0, capacidade - ocupadas));
         }
 
         return vagasPorTurno;
+    }
+
+    /**
+     * Resolve a capacidade de um turno numa data:
+     * 1) Se existir DisponibilidadeExcecao para essa data+turno, ela manda (mesmo que seja 0).
+     * 2) Caso contrário, cai para o padrão semanal (Disponibilidade), se existir.
+     * 3) Se nenhum dos dois existir, retorna null (turno não configurado, sem vaga).
+     */
+    private Integer resolverCapacidade(Usuario usuario, LocalDate data, DayOfWeek diaSemana, TurnoEnum turno) {
+        Optional<DisponibilidadeExcecao> excecao =
+                disponibilidadeExcecaoRepository.findByUsuarioAndDataAndTurno(usuario, data, turno);
+
+        if (excecao.isPresent()) {
+            return excecao.get().getCapacidade();
+        }
+
+        Optional<Disponibilidade> padrao =
+                disponibilidadeRepository.findByUsuarioAndDiaDaSemanaAndTurno(usuario, diaSemana, turno);
+
+        return padrao.map(Disponibilidade::getCapacidade).orElse(null);
     }
 
     @Override
@@ -232,14 +280,12 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             }
 
             DayOfWeek diaSemana = dataVerificacao.getDayOfWeek();
-            Map<TurnoEnum, Disponibilidade> porTurno = disponibilidadeMap.get(diaSemana);
-            if (porTurno == null) {
-                dataVerificacao = dataVerificacao.plusDays(1);
-                continue;
-            }
 
-            Disponibilidade disponibilidade = porTurno.get(turno);
-            if (disponibilidade == null) {
+            // Antes: só olhava o padrão semanal (disponibilidadeMap). Agora resolve
+            // considerando também eventuais exceções cadastradas para essa data específica.
+            Integer capacidade = resolverCapacidade(usuario, dataVerificacao, diaSemana, turno);
+
+            if (capacidade == null) {
                 dataVerificacao = dataVerificacao.plusDays(1);
                 continue;
             }
@@ -250,7 +296,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
                 ocupadas = porTurnoCount.get(turno);
             }
 
-            if (ocupadas < disponibilidade.getCapacidade()) {
+            if (ocupadas < capacidade) {
                 datasDisponiveis.add(dataVerificacao);
             }
 
@@ -288,10 +334,10 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     @Override
     @Transactional
     public AgendamentoDTO atualizarStatus(Long id, SituacaoAtendimento novoStatus, Integer expectedVersion) {
-       Agendamento agendamento = agendamentoRepository.findById(id)
+        Agendamento agendamento = agendamentoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado para o id"));
 
-                LocalDate dataAgendamento = agendamento.getDataAgendamento();
+        LocalDate dataAgendamento = agendamento.getDataAgendamento();
         if (dataAgendamento != null && dataAgendamento.isAfter(LocalDate.now())) {
             throw new ValidationException(
                     "Não é permitido registrar presença ou falta para agendamentos com data futura.");
@@ -303,7 +349,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         }
 
         SituacaoAtendimento statusAnterior = agendamento.getSituacaoAtendimento();
-        
+
         if (statusAnterior == novoStatus) {
             return agendamentoMapper.toAgendamentoDTO(agendamento);
         }
@@ -315,7 +361,8 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(pacienteAgendado.getIdPublico())
                     .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado"));
 
-            pacienteService.atualizarAssiduidadePaciente(paciente, statusAnterior, novoStatus);
+            pacienteService.atualizarAssiduidadePaciente(paciente, statusAnterior, novoStatus,
+                    agendamento.getDataAgendamento());
 
             // 6. RF08: Gatilho de Visita Domiciliar Automático
             // Se o status virou FALTOU e este agendamento é uma remarcação (tem um original vinculado):

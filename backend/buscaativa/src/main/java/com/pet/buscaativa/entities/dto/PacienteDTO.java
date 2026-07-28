@@ -14,9 +14,11 @@ import com.pet.buscaativa.entities.enums.SexoEnum;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.validation.CNS;
+import com.pet.buscaativa.validation.EnderecoObrigatorio;
 
 import jakarta.validation.constraints.*;
 
+@EnderecoObrigatorio
 public record PacienteDTO(
         UUID idPublico,
 
@@ -55,7 +57,6 @@ public record PacienteDTO(
         @NotNull(message = "Informe o número de Telefone do Paciente")
         String telefone,
 
-        @NotNull(message = "Informe o Endereço do Paciente ou Equipamento Social de Apoio.")
         Endereco endereco,
 
         boolean situacaoRua,

@@ -7,6 +7,7 @@ import com.pet.buscaativa.entities.enums.TurnoEnum;
 import com.pet.buscaativa.validation.UniqueDisponibilidade;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 @UniqueDisponibilidade
 public record DisponibilidadeDTO(
@@ -22,6 +23,7 @@ public record DisponibilidadeDTO(
         TurnoEnum turno,
 
         @NotNull
+        @Positive(message = "A capacidade deve ser maior que zero.")
         Integer capacidade
 
 ) {

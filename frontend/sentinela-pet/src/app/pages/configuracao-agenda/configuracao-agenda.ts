@@ -15,6 +15,10 @@ import {
   DisponibilidadeService,
   StandardError,
 } from '../../services/disponibilidade-service';
+import {
+  DisponibilidadeExcecaoDTO,
+  DisponibilidadeExcecaoService,
+} from '../../services/disponibilidade-excecao-service';
 
 interface DiaSemanaOption {
   valor: string;
@@ -49,12 +53,14 @@ export class ConfiguracaoAgenda implements OnInit {
 
   disponibilidades: DisponibilidadeDTO[] = [];
   bloqueios: BloqueioAgendaDTO[] = [];
+  excecoes: DisponibilidadeExcecaoDTO[] = [];
 
   carregandoDados = false;
   erroGeral: string | null = null;
 
   salvandoDisponibilidade = false;
   salvandoBloqueio = false;
+  salvandoExcecao = false;
 
   novaDisponibilidade: DisponibilidadeDTO = {
     diaSemana: '',
@@ -68,11 +74,18 @@ export class ConfiguracaoAgenda implements OnInit {
     motivoBloqueio: '',
   };
 
+  novaExcecao: DisponibilidadeExcecaoDTO = {
+    data: '',
+    turno: '',
+    capacidade: 1,
+  };
+
   constructor(
     private usuarioLogadoService: UsuarioLogadoService,
     private profissionalService: ProfissionalService,
     private disponibilidadeService: DisponibilidadeService,
     private bloqueioAgendaService: BloqueioAgendaService,
+    private disponibilidadeExcecaoService: DisponibilidadeExcecaoService,
   ) {}
 
   ngOnInit(): void {
@@ -110,6 +123,7 @@ export class ConfiguracaoAgenda implements OnInit {
   onProfissionalSelecionado(): void {
     this.disponibilidades = [];
     this.bloqueios = [];
+    this.excecoes = [];
 
     if (this.profissionalSelecionadoId) {
       this.carregarDados(this.profissionalSelecionadoId);
@@ -139,6 +153,16 @@ export class ConfiguracaoAgenda implements OnInit {
       error: (erro) => {
         console.error('Erro ao carregar bloqueios', erro);
         this.erroGeral = 'Não foi possível carregar os bloqueios de agenda.';
+      },
+    });
+
+    this.disponibilidadeExcecaoService.listar(usuarioId).subscribe({
+      next: (excecoes) => {
+        this.excecoes = excecoes.sort((a, b) => a.data.localeCompare(b.data));
+      },
+      error: (erro) => {
+        console.error('Erro ao carregar exceções', erro);
+        this.erroGeral = 'Não foi possível carregar as datas configuradas.';
       },
     });
   }
@@ -243,6 +267,50 @@ export class ConfiguracaoAgenda implements OnInit {
       error: (erro) => {
         console.error('Erro ao remover bloqueio', erro);
         this.erroGeral = 'Não foi possível remover o bloqueio.';
+      },
+    });
+  }
+
+  adicionarExcecao(): void {
+    if (!this.novaExcecao.data || !this.novaExcecao.turno || this.novaExcecao.capacidade == null) {
+      this.erroGeral = 'Preencha data, turno e capacidade (pode ser 0 para fechar o turno).';
+      return;
+    }
+
+    this.salvandoExcecao = true;
+    this.erroGeral = null;
+
+    const payload: DisponibilidadeExcecaoDTO = {
+      ...this.novaExcecao,
+      usuarioId: this.usuarioIdAtivo,
+    };
+
+    this.disponibilidadeExcecaoService.salvar(payload).subscribe({
+      next: () => {
+        this.salvandoExcecao = false;
+        this.novaExcecao = { data: '', turno: '', capacidade: 1 };
+        this.carregarDados(this.usuarioIdAtivo);
+      },
+      error: (erro: HttpErrorResponse) => {
+        this.salvandoExcecao = false;
+        this.erroGeral = this.extrairMensagemErro(
+          erro,
+          'Não foi possível salvar a configuração da data.',
+        );
+      },
+    });
+  }
+
+  removerExcecao(id: number | undefined): void {
+    if (!id) return;
+
+    this.disponibilidadeExcecaoService.remover(id).subscribe({
+      next: () => {
+        this.excecoes = this.excecoes.filter((e) => e.id !== id);
+      },
+      error: (erro) => {
+        console.error('Erro ao remover exceção', erro);
+        this.erroGeral = 'Não foi possível remover essa configuração.';
       },
     });
   }

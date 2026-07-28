@@ -11,5 +11,5 @@ public interface DisponibilidadeService {
 
     List<DisponibilidadeDTO> listarDisponibilidades(String emailLogado, UUID usuarioIdPublico);
 
-    void deletarDisponibilidade(Long id);
+    void deletarDisponibilidade(Long id, String emailLogado);
 }

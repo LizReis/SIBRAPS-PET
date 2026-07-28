@@ -206,13 +206,17 @@ public class PacienteServiceImpl implements PacienteService{
     }
 
     @Override
-    public void atualizarAssiduidadePaciente(Paciente paciente, SituacaoAtendimento statusAnterior, SituacaoAtendimento novoStatus) {
+    public void atualizarAssiduidadePaciente(Paciente paciente, SituacaoAtendimento statusAnterior,
+            SituacaoAtendimento novoStatus, LocalDate dataAtendimento) {
         if (novoStatus == SituacaoAtendimento.FALTOU && statusAnterior != SituacaoAtendimento.FALTOU) {
             paciente.setCountFaltas(faltasConsecutivas(paciente) + 1);
         }
         if (novoStatus == SituacaoAtendimento.PRESENTE) {
             paciente.setCountFaltas(0);
-            paciente.setDataUltimaPresenca(LocalDate.now());
+            if (paciente.getDataUltimaPresenca() == null
+                    || (dataAtendimento != null && dataAtendimento.isAfter(paciente.getDataUltimaPresenca()))) {
+                paciente.setDataUltimaPresenca(dataAtendimento);
+            }
             paciente.setGatilhoVisitaAcionado(false);
         }
         if (statusAnterior == SituacaoAtendimento.FALTOU && novoStatus != SituacaoAtendimento.FALTOU) {
@@ -234,8 +238,10 @@ public class PacienteServiceImpl implements PacienteService{
         //Definiçao dos limites padronizados de dias para Vermelho e Amarelo
         //Se o TipoAcompanhamento for Grupo terapeutico o amarelo recebe = 15, se for individual recebe 60
         //Se o TipoAcompanhamento for Grupo terapeutico o vermelho recebe = 30, se for individual recebe 120
-        int limiteAmareloDias = paciente.getTipoAcompanhamento() == TipoAcompanhamento.GRUPO_TERAPEUTICO ? 15 : 60;
-        int limiteVermelhoDias = paciente.getTipoAcompanhamento() == TipoAcompanhamento.GRUPO_TERAPEUTICO ? 30 : 120;
+        boolean acompanhamentoEmGrupo = paciente.getTipoAcompanhamento() == TipoAcompanhamento.GRUPO_TERAPEUTICO
+                || paciente.getTipoAcompanhamento() == TipoAcompanhamento.AMBOS;
+        int limiteAmareloDias = acompanhamentoEmGrupo ? 15 : 60;
+        int limiteVermelhoDias = acompanhamentoEmGrupo ? 30 : 120;
         int limiteAmareloFaltas = 2;
         int limiteVermelhoFaltas = 3;
 
@@ -271,7 +277,9 @@ public class PacienteServiceImpl implements PacienteService{
         if (encerramento.motivo() == MotivoEncerramento.OUTRO
                 && (encerramento.descricao() == null || encerramento.descricao().isBlank())) {
             throw new ValidationException("Descrição obrigatória quando o motivo do encerramento for OUTRO.");
-        }else if(paciente.getStatusPaciente() == encerramento.statusPaciente()){
+        }else if (encerramento.statusPaciente() == StatusPaciente.ATIVO) {
+            throw new ValidationException("O encerramento não aceita status ATIVO; utilize o fluxo de reativação.");
+        } else if(paciente.getStatusPaciente() == encerramento.statusPaciente()){
             throw new ValidationException("Paciente para encerramento não deve ter o mesmo status ou status ATIVO.");
         }
 

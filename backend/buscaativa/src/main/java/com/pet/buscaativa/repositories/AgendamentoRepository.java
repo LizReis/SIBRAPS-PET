@@ -36,4 +36,11 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long>{
 
     //Busca agendamentos do usuário em um intervalo
     List<Agendamento> findByUsuarioAndDataAgendamentoBetween(Usuario usuario, LocalDate startInclusive, LocalDate endInclusive);
+
+    @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.usuario = :usuario " +
+            "AND a.dataAgendamento >= :dataInicio AND a.situacaoAtendimento IN :situacoes " +
+            "AND FUNCTION('DAY_OF_WEEK', a.dataAgendamento) = :diaBanco AND a.turnoAgendamento = :turno")
+    long contarConflitosDisponibilidade(@Param("usuario") Usuario usuario,
+            @Param("dataInicio") LocalDate dataInicio, @Param("diaBanco") int diaBanco,
+            @Param("turno") TurnoEnum turno, @Param("situacoes") List<SituacaoAtendimento> situacoes);
 }

@@ -59,8 +59,13 @@ public class PacienteController {
     }
 
     @GetMapping("/busca/nome")
-    public ResponseEntity<List<PacienteDTO>> buscaPacienteNome(@RequestParam(value = "q", defaultValue = "") String nome){
-        return ResponseEntity.ok(pacienteService.findByNome(nome));
+    public ResponseEntity<List<PacienteDTO>> buscaPacienteNome(@RequestParam(value = "q") String nome){
+        String termo = nome.trim();
+        if (termo.length() < 3) {
+            throw new com.pet.buscaativa.services.exceptions.ValidationException(
+                    "Informe ao menos três caracteres para buscar por nome.");
+        }
+        return ResponseEntity.ok(pacienteService.findByNome(termo));
     }
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")

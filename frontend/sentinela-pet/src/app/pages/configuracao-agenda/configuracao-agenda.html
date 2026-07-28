@@ -96,6 +96,46 @@
         </ng-template>
       </section>
 
+      <!-- SEÇÃO: SOBRESCREVER DATA ESPECÍFICA -->
+      <section class="detail-card">
+        <h2 class="detail-card-title">Vagas em uma Data Específica</h2>
+        <p class="section-hint">
+          Use isso para abrir mais vagas, fechar um turno específico (capacidade 0), ou
+          atender em um turno que normalmente não atende, numa data pontual. Isso tem prioridade
+          sobre o horário padrão semanal.
+        </p>
+
+        <div class="form-inline">
+          <input type="date" [(ngModel)]="novaExcecao.data" />
+
+          <select [(ngModel)]="novaExcecao.turno">
+            <option value="" disabled>Turno</option>
+            <option *ngFor="let turno of turnos" [value]="turno">{{ labelTurno(turno) }}</option>
+          </select>
+
+          <input type="number" min="0" placeholder="Capacidade (0 = fechado)" [(ngModel)]="novaExcecao.capacidade" />
+
+          <button class="btn btn-new" (click)="adicionarExcecao()" [disabled]="salvandoExcecao">
+            {{ salvandoExcecao ? 'Salvando...' : '+ Definir' }}
+          </button>
+        </div>
+
+        <div class="lista-itens" *ngIf="excecoes.length > 0; else semExcecao">
+          <div class="item-linha" *ngFor="let e of excecoes">
+            <span class="item-info">
+              <strong>{{ formatarData(e.data) }}</strong> — {{ labelTurno(e.turno) }} —
+              <ng-container *ngIf="e.capacidade > 0; else fechado">{{ e.capacidade }} vaga(s)</ng-container>
+              <ng-template #fechado><span class="tag-fechado">Fechado</span></ng-template>
+            </span>
+            <button class="btn-remover" (click)="removerExcecao(e.id)">Remover</button>
+          </div>
+        </div>
+
+        <ng-template #semExcecao>
+          <p class="empty-inline" *ngIf="!carregandoDados">Nenhuma data específica configurada.</p>
+        </ng-template>
+      </section>
+
     </ng-container>
 
     <ng-template #selecioneProfissional>

@@ -3,8 +3,8 @@ package com.pet.buscaativa.controllers;
 import java.util.List;
 import java.util.UUID;
 
-import com.pet.buscaativa.entities.dto.BloqueioAgendaDTO;
-import com.pet.buscaativa.services.BloqueioAgendaService;
+import com.pet.buscaativa.entities.dto.DisponibilidadeExcecaoDTO;
+import com.pet.buscaativa.services.DisponibilidadeExcecaoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -13,11 +13,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/bloqueioAgenda-config")
+@RequestMapping("/api/disponibilidade-config/excecoes")
 @RequiredArgsConstructor
-public class BloqueioAgendaController {
+public class DisponibilidadeExcecaoController {
 
-    private final BloqueioAgendaService bloqueioAgendaService;
+    private final DisponibilidadeExcecaoService excecaoService;
 
     private String getEmailLogado() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -25,20 +25,20 @@ public class BloqueioAgendaController {
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
     @PostMapping
-    public ResponseEntity<BloqueioAgendaDTO> salvarBloqueio(@RequestBody @Valid BloqueioAgendaDTO bloqueioAgendaDTO) {
-        return ResponseEntity.ok(bloqueioAgendaService.save(bloqueioAgendaDTO, getEmailLogado()));
+    public ResponseEntity<DisponibilidadeExcecaoDTO> salvar(@RequestBody @Valid DisponibilidadeExcecaoDTO dto) {
+        return ResponseEntity.ok(excecaoService.save(dto, getEmailLogado()));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @GetMapping
-    public ResponseEntity<List<BloqueioAgendaDTO>> listarBloqueios(@RequestParam(required = false) UUID usuarioId) {
-        return ResponseEntity.ok(bloqueioAgendaService.listarBloqueios(getEmailLogado(), usuarioId));
+    public ResponseEntity<List<DisponibilidadeExcecaoDTO>> listar(@RequestParam(required = false) UUID usuarioId) {
+        return ResponseEntity.ok(excecaoService.listar(getEmailLogado(), usuarioId));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarBloqueio(@PathVariable Long id) {
-        bloqueioAgendaService.deletarBloqueio(id, getEmailLogado());
+    public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        excecaoService.deletar(id);
         return ResponseEntity.noContent().build();
     }
 }

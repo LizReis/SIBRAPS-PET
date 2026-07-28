@@ -11,5 +11,5 @@ public interface BloqueioAgendaService {
 
     List<BloqueioAgendaDTO> listarBloqueios(String emailLogado, UUID usuarioIdPublico);
 
-    void deletarBloqueio(Long id);
+    void deletarBloqueio(Long id, String emailLogado);
 }

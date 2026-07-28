@@ -1,5 +1,6 @@
 package com.pet.buscaativa.services;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,8 +39,9 @@ public interface PacienteService {
     List<AlertaBuscaAtivaDTO> listarPacientesEmBuscaAtiva();
     
     void validarPacienteDuplicado(PacienteDTO pacienteDTO, boolean ignorarSimilaridade);
-
-    void atualizarAssiduidadePaciente(Paciente paciente, SituacaoAtendimento statusAnterior, SituacaoAtendimento novoStatus);
+    
+    void atualizarAssiduidadePaciente(Paciente paciente, SituacaoAtendimento statusAnterior,
+            SituacaoAtendimento novoStatus, LocalDate dataAtendimento);
 
     void calcularEAtualizarRisco(Paciente paciente);
 

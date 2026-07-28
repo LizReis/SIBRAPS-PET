@@ -29,6 +29,7 @@ public class BloqueioAgendaServiceImpl implements BloqueioAgendaService {
         if (bloqueioAgendaDTO.id() != null) {
             bloqueio = bloqueioRepository.findById(bloqueioAgendaDTO.id())
                     .orElseThrow(() -> new ResourceNotFoundException("Bloqueio não encontrado."));
+            usuarioContextService.validarAlteracao(bloqueio.getUsuario(), emailLogado);
         }
 
         bloqueio.setUsuario(usuario);
@@ -51,8 +52,11 @@ public class BloqueioAgendaServiceImpl implements BloqueioAgendaService {
     }
 
     @Override
-    public void deletarBloqueio(Long id) {
-        bloqueioRepository.deleteById(id);
+    public void deletarBloqueio(Long id, String emailLogado) {
+        BloqueioAgenda bloqueio = bloqueioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bloqueio não encontrado."));
+        usuarioContextService.validarAlteracao(bloqueio.getUsuario(), emailLogado);
+        bloqueioRepository.delete(bloqueio);
     }
 
     private BloqueioAgendaDTO toDTO(BloqueioAgenda b) {
