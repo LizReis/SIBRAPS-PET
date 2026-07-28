@@ -14,21 +14,21 @@ import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.TurnoEnum;
 
 @Repository
-public interface AgendamentoRepository extends JpaRepository<Agendamento, Long>{
-    
-    List<Agendamento>findByDataAgendamento(LocalDate dataAgendamento);
+public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
+
+    List<Agendamento> findByDataAgendamento(LocalDate dataAgendamento);
 
     // Conta agendamentos que ocupam vaga com filtro por status
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.usuario = :usuario AND a.dataAgendamento = :data AND a.turnoAgendamento = :turno AND a.situacaoAtendimento IN :situacoes")
-    int contarVagasOcupadasBySituacoes(@Param("usuario") Usuario usuario, 
-                                       @Param("data") LocalDate dataAgendamento, 
-                                       @Param("turno") TurnoEnum turnoAgendamento, 
+    int contarVagasOcupadasBySituacoes(@Param("usuario") Usuario usuario,
+                                       @Param("data") LocalDate dataAgendamento,
+                                       @Param("turno") TurnoEnum turnoAgendamento,
                                        @Param("situacoes") List<SituacaoAtendimento> situacoes);
 
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.usuario = :usuario AND a.dataAgendamento = :data AND a.turnoAgendamento = :turno AND a.situacaoAtendimento <> :situacao")
-    int contarVagasOcupadas(@Param("usuario") Usuario usuario, 
-                            @Param("data") LocalDate dataAgendamento, 
-                            @Param("turno") TurnoEnum turnoAgendamento, 
+    int contarVagasOcupadas(@Param("usuario") Usuario usuario,
+                            @Param("data") LocalDate dataAgendamento,
+                            @Param("turno") TurnoEnum turnoAgendamento,
                             @Param("situacao") SituacaoAtendimento situacao);
 
 
@@ -41,6 +41,14 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long>{
             "AND a.dataAgendamento >= :dataInicio AND a.situacaoAtendimento IN :situacoes " +
             "AND FUNCTION('DAY_OF_WEEK', a.dataAgendamento) = :diaBanco AND a.turnoAgendamento = :turno")
     long contarConflitosDisponibilidade(@Param("usuario") Usuario usuario,
-            @Param("dataInicio") LocalDate dataInicio, @Param("diaBanco") int diaBanco,
-            @Param("turno") TurnoEnum turno, @Param("situacoes") List<SituacaoAtendimento> situacoes);
+                                        @Param("dataInicio") LocalDate dataInicio, @Param("diaBanco") int diaBanco,
+                                        @Param("turno") TurnoEnum turno, @Param("situacoes") List<SituacaoAtendimento> situacoes);
+
+    @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.usuario = :usuario " +
+            "AND a.dataAgendamento >= :dataInicio AND a.situacaoAtendimento IN :situacoes " +
+            "AND FUNCTION('DAY_OF_WEEK', a.dataAgendamento) = :diaBanco AND a.turnoAgendamento = :turno " +
+            "GROUP BY a.dataAgendamento")
+    List<Long> contarOcupacaoPorDataDisponibilidade(@Param("usuario") Usuario usuario,
+                                                    @Param("dataInicio") LocalDate dataInicio, @Param("diaBanco") int diaBanco,
+                                                    @Param("turno") TurnoEnum turno, @Param("situacoes") List<SituacaoAtendimento> situacoes);
 }

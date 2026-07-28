@@ -51,6 +51,22 @@ public class DisponibilidadeServiceImpl implements DisponibilidadeService {
             disponibilidade = disponibilidadeRepository.findById(disponibilidadeDTO.id())
                     .orElseThrow(() -> new ResourceNotFoundException("Disponibilidade não encontrada."));
             usuarioContextService.validarAlteracao(disponibilidade.getUsuario(), emailLogado);
+
+            // Se a capacidade está sendo reduzida, garante que ela ainda comporta
+            // o dia futuro mais cheio já agendado para esse dia da semana + turno.
+            int diaBanco = disponibilidadeDTO.diaSemana().getValue() % 7 + 1;
+
+            List<Long> ocupacoesPorDia = agendamentoRepository.contarOcupacaoPorDataDisponibilidade(
+                    usuario, LocalDate.now(), diaBanco, disponibilidadeDTO.turno(),
+                    List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO, SituacaoAtendimento.PRESENTE));
+
+            long maiorOcupacao = ocupacoesPorDia.stream().mapToLong(Long::longValue).max().orElse(0L);
+
+            if (disponibilidadeDTO.capacidade() < maiorOcupacao) {
+                throw new ConflictException(
+                        "Não é possível reduzir a capacidade para " + disponibilidadeDTO.capacidade() +
+                                ": já existem " + maiorOcupacao + " atendimento(s) marcados em um dos dias futuros para este horário.");
+            }
         }
 
         disponibilidade.setUsuario(usuario);

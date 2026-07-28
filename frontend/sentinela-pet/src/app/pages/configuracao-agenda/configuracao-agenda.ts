@@ -62,6 +62,10 @@ export class ConfiguracaoAgenda implements OnInit {
   salvandoBloqueio = false;
   salvandoExcecao = false;
 
+  editandoDisponibilidadeId: number | null = null;
+  capacidadeEmEdicao: number = 1;
+  salvandoEdicaoDisponibilidade = false;
+
   novaDisponibilidade: DisponibilidadeDTO = {
     diaSemana: '',
     turno: '',
@@ -124,6 +128,7 @@ export class ConfiguracaoAgenda implements OnInit {
     this.disponibilidades = [];
     this.bloqueios = [];
     this.excecoes = [];
+    this.editandoDisponibilidadeId = null;
 
     if (this.profissionalSelecionadoId) {
       this.carregarDados(this.profissionalSelecionadoId);
@@ -214,13 +219,56 @@ export class ConfiguracaoAgenda implements OnInit {
   removerDisponibilidade(id: number | undefined): void {
     if (!id) return;
 
+    this.erroGeral = null;
+
     this.disponibilidadeService.remover(id).subscribe({
       next: () => {
         this.disponibilidades = this.disponibilidades.filter((d) => d.id !== id);
       },
-      error: (erro) => {
+      error: (erro: HttpErrorResponse) => {
         console.error('Erro ao remover disponibilidade', erro);
-        this.erroGeral = 'Não foi possível remover a disponibilidade.';
+        this.erroGeral = this.extrairMensagemErro(
+          erro,
+          'Não foi possível remover a disponibilidade.',
+        );
+      },
+    });
+  }
+
+  iniciarEdicaoDisponibilidade(d: DisponibilidadeDTO): void {
+    this.editandoDisponibilidadeId = d.id ?? null;
+    this.capacidadeEmEdicao = d.capacidade;
+    this.erroGeral = null;
+  }
+
+  cancelarEdicaoDisponibilidade(): void {
+    this.editandoDisponibilidadeId = null;
+  }
+
+  salvarEdicaoDisponibilidade(d: DisponibilidadeDTO): void {
+    if (!this.capacidadeEmEdicao || this.capacidadeEmEdicao < 1) {
+      this.erroGeral = 'A capacidade deve ser pelo menos 1.';
+      return;
+    }
+
+    this.salvandoEdicaoDisponibilidade = true;
+    this.erroGeral = null;
+
+    const payload: DisponibilidadeDTO = {
+      ...d,
+      capacidade: this.capacidadeEmEdicao,
+      usuarioId: this.usuarioIdAtivo,
+    };
+
+    this.disponibilidadeService.salvar(payload).subscribe({
+      next: () => {
+        this.salvandoEdicaoDisponibilidade = false;
+        this.editandoDisponibilidadeId = null;
+        this.carregarDados(this.usuarioIdAtivo);
+      },
+      error: (erro: HttpErrorResponse) => {
+        this.salvandoEdicaoDisponibilidade = false;
+        this.erroGeral = this.extrairMensagemErro(erro, 'Não foi possível atualizar a capacidade.');
       },
     });
   }

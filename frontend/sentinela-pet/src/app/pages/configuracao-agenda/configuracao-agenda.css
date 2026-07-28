@@ -140,6 +140,8 @@ input:focus {
   background: #f8fafc;
   padding: 12px 16px;
   border-radius: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .item-info {
@@ -155,6 +157,78 @@ input:focus {
 .tag-fechado {
   color: #dc2626;
   font-weight: bold;
+}
+
+.item-acoes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.item-acoes-edicao {
+  align-items: center;
+}
+
+.btn-editar {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-editar:hover {
+  background: #bae6fd;
+}
+
+.input-edicao {
+  width: 80px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.btn-salvar {
+  background: #dcfce7;
+  color: #15803d;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-salvar:hover:not(:disabled) {
+  background: #bbf7d0;
+}
+
+.btn-salvar:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-cancelar-edicao {
+  background: #f1f5f9;
+  color: #334155;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-cancelar-edicao:hover {
+  background: #e2e8f0;
 }
 
 .btn-remover {
@@ -212,5 +286,21 @@ input:focus {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+
+  .item-acoes {
+    width: 100%;
+  }
+
+  .item-acoes button {
+    flex: 1;
+  }
+
+  .item-acoes-edicao {
+    flex-wrap: wrap;
+  }
+
+  .input-edicao {
+    width: 100%;
   }
 }
