@@ -14,7 +14,7 @@ export interface UsuarioLogadoDTO {
   providedIn: 'root',
 })
 export class UsuarioLogadoService {
-  private readonly apiUrl = 'http://localhost:8080/api/usuarios/me';
+  private readonly apiUrl = '/api/usuarios/me';
 
   private http = inject(HttpClient);
 

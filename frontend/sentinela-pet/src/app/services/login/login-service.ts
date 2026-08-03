@@ -8,7 +8,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class LoginService {
-  static readonly BASE_PATH = 'http://localhost:8080';
+  static readonly BASE_PATH = '';
 
   private http = inject(HttpClient);
 

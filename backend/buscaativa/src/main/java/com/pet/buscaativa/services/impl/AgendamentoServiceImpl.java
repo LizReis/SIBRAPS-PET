@@ -11,10 +11,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import com.pet.buscaativa.entities.*;
-import com.pet.buscaativa.repositories.*;
 import org.springframework.stereotype.Service;
 
+import com.pet.buscaativa.entities.Agendamento;
+import com.pet.buscaativa.entities.BloqueioAgenda;
+import com.pet.buscaativa.entities.Disponibilidade;
+import com.pet.buscaativa.entities.DisponibilidadeExcecao;
+import com.pet.buscaativa.entities.Paciente;
+import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.dto.AgendamentoDTO;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
@@ -22,6 +26,12 @@ import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.entities.enums.TipoUsuario;
 import com.pet.buscaativa.entities.enums.TurnoEnum;
 import com.pet.buscaativa.mapping.AgendamentoMapper;
+import com.pet.buscaativa.repositories.AgendamentoRepository;
+import com.pet.buscaativa.repositories.BloqueioAgendaRepository;
+import com.pet.buscaativa.repositories.DisponibilidadeExcecaoRepository;
+import com.pet.buscaativa.repositories.DisponibilidadeRepository;
+import com.pet.buscaativa.repositories.PacienteRepository;
+import com.pet.buscaativa.repositories.UsuarioRepository;
 import com.pet.buscaativa.services.AgendamentoService;
 import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
@@ -103,8 +113,8 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             if (agendamentoDTO.id() != null && agendamentoDTO.id().equals(agendamentoDTO.agendamentoOriginalId())) {
                 throw new ValidationException("Um agendamento não pode ser vinculado a ele mesmo.");
             }
-            if (!List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO)
-                    .contains(original.getSituacaoAtendimento())) {
+            if (!List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO,
+                    SituacaoAtendimento.FALTOU).contains(original.getSituacaoAtendimento())) {
                 throw new ConflictException("O agendamento original não está em situação compatível com remarcação.");
             }
 
@@ -114,6 +124,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             }
 
             SituacaoAtendimento statusAnterior = original.getSituacaoAtendimento();
+            agendamento.setRemarcacaoAposFalta(statusAnterior == SituacaoAtendimento.FALTOU);
             original.setSituacaoAtendimento(SituacaoAtendimento.REMARCADO_ORIGEM);
             agendamentoRepository.save(original);
             historicoPacienteService.registrarAlteracaoDeAtendimento(original, statusAnterior);
@@ -327,6 +338,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         }
 
         return agendamentos.stream()
+                .filter(a -> a.getPaciente() != null && a.getPaciente().getStatusPaciente() == StatusPaciente.ATIVO)
                 .map(agendamentoMapper::toAgendamentoDTO)
                 .toList();
     }
@@ -366,8 +378,13 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
             // 6. RF08: Gatilho de Visita Domiciliar Automático
             // Se o status virou FALTOU e este agendamento é uma remarcação (tem um original vinculado):
-            if (novoStatus == SituacaoAtendimento.FALTOU && agendamento.getAgendamentoOriginal() != null) {
+            if (novoStatus == SituacaoAtendimento.FALTOU && agendamento.getAgendamentoOriginal() != null
+                    && agendamento.isRemarcacaoAposFalta()) {
                 paciente.setGatilhoVisitaAcionado(true);
+                pacienteRepository.save(paciente);
+            } else if (statusAnterior == SituacaoAtendimento.FALTOU && agendamento.getAgendamentoOriginal() != null
+                    && agendamento.isRemarcacaoAposFalta()) {
+                paciente.setGatilhoVisitaAcionado(false);
                 pacienteRepository.save(paciente);
             }
 

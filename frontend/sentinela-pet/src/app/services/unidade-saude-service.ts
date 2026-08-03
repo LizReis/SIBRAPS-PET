@@ -17,7 +17,7 @@ export interface UnidadeSaude {
 })
 export class UnidadeSaudeService {
   // Ajuste esta URL caso o endpoint do backend seja diferente
-  private readonly apiUrl = 'http://localhost:8080/api/unidades-saude';
+  private readonly apiUrl = '/api/unidades-saude';
 
   constructor(private http: HttpClient) {}
 

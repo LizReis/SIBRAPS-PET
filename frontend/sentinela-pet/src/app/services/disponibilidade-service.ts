@@ -31,7 +31,7 @@ export interface ValidationError extends StandardError {
   providedIn: 'root',
 })
 export class DisponibilidadeService {
-  private readonly apiUrl = 'http://localhost:8080/api/disponibilidade-config/disponibilidade';
+  private readonly apiUrl = '/api/disponibilidade-config/disponibilidade';
 
   constructor(private http: HttpClient) {}
 

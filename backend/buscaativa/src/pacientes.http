@@ -20,7 +20,7 @@
 # Caso não funcionem, substitua manualmente hoje/ontem/amanhã por datas no formato AAAA-MM-DD.
 # =================================================================================================
 
-@baseUrl = http://localhost:8080
+@baseUrl = 
 
 # Credenciais criadas automaticamente por DevConfig no perfil dev
 @adminEmail = admin@pet.com

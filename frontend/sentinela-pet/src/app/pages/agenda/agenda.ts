@@ -73,7 +73,9 @@ export class Agenda implements OnInit {
   carregarProfissionais(): void {
     this.profissionalService.listar().subscribe({
       next: (profissionais) => {
-        this.profissionais = profissionais;
+        this.profissionais = profissionais.filter(
+          (p) => p.tipoUsuario === 'PROFISSIONAL' || p.tipoUsuario === 'ADMINISTRADOR',
+        );
       },
       error: (erro) => {
         console.error('Erro ao carregar profissionais', erro);

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.pet.buscaativa.entities.Agendamento;
+import com.pet.buscaativa.entities.Paciente;
 import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.TurnoEnum;
@@ -17,6 +18,8 @@ import com.pet.buscaativa.entities.enums.TurnoEnum;
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
 
     List<Agendamento> findByDataAgendamento(LocalDate dataAgendamento);
+
+    List<Agendamento> findByPacienteOrderByDataAgendamentoDescIdDesc(Paciente paciente);
 
     // Conta agendamentos que ocupam vaga com filtro por status
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.usuario = :usuario AND a.dataAgendamento = :data AND a.turnoAgendamento = :turno AND a.situacaoAtendimento IN :situacoes")

@@ -21,6 +21,7 @@ import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.mapping.PacienteMapper;
+import com.pet.buscaativa.repositories.AgendamentoRepository;
 import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
@@ -37,13 +38,25 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PacienteServiceImpl implements PacienteService{
 
+    private static final int DIAS_AMARELO_INDIVIDUAL = 60;
+    private static final int DIAS_VERMELHO_INDIVIDUAL = 120;
+    private static final int DIAS_AMARELO_GRUPO = 15;
+    private static final int DIAS_VERMELHO_GRUPO = 30;
+    private static final int FALTAS_AMARELO = 2;
+    private static final int FALTAS_VERMELHO = 3;
+
     private final PacienteRepository pacienteRepository;
     private final PacienteMapper pacienteMapper;
     private final HistoricoPacienteService historicoPacienteService;
+    private final AgendamentoRepository agendamentoRepository;
 
 
     @Override
     public PacienteDTO save(PacienteDTO pacienteDTO, boolean ignorarSimilaridade) {
+        if (pacienteDTO.countFaltas() != null) {
+            throw new ValidationException("O contador de faltas é calculado pelo sistema e não pode ser informado.");
+        }
+        
         validarPacienteDuplicado(pacienteDTO, ignorarSimilaridade);
 
         Paciente pacienteSalvar;
@@ -208,20 +221,35 @@ public class PacienteServiceImpl implements PacienteService{
     @Override
     public void atualizarAssiduidadePaciente(Paciente paciente, SituacaoAtendimento statusAnterior,
             SituacaoAtendimento novoStatus, LocalDate dataAtendimento) {
-        if (novoStatus == SituacaoAtendimento.FALTOU && statusAnterior != SituacaoAtendimento.FALTOU) {
-            paciente.setCountFaltas(faltasConsecutivas(paciente) + 1);
-        }
+
         if (novoStatus == SituacaoAtendimento.PRESENTE) {
-            paciente.setCountFaltas(0);
-            if (paciente.getDataUltimaPresenca() == null
-                    || (dataAtendimento != null && dataAtendimento.isAfter(paciente.getDataUltimaPresenca()))) {
-                paciente.setDataUltimaPresenca(dataAtendimento);
-            }
             paciente.setGatilhoVisitaAcionado(false);
         }
         if (statusAnterior == SituacaoAtendimento.FALTOU && novoStatus != SituacaoAtendimento.FALTOU) {
             paciente.setCountFaltas(Math.max(0, faltasConsecutivas(paciente) - 1));
         }
+
+        // Recalcular a partir da fonte evita dupla contagem e torna correções retroativas
+        // determinísticas. O agendamento corrente já está alterado no persistence context.
+        var atendimentos = agendamentoRepository.findByPacienteOrderByDataAgendamentoDescIdDesc(paciente);
+        int consecutivas = 0;
+        LocalDate ultimaPresenca = null;
+        for (var atendimento : atendimentos) {
+            if (atendimento.getSituacaoAtendimento() == SituacaoAtendimento.PRESENTE) {
+                if (ultimaPresenca == null || atendimento.getDataAgendamento().isAfter(ultimaPresenca)) {
+                    ultimaPresenca = atendimento.getDataAgendamento();
+                }
+            }
+        }
+        for (var atendimento : atendimentos) {
+            if (atendimento.getSituacaoAtendimento() == SituacaoAtendimento.FALTOU) {
+                consecutivas++;
+            } else if (atendimento.getSituacaoAtendimento() == SituacaoAtendimento.PRESENTE) {
+                break;
+            }
+        }
+        paciente.setCountFaltas(Math.max(0, consecutivas));
+        paciente.setDataUltimaPresenca(ultimaPresenca);
 
         calcularEAtualizarRisco(paciente);
         if (paciente.getIdPublico() != null) {
@@ -230,6 +258,7 @@ public class PacienteServiceImpl implements PacienteService{
     }
     @Override
     public void calcularEAtualizarRisco(Paciente paciente) {
+        ClassificacaoRisco classificacaoAnterior = paciente.getClassificacaoRisco();
         if(paciente.getStatusPaciente() == StatusPaciente.INATIVO){
             paciente.setClassificacaoRisco(ClassificacaoRisco.VERDE);
             return;
@@ -238,12 +267,11 @@ public class PacienteServiceImpl implements PacienteService{
         //Definiçao dos limites padronizados de dias para Vermelho e Amarelo
         //Se o TipoAcompanhamento for Grupo terapeutico o amarelo recebe = 15, se for individual recebe 60
         //Se o TipoAcompanhamento for Grupo terapeutico o vermelho recebe = 30, se for individual recebe 120
+        // Os limites são regras fixas do produto; nenhum perfil pode alterá-los.
         boolean acompanhamentoEmGrupo = paciente.getTipoAcompanhamento() == TipoAcompanhamento.GRUPO_TERAPEUTICO
                 || paciente.getTipoAcompanhamento() == TipoAcompanhamento.AMBOS;
-        int limiteAmareloDias = acompanhamentoEmGrupo ? 15 : 60;
-        int limiteVermelhoDias = acompanhamentoEmGrupo ? 30 : 120;
-        int limiteAmareloFaltas = 2;
-        int limiteVermelhoFaltas = 3;
+        int limiteAmareloDias = acompanhamentoEmGrupo ? DIAS_AMARELO_GRUPO : DIAS_AMARELO_INDIVIDUAL;
+        int limiteVermelhoDias = acompanhamentoEmGrupo ? DIAS_VERMELHO_GRUPO : DIAS_VERMELHO_INDIVIDUAL;
 
         long diasAusente = 0;
 
@@ -254,16 +282,22 @@ public class PacienteServiceImpl implements PacienteService{
         // Verifica primeiro o risco máximo (Vermelho)
         int faltasConsecutivas = faltasConsecutivas(paciente);
 
-        if (faltasConsecutivas >= limiteVermelhoFaltas || diasAusente > limiteVermelhoDias) {
+        if (faltasConsecutivas >= FALTAS_VERMELHO || diasAusente > limiteVermelhoDias) {
             paciente.setClassificacaoRisco(ClassificacaoRisco.VERMELHO);
         }  
         // Depois o risco médio (Amarelo)
-        else if (faltasConsecutivas >= limiteAmareloFaltas || diasAusente > limiteAmareloDias) {
+        else if (faltasConsecutivas >= FALTAS_AMARELO || diasAusente > limiteAmareloDias) {
             paciente.setClassificacaoRisco(ClassificacaoRisco.AMARELO);
         } 
         // Caso contrário, está tudo bem (Verde)
         else {
             paciente.setClassificacaoRisco(ClassificacaoRisco.VERDE);
+        }
+
+        if (paciente.getId() != null && classificacaoAnterior != ClassificacaoRisco.VERMELHO
+                && paciente.getClassificacaoRisco() == ClassificacaoRisco.VERMELHO) {
+            historicoPacienteService.registrarSituacaoAtual(paciente,
+                    "Classificação de risco alterada de " + classificacaoAnterior + " para VERMELHO.");
         }
     }
 
@@ -300,6 +334,11 @@ public class PacienteServiceImpl implements PacienteService{
         Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(idPublico)
                 .orElseThrow(() -> new ResourceNotFoundException(idPublico));
 
+
+        if (paciente.getStatusPaciente() == StatusPaciente.ATIVO) {
+            throw new ValidationException("Paciente já está ativo.");
+        }
+
         paciente.setStatusPaciente(StatusPaciente.ATIVO);
         paciente.setDataReativacao(LocalDate.now());
         paciente.setMotivoReativacao(reativacao.motivo());
@@ -310,7 +349,13 @@ public class PacienteServiceImpl implements PacienteService{
     }
 
     @Override
+    @Transactional
     public List<AlertaBuscaAtivaDTO> listarPacientesEmBuscaAtiva() {
+        // Reclassificação sob demanda impede que a consulta dependa exclusivamente do scheduler.
+        pacienteRepository.findByStatusPaciente(StatusPaciente.ATIVO).forEach(p -> {
+            calcularEAtualizarRisco(p);
+            pacienteRepository.save(p);
+        });
         return pacienteRepository
                 .findByStatusPacienteAndClassificacaoRisco(StatusPaciente.ATIVO, ClassificacaoRisco.VERMELHO)
                 .stream()
@@ -319,8 +364,7 @@ public class PacienteServiceImpl implements PacienteService{
     }
 
     private AlertaBuscaAtivaDTO montarAlertaBuscaAtiva(Paciente paciente) {
-        boolean alertaDeVisita = Boolean.TRUE.equals(paciente.getGatilhoVisitaAcionado())
-                || faltasConsecutivas(paciente) >= 2;
+        boolean alertaDeVisita = Boolean.TRUE.equals(paciente.getGatilhoVisitaAcionado());
 
         String alerta = null;
         String localBusca = null;

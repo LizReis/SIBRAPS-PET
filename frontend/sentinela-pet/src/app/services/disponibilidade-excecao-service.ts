@@ -14,7 +14,7 @@ export interface DisponibilidadeExcecaoDTO {
   providedIn: 'root',
 })
 export class DisponibilidadeExcecaoService {
-  private readonly apiUrl = 'http://localhost:8080/api/disponibilidade-config/excecoes';
+  private readonly apiUrl = '/api/disponibilidade-config/excecoes';
 
   constructor(private http: HttpClient) {}
 

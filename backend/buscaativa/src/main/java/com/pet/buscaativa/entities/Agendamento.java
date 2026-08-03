@@ -6,9 +6,9 @@ import java.time.LocalTime;
 import org.hibernate.envers.Audited;
 
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
-import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.entities.enums.TurnoEnum;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -61,6 +61,9 @@ public class Agendamento {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "agendamento_original_id")
     private Agendamento agendamentoOriginal;
+
+    @Column(name = "remarcacao_apos_falta", nullable = false)
+    private boolean remarcacaoAposFalta;
 
     @Version
     private Integer version;

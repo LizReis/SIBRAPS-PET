@@ -34,7 +34,7 @@ public class ResourceExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<StandardError> validation(ValidationException e, HttpServletRequest request) {
         String error = "Erro de validação.";
-        HttpStatus status = HttpStatus.BAD_REQUEST;
+        HttpStatus status = HttpStatus.UNPROCESSABLE_ENTITY;
         StandardError sterr = new StandardError(Instant.now(), status.value(), error, e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(status).body(sterr);
     }

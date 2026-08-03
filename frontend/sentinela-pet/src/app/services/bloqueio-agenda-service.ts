@@ -14,7 +14,7 @@ export interface BloqueioAgendaDTO {
   providedIn: 'root',
 })
 export class BloqueioAgendaService {
-  private readonly apiUrl = 'http://localhost:8080/api/bloqueioAgenda-config';
+  private readonly apiUrl = '/api/bloqueioAgenda-config';
 
   constructor(private http: HttpClient) {}
 

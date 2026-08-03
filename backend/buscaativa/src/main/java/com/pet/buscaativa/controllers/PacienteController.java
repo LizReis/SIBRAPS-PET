@@ -104,6 +104,7 @@ public class PacienteController {
 
 
     @GetMapping("/busca-ativa")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     public ResponseEntity<List<AlertaBuscaAtivaDTO>> listarBuscaAtiva(){
         return ResponseEntity.ok(pacienteService.listarPacientesEmBuscaAtiva());
     }

@@ -34,7 +34,7 @@ export interface ValidationError extends StandardError {
   providedIn: 'root',
 })
 export class ProfissionalService {
-  private readonly apiUrl = 'http://localhost:8080/api/usuarios';
+  private readonly apiUrl = '/api/usuarios';
 
   constructor(private http: HttpClient) {}
 

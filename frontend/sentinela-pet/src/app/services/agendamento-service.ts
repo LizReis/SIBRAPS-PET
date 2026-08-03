@@ -52,7 +52,7 @@ export interface ValidationError extends StandardError {
   providedIn: 'root',
 })
 export class AgendamentoService {
-  private readonly apiUrl = 'http://localhost:8080/api/agendamentos';
+  private readonly apiUrl = '/api/agendamentos';
 
   constructor(private http: HttpClient) {}
 
