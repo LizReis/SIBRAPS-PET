@@ -19,6 +19,10 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
 
     List<Agendamento> findByDataAgendamento(LocalDate dataAgendamento);
 
+    long countByDataAgendamentoAndSituacaoAtendimento(LocalDate dataAgendamento, SituacaoAtendimento situacaoAtendimento);
+
+    long countBySituacaoAtendimentoAndDataAgendamentoBetween(SituacaoAtendimento situacaoAtendimento, LocalDate inicio, LocalDate fim);
+
     List<Agendamento> findByPacienteOrderByDataAgendamentoDescIdDesc(Paciente paciente);
 
     // Conta agendamentos que ocupam vaga com filtro por status

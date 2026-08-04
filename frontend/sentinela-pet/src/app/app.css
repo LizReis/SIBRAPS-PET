@@ -1,18 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary-color: #005bf0;
-  --primary-hover: #004ecc;
-  --secondary-color: #003fa3;
-  --dark-blue: #002f7a;
-  --navy-blue: #001f52;
+  --primary-color: var(--sibrasp-primary);
+  --primary-hover: #0958ce;
+  --secondary-color: var(--sibrasp-navy-800);
+  --dark-blue: var(--sibrasp-navy-900);
+  --navy-blue: var(--sibrasp-navy-950);
 
   --light-blue: #e8f0ff;
   --dark-text: #374151;
   --light-text: #6b7280;
-  --bg-color: #f4f7fc;
+  --bg-color: var(--sibrasp-background);
   --card-bg: #ffffff;
-  --border-color: #dbe4f3;
+  --border-color: var(--sibrasp-border);
 }
 
 body {

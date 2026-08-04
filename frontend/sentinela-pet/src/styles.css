@@ -154,3 +154,18 @@ button {
   background: none;
   font-family: inherit;
 }
+
+:root {
+  --sibrasp-navy-950: #062959;
+  --sibrasp-navy-900: #0a2a5a;
+  --sibrasp-navy-800: #113768;
+  --sibrasp-active: #133f84;
+  --sibrasp-primary: #0b63e5;
+  --sibrasp-background: #f7f9fc;
+  --sibrasp-border: #dce4ef;
+  --sibrasp-text: #0b2855;
+  --sibrasp-muted: #66738a;
+  --sibrasp-white: #ffffff;
+}
+
+*:focus-visible { outline: 3px solid rgba(11, 99, 229, 0.28); outline-offset: 2px; }

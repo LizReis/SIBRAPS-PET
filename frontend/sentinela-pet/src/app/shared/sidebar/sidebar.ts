@@ -20,7 +20,8 @@ export class Sidebar {
     { label: 'Painel', route: '/painel', icon: 'bar_chart' },
     { label: 'Agenda', route: '/agenda', icon: 'calendar_today' },
     { label: 'Pacientes', route: '/pacientes', icon: 'groups' },
-    { label: 'Profissionais', route: '/profissionais', icon: 'person' },
+    { label: 'Profissionais', route: '/profissionais', icon: 'person_add' },
+    { label: 'Relatórios', route: '/relatorios', icon: 'clinical_notes' },
   ];
 
   logout() {

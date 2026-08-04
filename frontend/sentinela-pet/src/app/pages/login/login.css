@@ -13,7 +13,7 @@
 
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.12), transparent 35%),
-    linear-gradient(135deg, var(--navy-blue), var(--primary-color));
+    linear-gradient(135deg, #142a50, #48679c);
 }
 
 .login-card {
@@ -55,7 +55,7 @@
   font-size: 3rem;
   font-weight: 800;
 
-  color: var(--navy-blue);
+  color: var(--sibrasp-text);
 
   margin-bottom: 1rem;
 }
@@ -113,7 +113,7 @@
 
   margin-bottom: 0.5rem;
 
-  color: var(--navy-blue);
+  color: var(--sibrasp-text);
   font-weight: 600;
 }
 
@@ -133,9 +133,9 @@
 .input-group input:focus {
   outline: none;
 
-  border-color: var(--primary-color);
+  border-color: #142a50;
 
-  box-shadow: 0 0 0 4px rgba(0, 91, 240, 0.15);
+  box-shadow: 0 0 0 4px rgba(20, 42, 80, 0.16);
 }
 
 .btn-login {
@@ -146,7 +146,7 @@
   border: none;
   border-radius: var(--radius-md);
 
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(135deg, #142a50, #12365f);
 
   color: white;
 
@@ -161,7 +161,7 @@
 .btn-login:hover {
   transform: translateY(-2px);
 
-  box-shadow: 0 10px 25px rgba(0, 91, 240, 0.25);
+  box-shadow: 0 10px 25px rgba(14, 38, 73, 0.24);
 }
 
 .login-banner-section {
@@ -173,9 +173,9 @@
 
   background: linear-gradient(
     135deg,
-    var(--primary-color),
-    var(--secondary-color),
-    var(--navy-blue)
+    #142a50,
+    #12365f,
+    var(--sibrasp-text)
   );
 }
 

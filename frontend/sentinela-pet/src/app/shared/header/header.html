@@ -1,16 +1,16 @@
 <header class="header">
   <!-- Botão Assistente Virtual -->
-  <button class="componente-exportacao">
-    <span class="material-symbols-outlined">
-      download
-    </span>
-    Exportar busca ativa (CSV)
+  <button type="button" class="menu-button" aria-label="Abrir ou fechar menu lateral" (click)="toggleMenu()">
+    <span class="material-symbols-outlined" aria-hidden="true">menu</span>
   </button>
 
   <!-- Profile -->
-  <div class="profile-container">
-    <span class="profile-name">{{ userName }}</span>
-    <div class="profile-avatar" [style.background]="avatarColor">
+  <div class="header-actions">
+    <button type="button" class="notification-button" aria-label="Notificações">
+      <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+      @if (totalNotificacoes > 0) { <span class="notification-badge">{{ totalNotificacoes }}</span> }
+    </button>
+    <div class="profile-avatar" [style.background]="avatarColor" aria-label="Avatar do usuário logado">
       <span class="avatar-initials">{{ userInitials }}</span>
     </div>
   </div>

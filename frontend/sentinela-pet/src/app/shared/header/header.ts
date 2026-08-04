@@ -1,64 +1,33 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { take } from 'rxjs';
+import { InicioService } from '../../services/inicio-service';
 import { UsuarioLogadoDTO, UsuarioLogadoService } from '../../services/usuario-logado-service';
 
-@Component({
-  selector: 'app-header',
-  imports: [],
-  templateUrl: './header.html',
-  styleUrl: './header.css',
-})
+@Component({ 
+  selector: 'app-header', 
+  imports: [], 
+  templateUrl: './header.html', 
+  styleUrl: './header.css' })
 export class Header implements OnInit {
+  @Output() menuToggle = new EventEmitter<void>();
   private usuarioLogadoService = inject(UsuarioLogadoService);
 
-  userName = 'Carregando...';
+  private inicioService = inject(InicioService);
   userInitials = '';
-  avatarColor = '';
 
-  // Paleta de cores para o avatar
-  private colors = [
-    '#005bf0',
-    '#004ecc',
-    '#003fa3',
-    '#002f7a',
-    '#001f52',
-    '#1d4ed8',
-    '#2563eb',
-    '#3b82f6',
-  ];
+  avatarColor = '#e8eef8';
+  totalNotificacoes = 0;
+  private colors = ['#e8eef8', '#dbeafe', '#e0f2fe', '#eef2ff'];
 
   ngOnInit(): void {
-    this.usuarioLogadoService
-      .obterUsuarioLogado()
-      .pipe(take(1))
-      .subscribe({
-        next: (usuario: UsuarioLogadoDTO) => {
-          this.userName = usuario.nome;
-          this.userInitials = this.getInitials(usuario.nome);
-          this.avatarColor = this.getColor(usuario.nome);
-        },
-        error: (erro) => {
-          console.error('Erro ao carregar usuário logado:', erro);
-
-          this.userName = 'Usuário';
-          this.userInitials = this.getInitials(this.userName);
-          this.avatarColor = this.getColor(this.userName);
-        },
-      });
+    this.usuarioLogadoService.obterUsuarioLogado().pipe(take(1)).subscribe({
+      next: (usuario: UsuarioLogadoDTO) => { this.userInitials = this.getInitials(usuario.nome); this.avatarColor = this.getColor(usuario.nome); },
+      error: () => { this.userInitials = this.getInitials('Usuário'); this.avatarColor = this.getColor('Usuário'); },
+    });
+    this.inicioService.buscarResumo().pipe(take(1)).subscribe({ next: r => this.totalNotificacoes = r.totalNotificacoes ?? 0, error: () => this.totalNotificacoes = 0 });
   }
 
-  private getInitials(name: string): string {
-    return name
-      .split(' ')
-      .filter((n) => n.length > 0)
-      .slice(0, 2)
-      .map((n) => n[0].toUpperCase())
-      .join('');
-  }
-
-  private getColor(name: string): string {
-    const index = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % this.colors.length;
-
-    return this.colors[index];
-  }
+  toggleMenu(): void { this.menuToggle.emit(); }
+  private getInitials(name: string): string { return name.split(' ').filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join(''); }
+  private getColor(name: string): string { return this.colors[name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % this.colors.length]; }
 }
