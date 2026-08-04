@@ -22,15 +22,19 @@
       </div>
 
       <div class="header-actions">
-        <button class="btn btn-voltar" (click)="voltar()">
+        <button type="button" class="btn btn-voltar" (click)="voltar()">
           Voltar
         </button>
 
-        <button class="btn btn-edit" (click)="editarPaciente()">
+        <button type="button" class="btn btn-historico" (click)="abrirHistoricoPaciente()">
+          Histórico do Paciente
+        </button>
+
+        <button type="button" class="btn btn-edit" (click)="editarPaciente()">
           Editar
         </button>
 
-        <button class="btn" [class.btn-inativar]="pacienteAtivo" [class.btn-ativar]="!pacienteAtivo"
+        <button type="button" class="btn" [class.btn-inativar]="pacienteAtivo" [class.btn-ativar]="!pacienteAtivo"
           (click)="pedirConfirmacaoInativacao()" [disabled]="inativando || !pacienteAtivo">
           {{ pacienteAtivo ? 'Inativar Paciente' : 'Paciente Inativo' }}
         </button>
@@ -43,10 +47,10 @@
         lista principal de pacientes até ser reativado.
       </p>
       <div class="confirm-actions">
-        <button class="btn btn-voltar" (click)="cancelarInativacao()" [disabled]="inativando">
+        <button type="button" class="btn btn-voltar" (click)="cancelarInativacao()" [disabled]="inativando">
           Cancelar
         </button>
-        <button class="btn btn-inativar" (click)="confirmarInativacao()" [disabled]="inativando">
+        <button type="button" class="btn btn-inativar" (click)="confirmarInativacao()" [disabled]="inativando">
           {{ inativando ? 'Inativando...' : 'Confirmar Inativação' }}
         </button>
       </div>

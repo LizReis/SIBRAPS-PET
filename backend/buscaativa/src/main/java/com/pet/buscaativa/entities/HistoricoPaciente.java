@@ -60,4 +60,7 @@ public class HistoricoPaciente extends AbstractEntities {
 
     @Column(length = 2000)
     private String descricao;
+
+    /** Valor no instante do fato; não é recalculado com o contador atual. */
+    private Integer numeroFaltaConsecutiva;
 }

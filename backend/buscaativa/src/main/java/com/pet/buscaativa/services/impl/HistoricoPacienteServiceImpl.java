@@ -3,6 +3,8 @@ package com.pet.buscaativa.services.impl;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -47,8 +49,19 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
                 .map(this::toEventoDTO)
                 .toList();
 
-        return new HistoricoPacienteDTO(paciente.getIdPublico(), paciente.getNome(),
-                paciente.getStatusPaciente(), eventos);
+        long consultas = contar(eventos, TipoEventoHistoricoPaciente.CONSULTA_AGENDADA);
+        long presencas = contar(eventos, TipoEventoHistoricoPaciente.PRESENCA);
+        long faltas = contar(eventos, TipoEventoHistoricoPaciente.FALTA);
+        long remarcacoes = contar(eventos, TipoEventoHistoricoPaciente.REMARCACAO);
+        long grupos = contar(eventos, TipoEventoHistoricoPaciente.PARTICIPACAO_GRUPO_TERAPEUTICO);
+        long buscas = contar(eventos, TipoEventoHistoricoPaciente.BUSCA_ATIVA);
+        Long diasSemComparecer = paciente.getDataUltimaPresenca() == null ? null
+                : Math.max(0, ChronoUnit.DAYS.between(paciente.getDataUltimaPresenca(), LocalDate.now()));
+
+        return new HistoricoPacienteDTO( paciente.getNome(),
+                paciente.getStatusPaciente(), paciente.getClassificacaoRisco(), paciente.getTipoAcompanhamento(),
+                paciente.getDataUltimaPresenca(), diasSemComparecer, paciente.getCountFaltas(),
+                consultas, presencas, faltas, remarcacoes, grupos, buscas, eventos);
     }
 
     @Override
@@ -63,6 +76,7 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
                 .orElseThrow(() -> new ResourceNotFoundException(pacienteId));
         salvar(paciente, null, usuarioLogado(), registro.tipo(), null,
                 registro.ocorridoEm() == null ? LocalDateTime.now() : registro.ocorridoEm(), registro.descricao());
+        
     }
 
     @Override
@@ -110,6 +124,11 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
         historico.setSituacaoAtendimento(situacao);
         historico.setOcorridoEm(ocorridoEm);
         historico.setDescricao(descricao);
+
+        if (tipo == TipoEventoHistoricoPaciente.FALTA) {
+            historico.setNumeroFaltaConsecutiva(paciente.getCountFaltas());
+        }
+
         historicoRepository.save(historico);
     }
 
@@ -127,9 +146,31 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
     }
 
     private HistoricoPacienteEventoDTO toEventoDTO(HistoricoPaciente evento) {
+        Usuario responsavel = evento.getProfissional();
         return new HistoricoPacienteEventoDTO(evento.getId(), evento.getTipo(), evento.getSituacaoAtendimento(),
-                evento.getOcorridoEm(), evento.getDescricao(),
+                evento.getOcorridoEm(), titulo(evento), evento.getDescricao(),
                 evento.getAgendamento() == null ? null : evento.getAgendamento().getId(),
-                evento.getProfissional() == null ? evento.getCreatedBy() : evento.getProfissional().getNome());
+                responsavel == null ? evento.getCreatedBy() : responsavel.getNome(),
+                responsavel == null || responsavel.getTipoUsuario() == null ? null : responsavel.getTipoUsuario().name(),
+                responsavel == null || responsavel.getUnidadeAtuacao() == null ? null : responsavel.getUnidadeAtuacao().name(),
+                evento.getNumeroFaltaConsecutiva());
+    }
+
+    private long contar(List<HistoricoPacienteEventoDTO> eventos, TipoEventoHistoricoPaciente tipo) {
+        return eventos.stream().filter(evento -> evento.tipo() == tipo).count();
+    }
+
+    private String titulo(HistoricoPaciente evento) {
+        return switch (evento.getTipo()) {
+            case CONSULTA_AGENDADA -> "Consulta agendada";
+            case PRESENCA -> "Presença registrada";
+            case FALTA -> evento.getNumeroFaltaConsecutiva() == null
+                    ? "Falta registrada"
+                    : "Falta registrada (" + evento.getNumeroFaltaConsecutiva() + "ª consecutiva)";
+            case REMARCACAO -> "Remarcação registrada";
+            case PARTICIPACAO_GRUPO_TERAPEUTICO -> "Participação em grupo terapêutico";
+            case SITUACAO_ATUALIZADA -> "Situação do paciente atualizada";
+            case BUSCA_ATIVA -> "Registro de busca ativa";
+        };
     }
 }

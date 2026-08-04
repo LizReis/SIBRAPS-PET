@@ -68,13 +68,45 @@ export interface ValidationError extends StandardError {
   errors: FieldMessage[];
 }
 
+export interface HistoricoPacienteEvento {
+  id: number;
+  tipo: string;
+  situacaoAtendimento?: string;
+  ocorridoEm: string;
+  titulo: string;
+  descricao?: string;
+  agendamentoId?: number;
+  nomeResponsavel?: string;
+  funcaoResponsavel?: string;
+  nomeUnidade?: string;
+  numeroFaltaConsecutiva?: number;
+}
+
+export interface HistoricoPacientePayload {
+  idPublico: string;
+  nomePaciente: string;
+  statusPaciente: string;
+  classificacaoAtual: string;
+  tipoAcompanhamento: string;
+  dataUltimaPresenca?: string;
+  diasSemComparecer?: number;
+  quantidadeFaltasAtual: number;
+  totalConsultasAgendadas: number;
+  totalPresencas: number;
+  totalFaltas: number;
+  totalRemarcacoes: number;
+  totalGruposTerapeuticos: number;
+  totalRegistrosBuscaAtiva: number;
+  eventos: HistoricoPacienteEvento[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class PacienteService {
   private readonly apiUrl = '/api/pacientes';
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   listar(): Observable<PacientePayload[]> {
     return this.http.get<PacientePayload[]>(this.apiUrl);
@@ -87,26 +119,53 @@ export class PacienteService {
   }
 
   buscarPorCpf(cpf: string): Observable<PacientePayload> {
-    return this.http.get<PacientePayload>(`${this.apiUrl}/busca/cpf/${cpf}`);
+    return this.http.get<PacientePayload>(
+      `${this.apiUrl}/busca/cpf/${cpf}`,
+    );
   }
 
   buscarPorCns(cns: string): Observable<PacientePayload> {
-    return this.http.get<PacientePayload>(`${this.apiUrl}/busca/cns/${cns}`);
+    return this.http.get<PacientePayload>(
+      `${this.apiUrl}/busca/cns/${cns}`,
+    );
   }
 
-  cadastrarPaciente(paciente: PacientePayload): Observable<PacientePayload> {
-    return this.http.post<PacientePayload>(this.apiUrl, paciente);
+  cadastrarPaciente(
+    paciente: PacientePayload,
+  ): Observable<PacientePayload> {
+    return this.http.post<PacientePayload>(
+      this.apiUrl,
+      paciente,
+    );
   }
 
-  atualizarPaciente(idPublico: string, paciente: PacientePayload): Observable<PacientePayload> {
-    return this.http.put<PacientePayload>(`${this.apiUrl}/${idPublico}`, paciente);
+  atualizarPaciente(
+    idPublico: string,
+    paciente: PacientePayload,
+  ): Observable<PacientePayload> {
+    return this.http.put<PacientePayload>(
+      `${this.apiUrl}/${idPublico}`,
+      paciente,
+    );
   }
 
   buscarPorId(idPublico: string): Observable<PacientePayload> {
-    return this.http.get<PacientePayload>(`${this.apiUrl}/${idPublico}`);
+    return this.http.get<PacientePayload>(
+      `${this.apiUrl}/${idPublico}`,
+    );
+  }
+
+  buscarHistorico(
+    idPublico: string,
+  ): Observable<HistoricoPacientePayload> {
+    return this.http.get<HistoricoPacientePayload>(
+      `${this.apiUrl}/${idPublico}/historico`,
+    );
   }
 
   inativarPaciente(idPublico: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${idPublico}`);
+    return this.http.delete<void>(
+      `${this.apiUrl}/${idPublico}`,
+    );
   }
 }

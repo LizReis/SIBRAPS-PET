@@ -73,6 +73,22 @@
   opacity: 0.7;
 }
 
+.btn:focus-visible {
+  outline: 3px solid rgba(0, 91, 240, 0.35);
+  outline-offset: 2px;
+}
+
+.btn-historico {
+  background: #003fa3;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 63, 163, 0.22);
+}
+
+.btn-historico:hover:not(:disabled) {
+  background: #002f7a;
+  transform: translateY(-1px);
+}
+
 .btn-voltar {
   background: #f1f5f9;
   color: #334155;

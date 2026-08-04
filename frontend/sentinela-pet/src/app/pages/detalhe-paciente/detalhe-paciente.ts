@@ -63,6 +63,12 @@ export class DetalhePaciente implements OnInit {
     this.router.navigate(['/pacientes/editar', this.paciente.idPublico]);
   }
 
+  abrirHistoricoPaciente(): void {
+    if (!this.paciente?.idPublico) return;
+    this.router.navigate(['/pacientes/detalhes', this.paciente.idPublico, 'historico']);
+  }
+
+
   pedirConfirmacaoInativacao(): void {
     this.confirmandoInativacao = true;
   }

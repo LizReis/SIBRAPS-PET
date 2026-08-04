@@ -11,6 +11,10 @@ public record HistoricoPacienteEventoDTO(
         SituacaoAtendimento situacaoAtendimento,
         LocalDateTime ocorridoEm,
         String descricao,
+        String titulo,
         Long agendamentoId,
-        String profissional) {
+        String nomeResponsavel,
+        String funcaoResponsavel,
+        String nomeUnidade,
+        Integer numeroFaltaConsecutiva) {
 }
