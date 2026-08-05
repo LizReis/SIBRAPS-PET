@@ -81,6 +81,15 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             throw new ValidationException("Não é permitido criar agendamento em data passada.");
         }
 
+        boolean horarioJaOcupado = agendamentoRepository.existsAgendamentoAtivoNoMesmoHorario(
+                usuario, agendamentoDTO.dataAgendamento(), agendamentoDTO.horaAtendimento(),
+                List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO, SituacaoAtendimento.PRESENTE));
+
+        if (horarioJaOcupado) {
+            throw new ConflictException(
+                    "Já existe um atendimento marcado para este profissional nesta data e horário.");
+        }
+
         if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, agendamentoDTO.dataAgendamento())) {
             throw new ConflictException("A agenda do profissional está bloqueada na data informada.");
         }

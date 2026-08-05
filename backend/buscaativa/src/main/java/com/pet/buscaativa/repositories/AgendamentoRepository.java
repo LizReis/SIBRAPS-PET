@@ -69,4 +69,13 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     List<Long> contarOcupacaoPorDataDisponibilidade(@Param("usuario") Usuario usuario,
                                                     @Param("dataInicio") LocalDate dataInicio, @Param("diaBanco") int diaBanco,
                                                     @Param("turno") TurnoEnum turno, @Param("situacoes") List<SituacaoAtendimento> situacoes);
+
+
+    // Verifica se já existe um agendamento ativo do profissional na mesma data e horário exato
+    @Query("SELECT COUNT(a) > 0 FROM Agendamento a WHERE a.usuario = :usuario " +
+            "AND a.dataAgendamento = :data AND a.horaAtendimento = :hora " +
+            "AND a.situacaoAtendimento IN :situacoes")
+    boolean existsAgendamentoAtivoNoMesmoHorario(@Param("usuario") Usuario usuario,
+                                                 @Param("data") LocalDate data, @Param("hora") LocalTime hora,
+                                                 @Param("situacoes") List<SituacaoAtendimento> situacoes);
 }
