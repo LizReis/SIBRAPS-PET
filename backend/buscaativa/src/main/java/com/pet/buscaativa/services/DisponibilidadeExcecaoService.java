@@ -11,5 +11,5 @@ public interface DisponibilidadeExcecaoService {
 
     List<DisponibilidadeExcecaoDTO> listar(String emailLogado, UUID usuarioIdPublico);
 
-    void deletar(Long id);
+    void deletar(Long id, String emailLogado);
 }

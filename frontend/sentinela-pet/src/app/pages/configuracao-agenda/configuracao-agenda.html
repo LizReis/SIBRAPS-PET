@@ -1,174 +1,66 @@
-<main class="container">
-
-  <section class="page-header">
-    <div class="page-title">
-      <h1>Configurar Agenda</h1>
-      <p>Defina seus dias, turnos e capacidade de atendimento, além de bloqueios de agenda.</p>
-    </div>
-  </section>
-
-  <div class="loading-message" *ngIf="carregandoUsuarioLogado">
-    Carregando...
-  </div>
-
-  <div class="alert-erro" *ngIf="erroGeral">
-    {{ erroGeral }}
-  </div>
+<main class="agenda-page">
+  <header class="page-heading"><h1>Configuração da Agenda</h1><p>Defina os horários disponíveis, bloqueios e exceções da agenda do profissional.</p></header>
+  <div class="feedback error" role="alert" *ngIf="erroGeral">{{erroGeral}}</div>
+  <div class="feedback success" role="status" *ngIf="sucesso">{{sucesso}}</div>
+  <div class="loading" *ngIf="carregandoUsuarioLogado">Carregando configuração...</div>
 
   <ng-container *ngIf="!carregandoUsuarioLogado">
 
-    <section class="search-area" *ngIf="isAdmin">
-      <label class="select-label">Selecione o profissional</label>
-
-      <select class="search-select" [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalSelecionado()">
-        <option [ngValue]="null" disabled>Selecione um profissional</option>
-        <option *ngFor="let profissional of profissionais" [value]="profissional.idPublico">
-          {{ profissional.nome }}
-        </option>
-      </select>
+    <section class="overview-card">
+      <div class="professional-field">
+        <label for="profissional">Profissional</label>
+        <select id="profissional" *ngIf="isAdmin; else profissionalAtual" [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalSelecionado()">
+          <option [ngValue]="null" disabled>Selecione um profissional</option><option *ngFor="let p of profissionais" [value]="p.idPublico">{{p.nome}}</option>
+        </select>
+        <ng-template #profissionalAtual><div class="readonly-field"><span class="material-symbols-outlined">person</span>{{nomeUsuario}}</div></ng-template>
+      </div>
+      <div class="summary blue"><span class="material-symbols-outlined">calendar_month</span><div><small>Horários configurados</small><strong>{{disponibilidades.length}}</strong><span>turnos</span></div></div>
+      <div class="summary red"><span class="material-symbols-outlined">lock</span><div><small>Bloqueios</small><strong>{{bloqueios.length}}</strong><span>períodos</span></div></div>
+      <div class="summary orange"><span class="material-symbols-outlined">event_note</span><div><small>Exceções</small><strong>{{excecoes.length}}</strong><span>configurações</span></div></div>
     </section>
 
-    <ng-container *ngIf="podeGerenciar; else selecioneProfissional">
+    <nav class="tabs" role="tablist" aria-label="Configurações da agenda" (keydown)="navegarAbas($event)">
+      <button type="button" id="tab-horarios" role="tab" [attr.aria-selected]="abaAtiva==='horarios'" aria-controls="painel-horarios" [class.active]="abaAtiva==='horarios'" (click)="selecionarAba('horarios')"><span class="material-symbols-outlined">schedule</span>Horários</button>
+      <button type="button" id="tab-bloqueios" role="tab" [attr.aria-selected]="abaAtiva==='bloqueios'" aria-controls="painel-bloqueios" [class.active]="abaAtiva==='bloqueios'" (click)="selecionarAba('bloqueios')"><span class="material-symbols-outlined">lock</span>Bloqueios</button>
+      <button type="button" id="tab-excecoes" role="tab" [attr.aria-selected]="abaAtiva==='excecoes'" aria-controls="painel-excecoes" [class.active]="abaAtiva==='excecoes'" (click)="selecionarAba('excecoes')"><span class="material-symbols-outlined">event_note</span>Exceções</button>
+    </nav>
 
-      <!-- SEÇÃO: DISPONIBILIDADE -->
-      <section class="detail-card">
-        <h2 class="detail-card-title">Horários Disponíveis</h2>
+    <div class="loading" *ngIf="carregandoDados">Carregando dados do profissional...</div>
+    <section class="panel" id="painel-horarios" role="tabpanel" aria-labelledby="tab-horarios" *ngIf="abaAtiva==='horarios'">
+      <div class="section-header"><div><h2>Visão semanal</h2><p>Capacidade regular por dia e turno.</p></div><button type="button" class="primary" [disabled]="!podeGerenciar" (click)="abrirHorario(undefined,$event)"><span class="material-symbols-outlined">add</span>Adicionar horário</button></div>
+      <div class="weekly-scroll"><table class="weekly"><thead><tr><th>Turno</th><th *ngFor="let dia of diasSemana">{{dia.curto}}</th></tr></thead><tbody><tr *ngFor="let turno of turnos"><th>{{labelTurno(turno)}}</th><td *ngFor="let dia of diasSemana" [class.available]="capacidade(dia.valor,turno)!==null"><span>{{capacidade(dia.valor,turno) ?? '—'}}</span></td></tr></tbody></table></div>
+      <div class="subheading"><h2>Horários cadastrados</h2></div>
+      <div class="table-wrap" *ngIf="disponibilidades.length; else semHorarios"><table><thead><tr><th>Dia</th><th>Turno</th><th>Capacidade</th><th>Ações</th></tr></thead><tbody><tr *ngFor="let d of disponibilidades"><td data-label="Dia">{{labelDiaSemana(d.diaSemana)}}</td><td data-label="Turno">{{labelTurno(d.turno)}}</td><td data-label="Capacidade">{{d.capacidade}} vagas</td><td data-label="Ações" class="actions"><button type="button" title="Editar" [attr.aria-label]="'Editar horário de '+labelDiaSemana(d.diaSemana)" (click)="abrirHorario(d,$event)"><span class="material-symbols-outlined">edit</span></button><button type="button" class="danger" title="Excluir" [attr.aria-label]="'Excluir horário de '+labelDiaSemana(d.diaSemana)" (click)="confirmarExclusao('horarios',d.id,$event)"><span class="material-symbols-outlined">delete</span></button></td></tr></tbody></table></div>
+      <ng-template #semHorarios><div class="empty"><span class="material-symbols-outlined">calendar_add_on</span><p>Nenhum horário semanal foi configurado para este profissional.</p><button type="button" class="primary" [disabled]="!podeGerenciar" (click)="abrirHorario(undefined,$event)">Adicionar horário</button></div></ng-template>
+      <aside class="tip"><span class="material-symbols-outlined">info</span>A capacidade informa quantos atendimentos podem ser marcados em cada turno.</aside>
+    </section>
 
-        <div class="form-inline">
-          <select [(ngModel)]="novaDisponibilidade.diaSemana">
-            <option value="" disabled>Dia da semana</option>
-            <option *ngFor="let dia of diasSemana" [value]="dia.valor">{{ dia.label }}</option>
-          </select>
+    <section class="panel" id="painel-bloqueios" role="tabpanel" aria-labelledby="tab-bloqueios" *ngIf="abaAtiva==='bloqueios'">
+      <div class="section-header"><div><h2>Bloqueios de agenda</h2><p>Bloqueios impedem novos agendamentos durante o período informado.</p></div><button type="button" class="primary" [disabled]="!podeGerenciar" (click)="abrirBloqueio(undefined,$event)"><span class="material-symbols-outlined">add</span>Novo bloqueio</button></div>
+      <div class="table-wrap" *ngIf="bloqueios.length; else semBloqueios"><table><thead><tr><th>Período</th><th>Motivo</th><th>Ações</th></tr></thead><tbody><tr *ngFor="let b of bloqueios"><td data-label="Período">{{periodo(b)}}</td><td data-label="Motivo">{{b.motivoBloqueio}}</td><td data-label="Ações" class="actions"><button type="button" title="Editar" aria-label="Editar bloqueio" (click)="abrirBloqueio(b,$event)"><span class="material-symbols-outlined">edit</span></button><button type="button" class="danger" title="Excluir" aria-label="Excluir bloqueio" (click)="confirmarExclusao('bloqueios',b.id,$event)"><span class="material-symbols-outlined">delete</span></button></td></tr></tbody></table></div>
+      <ng-template #semBloqueios><div class="empty"><span class="material-symbols-outlined">lock_open</span><p>Nenhum bloqueio de agenda foi cadastrado.</p><button type="button" class="primary" [disabled]="!podeGerenciar" (click)="abrirBloqueio(undefined,$event)">Novo bloqueio</button></div></ng-template>
+      <aside class="tip"><span class="material-symbols-outlined">info</span>Bloqueios impedem novos agendamentos durante um período.</aside>
+    </section>
 
-          <select [(ngModel)]="novaDisponibilidade.turno">
-            <option value="" disabled>Turno</option>
-            <option *ngFor="let turno of turnos" [value]="turno">{{ labelTurno(turno) }}</option>
-          </select>
-
-          <input type="number" min="1" placeholder="Capacidade" [(ngModel)]="novaDisponibilidade.capacidade" />
-
-          <button class="btn btn-new" (click)="adicionarDisponibilidade()" [disabled]="salvandoDisponibilidade">
-            {{ salvandoDisponibilidade ? 'Salvando...' : '+ Adicionar' }}
-          </button>
-        </div>
-
-        <div class="lista-itens" *ngIf="disponibilidades.length > 0; else semDisponibilidade">
-          <div class="item-linha" *ngFor="let d of disponibilidades">
-
-            <ng-container *ngIf="editandoDisponibilidadeId !== d.id; else modoEdicao">
-              <span class="item-info">
-                <strong>{{ labelDiaSemana(d.diaSemana) }}</strong> — {{ labelTurno(d.turno) }} —
-                {{ d.capacidade }} vaga(s)
-              </span>
-
-              <div class="item-acoes">
-                <button class="btn-editar" (click)="iniciarEdicaoDisponibilidade(d)">Editar</button>
-                <button class="btn-remover" (click)="removerDisponibilidade(d.id)">Remover</button>
-              </div>
-            </ng-container>
-
-            <ng-template #modoEdicao>
-              <span class="item-info">
-                <strong>{{ labelDiaSemana(d.diaSemana) }}</strong> — {{ labelTurno(d.turno) }}
-              </span>
-
-              <div class="item-acoes item-acoes-edicao">
-                <input type="number" min="1" class="input-edicao" [(ngModel)]="capacidadeEmEdicao" />
-                <button class="btn-salvar" (click)="salvarEdicaoDisponibilidade(d)"
-                  [disabled]="salvandoEdicaoDisponibilidade">
-                  {{ salvandoEdicaoDisponibilidade ? 'Salvando...' : 'Salvar' }}
-                </button>
-                <button class="btn-cancelar-edicao" (click)="cancelarEdicaoDisponibilidade()">
-                  Cancelar
-                </button>
-              </div>
-            </ng-template>
-
-          </div>
-        </div>
-
-        <ng-template #semDisponibilidade>
-          <p class="empty-inline" *ngIf="!carregandoDados">Nenhum horário cadastrado ainda.</p>
-        </ng-template>
-      </section>
-
-      <!-- SEÇÃO: BLOQUEIOS -->
-      <section class="detail-card">
-        <h2 class="detail-card-title">Bloqueios de Agenda</h2>
-
-        <div class="form-inline">
-          <input type="date" [(ngModel)]="novoBloqueio.dataInicio" />
-          <input type="date" [(ngModel)]="novoBloqueio.dataFim" />
-          <input type="text" placeholder="Motivo (opcional)" [(ngModel)]="novoBloqueio.motivoBloqueio" />
-
-          <button class="btn btn-new" (click)="adicionarBloqueio()" [disabled]="salvandoBloqueio">
-            {{ salvandoBloqueio ? 'Salvando...' : '+ Bloquear' }}
-          </button>
-        </div>
-
-        <div class="lista-itens" *ngIf="bloqueios.length > 0; else semBloqueio">
-          <div class="item-linha" *ngFor="let b of bloqueios">
-            <span class="item-info">
-              {{ formatarData(b.dataInicio) }} até {{ formatarData(b.dataFim) }}
-              <em *ngIf="b.motivoBloqueio">— {{ b.motivoBloqueio }}</em>
-            </span>
-            <button class="btn-remover" (click)="removerBloqueio(b.id)">Remover</button>
-          </div>
-        </div>
-
-        <ng-template #semBloqueio>
-          <p class="empty-inline" *ngIf="!carregandoDados">Nenhum bloqueio cadastrado.</p>
-        </ng-template>
-      </section>
-
-      <!-- SEÇÃO: SOBRESCREVER DATA ESPECÍFICA -->
-      <section class="detail-card">
-        <h2 class="detail-card-title">Vagas em uma Data Específica</h2>
-        <p class="section-hint">
-          Use isso para abrir mais vagas, fechar um turno específico (capacidade 0), ou
-          atender em um turno que normalmente não atende, numa data pontual. Isso tem prioridade
-          sobre o horário padrão semanal.
-        </p>
-
-        <div class="form-inline">
-          <input type="date" [(ngModel)]="novaExcecao.data" />
-
-          <select [(ngModel)]="novaExcecao.turno">
-            <option value="" disabled>Turno</option>
-            <option *ngFor="let turno of turnos" [value]="turno">{{ labelTurno(turno) }}</option>
-          </select>
-
-          <input type="number" min="0" placeholder="Capacidade (0 = fechado)" [(ngModel)]="novaExcecao.capacidade" />
-
-          <button class="btn btn-new" (click)="adicionarExcecao()" [disabled]="salvandoExcecao">
-            {{ salvandoExcecao ? 'Salvando...' : '+ Definir' }}
-          </button>
-        </div>
-
-        <div class="lista-itens" *ngIf="excecoes.length > 0; else semExcecao">
-          <div class="item-linha" *ngFor="let e of excecoes">
-            <span class="item-info">
-              <strong>{{ formatarData(e.data) }}</strong> — {{ labelTurno(e.turno) }} —
-              <ng-container *ngIf="e.capacidade > 0; else fechado">{{ e.capacidade }} vaga(s)</ng-container>
-              <ng-template #fechado><span class="tag-fechado">Fechado</span></ng-template>
-            </span>
-            <button class="btn-remover" (click)="removerExcecao(e.id)">Remover</button>
-          </div>
-        </div>
-
-        <ng-template #semExcecao>
-          <p class="empty-inline" *ngIf="!carregandoDados">Nenhuma data específica configurada.</p>
-        </ng-template>
-      </section>
-
-    </ng-container>
-
-    <ng-template #selecioneProfissional>
-      <div class="empty-message">
-        Selecione um profissional acima para gerenciar a agenda.
-      </div>
-    </ng-template>
+    <section class="panel" id="painel-excecoes" role="tabpanel" aria-labelledby="tab-excecoes" *ngIf="abaAtiva==='excecoes'">
+      <div class="section-header"><div><h2>Exceções de agenda</h2><p>Uma exceção substitui a capacidade semanal apenas na data e no turno informados.</p></div><button type="button" class="primary" [disabled]="!podeGerenciar" (click)="abrirExcecao(undefined,$event)"><span class="material-symbols-outlined">add</span>Nova exceção</button></div>
+      <div class="table-wrap" *ngIf="excecoes.length; else semExcecoes"><table><thead><tr><th>Data</th><th>Turno</th><th>Capacidade</th><th>Ações</th></tr></thead><tbody><tr *ngFor="let e of excecoes"><td data-label="Data">{{formatarData(e.data)}}</td><td data-label="Turno">{{labelTurno(e.turno)}}</td><td data-label="Capacidade"><span class="closed" *ngIf="e.capacidade===0; else vagas">Turno fechado</span><ng-template #vagas>{{e.capacidade}} vagas</ng-template></td><td data-label="Ações" class="actions"><button type="button" title="Editar" aria-label="Editar exceção" (click)="abrirExcecao(e,$event)"><span class="material-symbols-outlined">edit</span></button><button type="button" class="danger" title="Excluir" aria-label="Excluir exceção" (click)="confirmarExclusao('excecoes',e.id,$event)"><span class="material-symbols-outlined">delete</span></button></td></tr></tbody></table></div>
+      <ng-template #semExcecoes><div class="empty"><span class="material-symbols-outlined">event_busy</span><p>Nenhuma exceção foi configurada.</p><button type="button" class="primary" [disabled]="!podeGerenciar" (click)="abrirExcecao(undefined,$event)">Nova exceção</button></div></ng-template>
+      <aside class="tip"><span class="material-symbols-outlined">info</span>Exceções substituem a capacidade semanal em uma data específica.</aside>
+    </section>
 
   </ng-container>
 
 </main>
+
+<div class="modal-backdrop" *ngIf="modal" (mousedown)="$event.target===$event.currentTarget && fecharModal()">
+  <section class="modal-card" role="dialog" aria-modal="true" [attr.aria-labelledby]="'modal-title'" (keydown)="prenderFoco($event)">
+    <button type="button" class="modal-close" aria-label="Fechar modal" (click)="fecharModal()"><span class="material-symbols-outlined">close</span></button>
+    <ng-container *ngIf="modal==='horario'"><h2 id="modal-title">{{disponibilidadeForm.id?'Editar horário disponível':'Adicionar horário disponível'}}</h2><p>Defina o dia, turno e quantidade de vagas oferecidas regularmente.</p><div class="form-grid"><label>Dia da semana<select [(ngModel)]="disponibilidadeForm.diaSemana" [disabled]="!!disponibilidadeForm.id"><option value="" disabled>Selecione</option><option *ngFor="let d of diasSemana" [value]="d.valor">{{d.label}}</option></select></label><label>Turno<select [(ngModel)]="disponibilidadeForm.turno" [disabled]="!!disponibilidadeForm.id"><option value="" disabled>Selecione</option><option *ngFor="let t of turnos" [value]="t">{{labelTurno(t)}}</option></select></label><label>Quantidade de vagas<input type="number" min="1" step="1" [(ngModel)]="disponibilidadeForm.capacidade"></label></div></ng-container>
+    <ng-container *ngIf="modal==='bloqueio'"><h2 id="modal-title">{{bloqueioForm.id?'Editar bloqueio':'Novo bloqueio de agenda'}}</h2><p>Bloqueios impedem novos agendamentos no período.</p><div class="form-grid"><label>Data inicial<input type="date" [(ngModel)]="bloqueioForm.dataInicio"></label><label>Data final<input type="date" [(ngModel)]="bloqueioForm.dataFim"></label><label class="full">Motivo do bloqueio<input type="text" maxlength="255" placeholder="Ex.: Férias, reunião ou capacitação" [(ngModel)]="bloqueioForm.motivoBloqueio"></label></div></ng-container>
+    <ng-container *ngIf="modal==='excecao'"><h2 id="modal-title">{{excecaoForm.id?'Editar exceção':'Nova exceção de agenda'}}</h2><p>Substitua a capacidade semanal somente nesta data.</p><div class="form-grid"><label>Data da exceção<input type="date" [(ngModel)]="excecaoForm.data" [readonly]="!!excecaoForm.id"></label><label>Turno<select [(ngModel)]="excecaoForm.turno" [disabled]="!!excecaoForm.id"><option value="" disabled>Selecione</option><option *ngFor="let t of turnos" [value]="t">{{labelTurno(t)}}</option></select></label><label class="full">Quantidade de vagas<input type="number" min="0" step="1" [(ngModel)]="excecaoForm.capacidade"><small>Use 0 para fechar esse turno somente nesta data.</small></label></div></ng-container>
+    <ng-container *ngIf="modal==='confirmacao'"><h2 id="modal-title">Excluir {{acaoExclusao?.tipo==='horarios'?'horário':acaoExclusao?.tipo==='bloqueios'?'bloqueio':'exceção'}}?</h2><p>{{acaoExclusao?.tipo==='horarios'?'Esse horário semanal deixará de aceitar novos agendamentos.':'A exclusão só será concluída após a validação do servidor.'}}</p></ng-container>
+    <div class="modal-error" role="alert" *ngIf="erroModal">{{erroModal}}</div>
+    <footer><button type="button" class="secondary" [disabled]="salvando" (click)="fecharModal()">Cancelar</button><button type="button" class="primary" [disabled]="salvando" (click)="modal==='horario'?salvarHorario():modal==='bloqueio'?salvarBloqueio():modal==='excecao'?salvarExcecao():excluir()">{{salvando?'Salvando...':modal==='confirmacao'?'Excluir':(modal==='horario'&&disponibilidadeForm.id)||(modal==='bloqueio'&&bloqueioForm.id)||(modal==='excecao'&&excecaoForm.id)?'Salvar alteração':modal==='horario'?'Adicionar horário':modal==='bloqueio'?'Criar bloqueio':'Criar exceção'}}</button></footer>
+  </section>
+</div>

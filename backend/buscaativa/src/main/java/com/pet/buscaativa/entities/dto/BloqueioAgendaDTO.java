@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
 public record BloqueioAgendaDTO(
         Long id,
@@ -16,6 +17,7 @@ public record BloqueioAgendaDTO(
         @NotNull
         LocalDate dataFim,
 
+        @NotBlank(message = "Informe o motivo do bloqueio.")
         String motivoBloqueio
 ) {
 }

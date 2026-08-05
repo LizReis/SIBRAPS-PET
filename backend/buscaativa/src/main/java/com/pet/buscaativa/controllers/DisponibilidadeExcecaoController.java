@@ -38,7 +38,7 @@ public class DisponibilidadeExcecaoController {
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
-        excecaoService.deletar(id);
+        excecaoService.deletar(id, getEmailLogado());
         return ResponseEntity.noContent().build();
     }
 }

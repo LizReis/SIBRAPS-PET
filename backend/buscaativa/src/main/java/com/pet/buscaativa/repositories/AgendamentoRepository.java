@@ -42,6 +42,12 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
                             @Param("turno") TurnoEnum turnoAgendamento,
                             @Param("situacao") SituacaoAtendimento situacao);
 
+    @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.usuario = :usuario AND a.dataAgendamento BETWEEN :inicio AND :fim AND a.situacaoAtendimento IN :situacoes")
+    long contarAtivosNoPeriodo(@Param("usuario") Usuario usuario,
+                               @Param("inicio") LocalDate inicio,
+                               @Param("fim") LocalDate fim,
+                               @Param("situacoes") List<SituacaoAtendimento> situacoes);
+
 
     @Query("SELECT a FROM Agendamento a JOIN FETCH a.usuario JOIN FETCH a.paciente WHERE a.dataAgendamento = :dataAgendamento AND a.usuario = :usuario ORDER BY a.dataAgendamento, a.turnoAgendamento, a.horaAtendimento, a.id")
     List<Agendamento> findByDataAgendamentoAndUsuario(@Param("dataAgendamento") LocalDate dataAgendamento, @Param("usuario") Usuario usuario);
