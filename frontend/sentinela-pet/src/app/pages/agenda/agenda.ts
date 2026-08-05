@@ -14,6 +14,7 @@ type DiaCalendario = { data: Date; iso: string; dia: number; foraDoMes: boolean;
 type DiaSemana = { iso: string; data: Date; titulo: string; subtitulo: string; agendamentos: AgendamentoDTO[] };
 type DiaMes = DiaCalendario & { agendamentos: AgendamentoDTO[] };
 type StatusUi = { label: string; classe: string; patternClass: string; descricao?: string };
+type BlocoHoraAgenda = { hora: number; label: string; agendamentos: AgendamentoDTO[] };
 
 @Component({
   selector: 'app-agenda',
@@ -25,7 +26,6 @@ type StatusUi = { label: string; classe: string; patternClass: string; descricao
 export class Agenda implements OnInit, OnDestroy {
   private readonly horaInicialPadrao = 8;
   private readonly horaFinalPadrao = 18;
-  readonly alturaPorMinuto = 2.2;
   private relogioId: ReturnType<typeof setInterval> | null = null;
   private ultimaConsulta = '';
 
@@ -67,6 +67,7 @@ export class Agenda implements OnInit, OnDestroy {
     CANCELADO: { label: 'CANCELADO', classe: 'status-cancelado', patternClass: 'pattern-cancelado' },
     REMARCADO_ORIGEM: { label: 'AGENDAMENTO ANTERIOR', classe: 'status-remarcado-origem', patternClass: 'pattern-remarcado-origem', descricao: 'Este agendamento foi substituído por uma nova remarcação.' },
   };
+  readonly situacoesResumo = ['AGENDADO', 'PRESENTE', 'FALTOU', 'REMARCADO', 'CANCELADO', 'REMARCADO_ORIGEM'];
   readonly situacoesLegenda = Object.keys(this.statusUi);
 
   constructor(
@@ -137,15 +138,29 @@ export class Agenda implements OnInit, OnDestroy {
   selecionarDiaDoMes(iso: string): void { this.dataSelecionada = iso; this.visualizacao = 'dia'; this.mesCalendario = this.inicioDoMes(this.criarDataLocal(iso)); this.carregarAgenda(true); }
   mudarMesCalendario(offset: number): void { const d = new Date(this.mesCalendario); d.setMonth(d.getMonth() + offset, 1); this.mesCalendario = d; }
 
-  get horariosTimeline(): string[] { return Array.from({ length: this.horaFinalVisivel - this.horaInicialVisivel + 1 }, (_, i) => `${String(this.horaInicialVisivel + i).padStart(2, '0')}:00`); }
   get agendamentosDia(): AgendamentoDTO[] { return this.agendamentos.filter((a) => a.dataAgendamento === this.dataSelecionada); }
   get horaInicialVisivel(): number { return Math.min(this.horaInicialPadrao, ...this.agendamentosDia.map((a) => Math.floor(this.minutosDoHorario(a.horaAtendimento) / 60))); }
-  get horaFinalVisivel(): number { return Math.max(this.horaFinalPadrao, ...this.agendamentosDia.map((a) => Math.ceil(this.minutosDoHorario(a.horaAtendimento) / 60))); }
-  get minutosIniciaisAgenda(): number { return this.horaInicialVisivel * 60; }
-  get alturaTimeline(): number { return Math.max(1, (this.horaFinalVisivel - this.horaInicialVisivel) * 60) * this.alturaPorMinuto; }
-  estiloAgendamentoDia(a: AgendamentoDTO): Record<string, string> { return { top: `${Math.max(0, this.minutosDoHorario(a.horaAtendimento) - this.minutosIniciaisAgenda) * this.alturaPorMinuto}px` }; }
-  get mostrarIndicadorAtual(): boolean { const m = this.horarioAtual.getHours() * 60 + this.horarioAtual.getMinutes(); return this.visualizacao === 'dia' && this.dataSelecionada === this.formatarDataISO(new Date()) && m >= this.minutosIniciaisAgenda && m <= this.horaFinalVisivel * 60; }
-  get posicaoIndicadorAtualPx(): number { return (this.horarioAtual.getHours() * 60 + this.horarioAtual.getMinutes() - this.minutosIniciaisAgenda) * this.alturaPorMinuto; }
+  get horaFinalVisivel(): number { return Math.max(this.horaFinalPadrao, ...this.agendamentosDia.map((a) => Math.floor(this.minutosDoHorario(a.horaAtendimento) / 60))); }
+  get blocosHorariosDia(): BlocoHoraAgenda[] {
+    const blocos = new Map<number, BlocoHoraAgenda>();
+    for (let hora = this.horaInicialVisivel; hora <= this.horaFinalVisivel; hora++) {
+      blocos.set(hora, { hora, label: `${String(hora).padStart(2, '0')}:00`, agendamentos: [] });
+    }
+
+    this.agendamentosDia.forEach((agendamento) => {
+      const hora = Math.floor(this.minutosDoHorario(agendamento.horaAtendimento) / 60);
+      const bloco = blocos.get(hora);
+      if (bloco) bloco.agendamentos.push(agendamento);
+    });
+
+    return Array.from(blocos.values()).map((bloco) => ({
+      ...bloco,
+      agendamentos: [...bloco.agendamentos].sort((a, b) => this.minutosDoHorario(a.horaAtendimento) - this.minutosDoHorario(b.horaAtendimento) || a.id - b.id),
+    }));
+  }
+  get horaAtualBloco(): number { return this.horarioAtual.getHours(); }
+  get posicaoIndicadorAtualPercentual(): number { return (this.horarioAtual.getMinutes() / 60) * 100; }
+  get mostrarIndicadorAtual(): boolean { const hora = this.horaAtualBloco; return this.visualizacao === 'dia' && this.dataSelecionada === this.formatarDataISO(new Date()) && hora >= this.horaInicialVisivel && hora <= this.horaFinalVisivel; }
   get periodoTitulo(): string { const { inicio, fim } = this.periodoAtual(); if (this.visualizacao === 'dia') return this.formatarDataLonga(this.criarDataLocal(inicio)); if (this.visualizacao === 'semana') return `${this.formatarDataCurta(this.criarDataLocal(inicio))} a ${this.formatarDataCurta(this.criarDataLocal(fim))}`; return this.formatarMesAno(this.criarDataLocal(inicio)); }
   get contagemTitulo(): string { const n = this.agendamentos.length; return `${n} atendimento${n === 1 ? '' : 's'} agendado${n === 1 ? '' : 's'}`; }
   get resumoTitulo(): string { return this.visualizacao === 'dia' ? 'Resumo do dia' : this.visualizacao === 'semana' ? 'Resumo da semana' : 'Resumo do mês'; }
@@ -153,7 +168,7 @@ export class Agenda implements OnInit, OnDestroy {
   get calendario(): DiaCalendario[] { return this.montarGradeMensal(this.mesCalendario); }
   get diasDaSemana(): DiaSemana[] { const inicio = this.inicioDaSemana(this.criarDataLocal(this.dataSelecionada)); return Array.from({ length: 7 }, (_, i) => { const d = new Date(inicio); d.setDate(d.getDate() + i); const iso = this.formatarDataISO(d); return { iso, data: d, titulo: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''), subtitulo: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), agendamentos: this.agendamentos.filter((a) => a.dataAgendamento === iso) }; }); }
   get gradeMes(): DiaMes[] { return this.montarGradeMensal(this.criarDataLocal(this.dataSelecionada)).map((d) => ({ ...d, agendamentos: this.agendamentos.filter((a) => a.dataAgendamento === d.iso) })); }
-  resumoSituacoes(): { situacao: string; total: number }[] { const c = new Map<string, number>(); this.agendamentos.forEach((a) => c.set(a.situacaoAtendimento, (c.get(a.situacaoAtendimento) ?? 0) + 1)); return Array.from(c.entries()).map(([situacao, total]) => ({ situacao, total })); }
+  get resumoSituacoesCompleto(): { situacao: string; label: string; total: number }[] { const c = new Map<string, number>(); this.agendamentos.forEach((a) => c.set(a.situacaoAtendimento, (c.get(a.situacaoAtendimento) ?? 0) + 1)); return this.situacoesResumo.map((situacao) => ({ situacao, label: this.labelSituacao(situacao), total: c.get(situacao) ?? 0 })); }
 
   podeRegistrarFrequencia(a: AgendamentoDTO): boolean { return a.dataAgendamento <= this.formatarDataISO(new Date()) && ['AGENDADO', 'REMARCADO'].includes(a.situacaoAtendimento); }
   podeRemarcar(a: AgendamentoDTO): boolean { return this.podeCriarAgendamento && ['AGENDADO', 'REMARCADO', 'FALTOU'].includes(a.situacaoAtendimento) && a.situacaoAtendimento !== 'REMARCADO_ORIGEM' && a.tipoAcompanhamento !== 'GRUPO_TERAPEUTICO'; }

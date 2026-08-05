@@ -69,27 +69,26 @@
         <div class="empty-message" *ngIf="!carregando && agendamentos.length === 0">{{ mensagemVazia }}</div>
 
         <section class="day-view" *ngIf="!carregando && visualizacao === 'dia' && agendamentos.length > 0">
-          <div class="timeline-canvas" [style.height.px]="alturaTimeline">
-            <div class="now-line" *ngIf="mostrarIndicadorAtual" [style.top.px]="posicaoIndicadorAtualPx"><span>{{ formatarHora(horarioAtual.toTimeString()) }}</span></div>
-            <div class="hour-marker" *ngFor="let hora of horariosTimeline">
-              <div class="time-label">{{ hora }}</div>
-              <div class="hour-line"></div>
+
+          <div class="hour-block" *ngFor="let bloco of blocosHorariosDia" [class.current-hour]="mostrarIndicadorAtual && bloco.hora === horaAtualBloco">
+            <div class="time-label">{{ bloco.label }}</div>
+            <div class="hour-content">
+              <div class="now-line" *ngIf="mostrarIndicadorAtual && bloco.hora === horaAtualBloco" [style.top.%]="posicaoIndicadorAtualPercentual"><span>{{ formatarHora(horarioAtual.toTimeString()) }}</span></div>
+
+              <article class="appointment-card" *ngFor="let a of bloco.agendamentos" [attr.aria-busy]="atualizandoId === a.id">
+                <div class="appointment-time">{{ formatarHora(a.horaAtendimento) }}</div>
+                <div class="appointment-main">
+                  <strong>{{ a.nomePaciente }}</strong>
+                  <span class="appointment-meta-text">{{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}<ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container></span>
+                  <span class="badge" [ngClass]="[classeSituacao(a.situacaoAtendimento), classePadraoSituacao(a.situacaoAtendimento)]" [attr.title]="descricaoSituacao(a.situacaoAtendimento) || null">{{ labelSituacao(a.situacaoAtendimento) }}</span>
+                </div>
+                <div class="appointment-actions" *ngIf="possuiAcoes(a)">
+                  <button type="button" class="action-btn action-presente" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar presença de ' + a.nomePaciente">Presente</button>
+                  <button type="button" class="action-btn action-faltou" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar falta de ' + a.nomePaciente">Faltou</button>
+                  <button type="button" class="action-btn action-remarcar" *ngIf="podeRemarcar(a)" (click)="remarcar(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Remarcar atendimento de ' + a.nomePaciente" title="Remarcar atendimento"><span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Remarcar</button>
+                </div>
+              </article>
             </div>
-
-
-            <article class="appointment-card timeline-appointment" *ngFor="let a of agendamentosDia" [ngStyle]="estiloAgendamentoDia(a)" [attr.aria-busy]="atualizandoId === a.id">
-              <div class="appointment-time">{{ formatarHora(a.horaAtendimento) }}</div>
-              <div class="appointment-main">
-                <strong>{{ a.nomePaciente }}</strong>
-                <span class="appointment-meta-text">{{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}<ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container></span>
-                <span class="badge" [ngClass]="[classeSituacao(a.situacaoAtendimento), classePadraoSituacao(a.situacaoAtendimento)]" [attr.title]="descricaoSituacao(a.situacaoAtendimento) || null">{{ labelSituacao(a.situacaoAtendimento) }}</span>
-              </div>
-              <div class="appointment-actions" *ngIf="possuiAcoes(a)">
-                <button type="button" class="action-btn action-presente" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar presença de ' + a.nomePaciente">Presente</button>
-                <button type="button" class="action-btn action-faltou" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar falta de ' + a.nomePaciente">Faltou</button>
-                <button type="button" class="action-btn action-remarcar" *ngIf="podeRemarcar(a)" (click)="remarcar(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Remarcar atendimento de ' + a.nomePaciente" title="Remarcar atendimento"><span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Remarcar</button>
-              </div>
-            </article>
           </div>
         </section>
 
@@ -139,7 +138,8 @@
         <section class="card summary-card">
           <h2>{{ resumoTitulo }}</h2>
           <div class="summary-line total"><span>Total de atendimentos</span><strong>{{ agendamentos.length }}</strong></div>
-          <div class="summary-line" *ngFor="let item of resumoSituacoes()"><span>{{ labelSituacao(item.situacao) }}</span><strong>{{ item.total }}</strong></div>
+          <div class="summary-divider" aria-hidden="true"></div>
+          <div class="summary-line" *ngFor="let item of resumoSituacoesCompleto"><span>{{ item.label }}</span><strong>{{ item.total }}</strong></div>
         </section>
 
         <section class="card legend-card">

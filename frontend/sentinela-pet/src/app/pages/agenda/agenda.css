@@ -218,40 +218,34 @@
     position: relative
 }
 
-.timeline-canvas {
-    position: relative;
-    margin-left: 72px
-}
-
-.hour-marker {
-    position: relative;
-    height: 132px;
+.hour-block {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    min-height: 64px;
     border-top: 1px solid #edf1f6
 }
 
-.hour-marker:last-of-type {
-    height: 0
+.hour-block:last-child {
+    border-bottom: 1px solid #edf1f6
 }
 
 .time-label {
-    position: absolute;
-    left: -72px;
-    top: -9px;
-    width: 56px;
+    padding-top: 10px;
+    padding-right: 16px;
     color: #0f1b3d;
     font-weight: 800;
     text-align: right
 }
 
-.hour-line {
-    height: 1px
-}
-
-.timeline-appointment {
-    position: absolute;
-    left: 16px;
-    right: 0;
-    min-height: 98px
+.hour-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    min-height: 64px;
+    padding: 8px 0 8px 16px;
+    border-left: 1px solid #e7edf6
 }
 
 .appointment-card {
@@ -434,12 +428,13 @@
     left: 0;
     right: 0;
     border-top: 1px dashed #ef4444;
-    z-index: 5
+    z-index: 1;
+    pointer-events: none
 }
 
 .now-line span {
     position: absolute;
-    left: -58px;
+    left: -54px;
     top: -10px;
     background: #ef4444;
     color: #fff;
@@ -657,17 +652,56 @@
     font-weight: 900
 }
 
+.summary-card {
+    display: flex;
+    flex-direction: column
+}
+
+.summary-card h2 {
+    margin-bottom: 14px
+}
+
+
 .summary-line {
     display: flex;
     justify-content: space-between;
-    padding: 9px 0;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 0;
     border-bottom: 1px solid #edf1f6;
-    color: #4b5875
+     color: #34415e;
+    font-size: 14px;
+    letter-spacing: .01em
+}
+
+.summary-line span {
+    min-width: 0;
+    overflow-wrap: anywhere
+}
+
+.summary-line strong {
+    color: #253450;
+    font-weight: 800;
+    text-align: right
 }
 
 .summary-line.total {
+    padding-top: 0;
+    border-bottom: 0;
     color: #0f1b3d;
     font-weight: 900
+}
+
+.summary-line.total strong {
+    color: #0f1b3d;
+    font-size: 16px;
+    font-weight: 900
+}
+
+.summary-divider {
+    height: 1px;
+    margin: 2px 0 4px;
+    background: #dfe6f1
 }
 
 .legend-item {
@@ -727,13 +761,17 @@ select:focus-visible {
         display: flex
     }
 
-    .timeline-canvas {
-        margin-left: 54px
+    .hour-block {
+        grid-template-columns: 54px minmax(0, 1fr)
     }
 
     .time-label {
-        left: -54px;
-        width: 44px
+        padding-right: 10px;
+        font-size: 13px
+    }
+
+    .hour-content {
+        padding-left: 10px
     }
 
     .appointment-card,
@@ -759,7 +797,7 @@ select:focus-visible {
     }
 
     .now-line span {
-        left: -50px
+        left: -48px
     }
 
     .btn {

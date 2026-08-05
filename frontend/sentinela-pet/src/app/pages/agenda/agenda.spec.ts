@@ -25,16 +25,19 @@ function criarComponente(): Agenda {
 }
 
 describe('Agenda', () => {
-  it('calcula a posição por minuto para atendimento às 15:45 sem arredondar', () => {
+  it('agrupa atendimento às 15:45 no bloco numérico das 15:00 sem arredondar', () => {
     const component = criarComponente();
     component.dataSelecionada = '2026-08-05';
     component.agendamentos = [base];
 
+    const bloco = component.blocosHorariosDia.find((item) => item.hora === 15);
+
     expect(component.formatarHora(base.horaAtendimento)).toBe('15:45');
-    expect(parseFloat(component.estiloAgendamentoDia(base)['top'])).toBeCloseTo(1023);
+    expect(bloco?.label).toBe('15:00');
+    expect(bloco?.agendamentos.map((a) => a.id)).toEqual([base.id]);
   });
 
-  it('mantém atendimentos com minutos diferentes de zero na agenda do dia', () => {
+  it('mantém atendimentos com minutos diferentes de zero empilhados e ordenados por hora e id', () => {
     const component = criarComponente();
     component.dataSelecionada = '2026-08-05';
     component.agendamentos = [
@@ -43,14 +46,31 @@ describe('Agenda', () => {
       { ...base, id: 3, horaAtendimento: '15:45:00' },
     ];
 
-    expect(component.agendamentosDia.map((a) => component.formatarHora(a.horaAtendimento))).toEqual(['08:05', '10:30', '15:45']);
+    component.agendamentos.push(
+      { ...base, id: 5, horaAtendimento: '16:20:00' },
+      { ...base, id: 4, horaAtendimento: '16:20:00' },
+      { ...base, id: 6, horaAtendimento: '16:35:00' },
+    );
+
+    const bloco16 = component.blocosHorariosDia.find((item) => item.hora === 16);
+
+    expect(component.agendamentosDia.map((a) => component.formatarHora(a.horaAtendimento))).toContain('15:45');
+    expect(bloco16?.agendamentos.map((a) => `${component.formatarHora(a.horaAtendimento)}-${a.id}`)).toEqual(['16:20-4', '16:20-5', '16:35-6']);
   });
 
-  it('exibe REMARCADO_ORIGEM como AGENDAMENTO ANTERIOR sem alterar o valor da API', () => {
+  it('exibe todas as situações no resumo, inclusive zeros e REMARCADO_ORIGEM como AGENDAMENTO ANTERIOR', () => {
     const component = criarComponente();
+    component.agendamentos = [{ ...base, situacaoAtendimento: 'AGENDADO' }];
 
     expect(component.labelSituacao('REMARCADO_ORIGEM')).toBe('AGENDAMENTO ANTERIOR');
-    expect('REMARCADO_ORIGEM').toBe('REMARCADO_ORIGEM');
+    expect(component.resumoSituacoesCompleto.map((item) => `${item.label}:${item.total}`)).toEqual([
+      'AGENDADO:1',
+      'PRESENTE:0',
+      'FALTOU:0',
+      'REMARCADO:0',
+      'CANCELADO:0',
+      'AGENDAMENTO ANTERIOR:0',
+    ]);
   });
 
   it('controla exibição das ações principais no card', () => {
