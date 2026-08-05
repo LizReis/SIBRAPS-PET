@@ -2,10 +2,12 @@
 
   <section class="page-header">
     <div class="page-title">
-      <h1>Novo Agendamento</h1>
-      <p>Selecione o paciente, o profissional e o horário do atendimento.</p>
+      <h1>{{ modoRemarcacao ? 'Remarcar Atendimento' : 'Novo Agendamento' }}</h1>
+      <p>{{ modoRemarcacao ? 'Escolha a nova data, turno e horário sem alterar o original antes da confirmação.' : 'Selecione o paciente, o profissional e o horário do atendimento.' }}</p>
     </div>
   </section>
+
+  <div class="empty-inline" *ngIf="carregandoRemarcacao">Carregando dados da remarcação...</div>
 
   <div class="alert-erro" *ngIf="erroGeral">
     {{ erroGeral }}
@@ -82,6 +84,11 @@
   <section class="detail-card" *ngIf="turnoSelecionado">
     <h2 class="detail-card-title">3. Horário</h2>
 
+    <div class="sugestoes-remarcacao" *ngIf="modoRemarcacao && sugestoesRemarcacao.length > 0">
+      <span>Datas sugeridas:</span>
+      <button type="button" *ngFor="let data of sugestoesRemarcacao" (click)="dataSelecionada = data; onProfissionalOuDataAlterado()">{{ data }}</button>
+    </div>
+
     <div class="form-inline">
       <input type="time" [(ngModel)]="horaAtendimento" />
     </div>
@@ -96,7 +103,7 @@
     </button>
 
     <button type="button" class="btn btn-save" [disabled]="!podeConfirmar" (click)="confirmarAgendamento()">
-      {{ salvando ? 'Salvando...' : 'Confirmar Agendamento' }}
+      {{ salvando ? 'Salvando...' : (modoRemarcacao ? 'Confirmar Remarcação' : 'Confirmar Agendamento') }}
     </button>
   </section>
 

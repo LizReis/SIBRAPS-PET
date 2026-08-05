@@ -413,4 +413,21 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         return agendamentoMapper.toAgendamentoDTO(agendamento);
     }
 
+    @Override
+    public AgendamentoDTO findById(Long id, String emailLogado) {
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailLogado)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário logado não encontrado"));
+
+        Agendamento agendamento = agendamentoRepository.findByIdWithUsuarioAndPaciente(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado"));
+
+        if (usuarioLogado.getTipoUsuario() == TipoUsuario.PROFISSIONAL
+                && !agendamento.getUsuario().getIdPublico().equals(usuarioLogado.getIdPublico())) {
+            throw new ValidationException("Profissional não pode consultar a agenda de outro profissional.");
+        }
+
+        return agendamentoMapper.toAgendamentoDTO(agendamento);
+    }
+
+
 }

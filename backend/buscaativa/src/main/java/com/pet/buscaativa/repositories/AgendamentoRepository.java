@@ -17,6 +17,9 @@ import com.pet.buscaativa.entities.enums.TurnoEnum;
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
 
+    @Query("SELECT a FROM Agendamento a JOIN FETCH a.usuario JOIN FETCH a.paciente WHERE a.id = :id")
+    java.util.Optional<Agendamento> findByIdWithUsuarioAndPaciente(@Param("id") Long id);
+
     @Query("SELECT a FROM Agendamento a JOIN FETCH a.usuario JOIN FETCH a.paciente WHERE a.dataAgendamento = :dataAgendamento ORDER BY a.dataAgendamento, a.turnoAgendamento, a.horaAtendimento, a.id")
     List<Agendamento> findByDataAgendamento(@Param("dataAgendamento") LocalDate dataAgendamento);
 

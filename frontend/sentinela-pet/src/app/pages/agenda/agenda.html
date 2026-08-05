@@ -1,5 +1,4 @@
 
-
 <main class="agenda-page">
   <section class="page-header">
     <div class="page-title">
@@ -8,7 +7,13 @@
     </div>
   </section>
 
- 
+  <div class="loading-message" *ngIf="carregandoUsuarioLogado">
+    Carregando...
+  </div>
+
+  <div class="alert-erro" *ngIf="erroGeral">
+    {{ erroGeral }}
+  </div>
   <div class="loading-message" *ngIf="carregandoUsuarioLogado">Carregando...</div>
 
   <ng-container *ngIf="!carregandoUsuarioLogado">
@@ -44,6 +49,7 @@
       <button type="button" (click)="tentarNovamente()">Tentar novamente</button>
     </div>
 
+
     <section class="agenda-layout">
       <div class="agenda-main card">
         <header class="agenda-head">
@@ -51,7 +57,7 @@
             <h2>{{ periodoTitulo }}</h2>
             <p>{{ contagemTitulo }}</p>
           </div>
-
+      
           <nav class="period-nav" aria-label="Navegação do período">
             <button type="button" (click)="navegarPeriodo(-1)" aria-label="Período anterior">‹</button>
             <button type="button" class="today" (click)="irParaHoje()">Hoje</button>
@@ -63,36 +69,51 @@
         <div class="empty-message" *ngIf="!carregando && agendamentos.length === 0">{{ mensagemVazia }}</div>
 
         <section class="day-view" *ngIf="!carregando && visualizacao === 'dia' && agendamentos.length > 0">
-          <div class="now-line" *ngIf="mostrarIndicadorAtual" [style.top.%]="posicaoIndicadorAtual"><span>{{ formatarHora(horarioAtual.toTimeString()) }}</span></div>
-          <div class="time-row" *ngFor="let hora of horariosTimeline">
-            <div class="time-label">{{ hora }}</div>
-            <div class="time-slot">
-              <article class="appointment-card" *ngFor="let a of agendamentosPorHora(hora)">
-                <div class="appointment-main">
-                  <strong>{{ a.nomePaciente }}</strong>
-                  <span class="appointment-meta">
-                    <span>{{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}<ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container></span>
-                    <span class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">{{ labelSituacao(a.situacaoAtendimento) }}</span>
-                  </span>
-                </div>
-                <div class="actions" *ngIf="podeRegistrarFrequencia(a)">
-                  <button type="button" class="more" (click)="toggleMenu($event, a.id)" [attr.aria-label]="'Mais opções para ' + a.nomePaciente" [attr.aria-expanded]="menuAbertoId === a.id">•••</button>
-                  <div class="actions-menu" *ngIf="menuAbertoId === a.id" (click)="$event.stopPropagation()">
-                    <button type="button" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">Marcar como PRESENTE</button>
-                    <button type="button" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">Marcar como FALTOU</button>
-                  </div>
-                </div>
-              </article>
+          <div class="timeline-canvas" [style.height.px]="alturaTimeline">
+            <div class="now-line" *ngIf="mostrarIndicadorAtual" [style.top.px]="posicaoIndicadorAtualPx"><span>{{ formatarHora(horarioAtual.toTimeString()) }}</span></div>
+            <div class="hour-marker" *ngFor="let hora of horariosTimeline">
+              <div class="time-label">{{ hora }}</div>
+              <div class="hour-line"></div>
             </div>
+
+
+            <article class="appointment-card timeline-appointment" *ngFor="let a of agendamentosDia" [ngStyle]="estiloAgendamentoDia(a)" [attr.aria-busy]="atualizandoId === a.id">
+              <div class="appointment-time">{{ formatarHora(a.horaAtendimento) }}</div>
+              <div class="appointment-main">
+                <strong>{{ a.nomePaciente }}</strong>
+                <span class="appointment-meta-text">{{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}<ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container></span>
+                <span class="badge" [ngClass]="[classeSituacao(a.situacaoAtendimento), classePadraoSituacao(a.situacaoAtendimento)]" [attr.title]="descricaoSituacao(a.situacaoAtendimento) || null">{{ labelSituacao(a.situacaoAtendimento) }}</span>
+              </div>
+              <div class="appointment-actions" *ngIf="possuiAcoes(a)">
+                <button type="button" class="action-btn action-presente" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar presença de ' + a.nomePaciente">Presente</button>
+                <button type="button" class="action-btn action-faltou" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar falta de ' + a.nomePaciente">Faltou</button>
+                <button type="button" class="action-btn action-remarcar" *ngIf="podeRemarcar(a)" (click)="remarcar(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Remarcar atendimento de ' + a.nomePaciente" title="Remarcar atendimento"><span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Remarcar</button>
+              </div>
+            </article>
           </div>
         </section>
 
         <section class="week-view" *ngIf="!carregando && visualizacao === 'semana' && agendamentos.length > 0">
-          <article class="week-day" *ngFor="let dia of diasDaSemana">
-            <h3>{{ dia.titulo }} <span>{{ dia.subtitulo }}</span></h3>
+          <article class="week-day-row" *ngFor="let dia of diasDaSemana" [class.selected-day]="dia.iso === dataSelecionada" [class.today-day]="dia.iso === formatarDataISO(horarioAtual)">
+            <header class="week-day-header">
+              <div><h3>{{ dia.titulo }}</h3><span>{{ dia.subtitulo }}</span></div>
+              <strong>{{ dia.agendamentos.length }} atendimento{{ dia.agendamentos.length === 1 ? '' : 's' }}</strong>
+            </header>
             <p class="mini-empty" *ngIf="dia.agendamentos.length === 0">Sem atendimentos</p>
-            <div class="week-item" *ngFor="let a of dia.agendamentos">
-              <strong>{{ formatarHora(a.horaAtendimento) }}</strong><span>{{ a.nomePaciente }}</span><em class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">{{ a.situacaoAtendimento }}</em>
+            <div class="week-day-appointments" *ngIf="dia.agendamentos.length > 0">
+              <article class="appointment-card week-appointment" *ngFor="let a of dia.agendamentos" [attr.aria-busy]="atualizandoId === a.id">
+                <div class="appointment-time">{{ formatarHora(a.horaAtendimento) }}</div>
+                <div class="appointment-main">
+                  <strong>{{ a.nomePaciente }}</strong>
+                  <span class="appointment-meta-text">{{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}<ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container></span>
+                  <span class="badge" [ngClass]="[classeSituacao(a.situacaoAtendimento), classePadraoSituacao(a.situacaoAtendimento)]" [attr.title]="descricaoSituacao(a.situacaoAtendimento) || null">{{ labelSituacao(a.situacaoAtendimento) }}</span>
+                </div>
+                <div class="appointment-actions" *ngIf="possuiAcoes(a)">
+                  <button type="button" class="action-btn action-presente" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">Presente</button>
+                  <button type="button" class="action-btn action-faltou" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">Faltou</button>
+                  <button type="button" class="action-btn action-remarcar" *ngIf="podeRemarcar(a)" (click)="remarcar(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Remarcar atendimento de ' + a.nomePaciente"><span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Remarcar</button>
+                </div>
+              </article>
             </div>
           </article>
         </section>
@@ -102,7 +123,7 @@
           <button type="button" class="month-cell" *ngFor="let dia of gradeMes" [class.outside]="dia.foraDoMes" [class.selected]="dia.selecionado" (click)="selecionarDiaDoMes(dia.iso)">
             <strong>{{ dia.dia }}</strong>
             <span class="count" *ngIf="dia.agendamentos.length">{{ dia.agendamentos.length }} atendimento{{ dia.agendamentos.length === 1 ? '' : 's' }}</span>
-            <span class="month-item" *ngFor="let a of dia.agendamentos.slice(0, 2)"><i [ngClass]="classeSituacao(a.situacaoAtendimento)"></i>{{ formatarHora(a.horaAtendimento) }} {{ a.nomePaciente }}</span>
+            <span class="month-item" *ngFor="let a of dia.agendamentos.slice(0, 2)"><i [ngClass]="[classeSituacao(a.situacaoAtendimento), classePadraoSituacao(a.situacaoAtendimento)]"></i>{{ formatarHora(a.horaAtendimento) }} {{ a.nomePaciente }}</span>
             <span class="more-count" *ngIf="dia.agendamentos.length > 2">+{{ dia.agendamentos.length - 2 }} atendimentos</span>
           </button>
         </section>
@@ -118,12 +139,12 @@
         <section class="card summary-card">
           <h2>{{ resumoTitulo }}</h2>
           <div class="summary-line total"><span>Total de atendimentos</span><strong>{{ agendamentos.length }}</strong></div>
-          <div class="summary-line" *ngFor="let item of resumoSituacoes()"><span>{{ item.situacao }}</span><strong>{{ item.total }}</strong></div>
+          <div class="summary-line" *ngFor="let item of resumoSituacoes()"><span>{{ labelSituacao(item.situacao) }}</span><strong>{{ item.total }}</strong></div>
         </section>
 
         <section class="card legend-card">
           <h2>Legenda</h2>
-          <div class="legend-item" *ngFor="let situacao of situacoesLegenda"><i [ngClass]="classeSituacao(situacao)"></i><span>{{ situacao }}</span></div>
+          <div class="legend-item" *ngFor="let situacao of situacoesLegenda" [attr.title]="descricaoSituacao(situacao) || null"><i [ngClass]="[classeSituacao(situacao), classePadraoSituacao(situacao)]"></i><span>{{ labelSituacao(situacao) }}</span></div>
         </section>
       </aside>
     </section>

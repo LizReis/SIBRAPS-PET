@@ -218,161 +218,220 @@
     position: relative
 }
 
-.time-row {
-    display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
-    min-height: 74px;
-    border-bottom: 1px solid #edf1f6
+.timeline-canvas {
+    position: relative;
+    margin-left: 72px
+}
+
+.hour-marker {
+    position: relative;
+    height: 132px;
+    border-top: 1px solid #edf1f6
+}
+
+.hour-marker:last-of-type {
+    height: 0
 }
 
 .time-label {
-    padding-top: 16px;
+    position: absolute;
+    left: -72px;
+    top: -9px;
+    width: 56px;
     color: #0f1b3d;
-    font-weight: 700
+    font-weight: 800;
+    text-align: right
 }
 
-.time-slot {
-    border-left: 2px solid #e7edf6;
-    padding: 10px 0 10px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px
+.hour-line {
+    height: 1px
+}
+
+.timeline-appointment {
+    position: absolute;
+    left: 16px;
+    right: 0;
+    min-height: 98px
 }
 
 .appointment-card {
-    position: relative;
-    display: flex;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
     align-items: center;
     gap: 14px;
-    justify-content: space-between;
     background: #fbfcfe;
     border: 1px solid #e8eef6;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 14px 16px;
     box-shadow: 0 4px 12px rgba(15, 35, 80, .04);
-    z-index: 1
+    z-index: 2
+}
+
+.appointment-time {
+    color: #004aad;
+    font-size: 16px;
+    font-weight: 900
 }
 
 .appointment-main {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 7px;
     min-width: 0
 }
 
 .appointment-main strong {
-    color: #101936
+    color: #101936;
+    font-size: 16px;
+    overflow-wrap: anywhere
 }
 
-.appointment-main span {
-    color: #53627d
-}
-
-.appointment-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap
-}
-
-.appointment-meta .badge {
-    font-size: 11px;
-    padding: 5px 10px
+.appointment-meta-text {
+    color: #53627d;
+    font-size: 13px;
+    overflow-wrap: anywhere
 }
 
 .badge {
     display: inline-flex;
     align-items: center;
+    gap: 6px;
+    width: max-content;
     white-space: nowrap;
     border-radius: 999px;
+    border: 1px solid currentColor;
     padding: 6px 12px;
     font-size: 12px;
     font-style: normal;
-    font-weight: 900
+    font-weight: 900;
+    position: relative;
+    overflow: hidden
+}
+
+.badge::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: 0 0 auto
 }
 
 .status-presente {
-    background: #dcfce7;
-    color: #166534
+    background: #bbf7d0;
+    color: #14532d
 }
 
 .status-agendado {
-    background: #dff0ff;
-    color: #004aad
+    background: #bfdbfe;
+    color: #1d4ed8
 }
 
 .status-faltou {
-    background: #fee2e2;
+    background: #fecaca;
     color: #991b1b
 }
 
 .status-remarcado {
-    background: #ffedd5;
+    background: #fed7aa;
     color: #9a3412
 }
 
 .status-cancelado {
-    background: #e5e7eb;
-    color: #374151
+    background: #d1d5db;
+    color: #1f2937
 }
 
 .status-remarcado-origem {
-    background: #ede9fe;
-    color: #5b21b6
+    background: #ddd6fe;
+    color: #4c1d95
 }
 
 .status-neutro {
-    background: #eef2f7;
-    color: #475569
+    background: #e2e8f0;
+    color: #334155
 }
 
-.actions {
-    position: relative
+.pattern-presente {
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, .28) 25%, transparent 25%)
 }
 
-.more {
-    border: 0;
-    background: transparent;
-    color: #0f1b3d;
-    font-size: 18px;
+.pattern-agendado {
+    background-image: repeating-linear-gradient(45deg, rgba(29, 78, 216, .18) 0 4px, transparent 4px 8px)
+}
+
+.pattern-faltou {
+    background-image: repeating-linear-gradient(45deg, rgba(153, 27, 27, .16) 0 3px, transparent 3px 7px), repeating-linear-gradient(-45deg, rgba(153, 27, 27, .12) 0 3px, transparent 3px 7px)
+}
+
+.pattern-remarcado {
+    background-image: radial-gradient(rgba(154, 52, 18, .26) 1.4px, transparent 1.4px);
+    background-size: 7px 7px
+}
+
+.pattern-cancelado {
+    background-image: repeating-linear-gradient(0deg, rgba(31, 41, 55, .16) 0 3px, transparent 3px 7px)
+}
+
+.pattern-remarcado-origem {
+    background-image: linear-gradient(45deg, rgba(76, 29, 149, .18) 25%, transparent 25%), linear-gradient(-45deg, rgba(76, 29, 149, .18) 25%, transparent 25%);
+    background-size: 8px 8px
+}
+
+.appointment-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px
+}
+
+.action-btn {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    min-height: 38px;
+    padding: 0 12px;
     font-weight: 900;
-    letter-spacing: 2px;
-    cursor: pointer
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px
 }
 
-.actions-menu {
-    position: absolute;
-    right: 0;
-    top: 34px;
-    min-width: 190px;
-    background: #fff;
-    border: 1px solid #dfe6f1;
-    border-radius: 12px;
-    box-shadow: 0 16px 32px rgba(11, 31, 68, .16);
-    padding: 8px;
-    z-index: 20
+.action-btn .material-symbols-outlined {
+    font-size: 18px
 }
 
-.actions-menu button {
-    display: block;
-    width: 100%;
-    border: 0;
-    background: #fff;
-    text-align: left;
-    padding: 10px;
-    border-radius: 8px;
-    color: #17213d;
-    font-weight: 700;
-    cursor: pointer
+.action-presente {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac
 }
 
-.actions-menu button:hover {
-    background: #f0f6ff
+.action-faltou {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5
+}
+
+.action-remarcar {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #93c5fd
+}
+
+.action-btn:hover:not(:disabled) {
+    filter: brightness(.97);
+    transform: translateY(-1px)
+}
+
+.action-btn:disabled {
+    opacity: .55;
+    cursor: not-allowed
 }
 
 .now-line {
     position: absolute;
-    left: 72px;
+    left: 0;
     right: 0;
     border-top: 1px dashed #ef4444;
     z-index: 5
@@ -380,7 +439,7 @@
 
 .now-line span {
     position: absolute;
-    left: -46px;
+    left: -58px;
     top: -10px;
     background: #ef4444;
     color: #fff;
@@ -390,49 +449,68 @@
 }
 
 .week-view {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(130px, 1fr));
-    gap: 10px;
-    overflow: auto
+    display: flex;
+    flex-direction: column;
+    gap: 14px
 }
 
-.week-day {
+.week-day-row {
     background: #fbfcfe;
     border: 1px solid #e8eef6;
-    border-radius: 14px;
-    padding: 12px;
-    min-height: 220px
+    border-radius: 16px;
+    padding: 14px
 }
 
-.week-day h3 {
-    margin: 0 0 12px;
+.week-day-row.selected-day {
+    box-shadow: inset 4px 0 #004aad
+}
+
+.week-day-row.today-day .week-day-header h3::after {
+    content: "Hoje";
+    font-size: 11px;
+    margin-left: 8px;
+    background: #e0f2fe;
+    color: #075985;
+    border-radius: 999px;
+    padding: 3px 7px
+}
+
+.week-day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px
+}
+
+.week-day-header h3 {
+    margin: 0;
     text-transform: capitalize
 }
 
-.week-day h3 span {
-    display: block;
+.week-day-header span {
     color: #64748b;
-    font-size: 13px
+    font-weight: 700
 }
 
-.week-item {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 6px;
-    margin-bottom: 8px;
-    padding: 8px;
-    border-radius: 10px;
-    background: #fff;
-    border: 1px solid #edf1f6
+.week-day-header strong {
+    color: #004aad
 }
 
-.week-item .badge {
-    grid-column: 1/-1;
-    width: max-content
+.week-day-appointments {
+    display: flex;
+    flex-direction: column;
+    gap: 10px
+}
+
+.week-appointment {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    background: #fff
 }
 
 .mini-empty {
-    color: #94a3b8
+    color: #64748b;
+    margin: 8px 0
 }
 
 .month-view {
@@ -498,11 +576,13 @@
 .month-item i,
 .legend-item i {
     display: inline-block;
-    width: 9px;
-    height: 9px;
+    width: 15px;
+    height: 15px;
     border-radius: 50%;
     padding: 0;
-    margin-right: 6px
+    margin-right: 8px;
+    border: 2px solid currentColor;
+    vertical-align: -2px
 }
 
 .agenda-sidebar {
@@ -596,7 +676,7 @@
     gap: 8px;
     margin-top: 12px;
     color: #34415e;
-    font-weight: 700
+    font-weight: 800
 }
 
 button:focus-visible,
@@ -647,22 +727,39 @@ select:focus-visible {
         display: flex
     }
 
-    .time-row {
-        grid-template-columns: 54px minmax(0, 1fr)
+    .timeline-canvas {
+        margin-left: 54px
     }
 
-    .appointment-card {
+    .time-label {
+        left: -54px;
+        width: 44px
+    }
+
+    .appointment-card,
+    .week-appointment {
+        grid-template-columns: 1fr
+    }
+
+    .appointment-actions {
+        justify-content: flex-start
+    }
+
+    .action-btn {
+        min-height: 42px
+    }
+
+    .week-day-header {
         align-items: flex-start;
-        flex-wrap: wrap
+        flex-direction: column
     }
 
-    .week-view,
     .month-view {
         grid-template-columns: repeat(7, 150px)
     }
 
-    .now-line {
-        left: 54px
+    .now-line span {
+        left: -50px
     }
 
     .btn {

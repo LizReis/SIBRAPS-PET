@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { PacientePayload, PacienteService } from '../../services/paciente/paciente-service';
 import {
@@ -44,20 +44,48 @@ export class NovoAgendamento implements OnInit {
   // Passo 4: horário
   horaAtendimento = '';
 
+  agendamentoOriginalId: number | null = null;
+  carregandoRemarcacao = false;
+  sugestoesRemarcacao: string[] = [];
+
   salvando = false;
   erroGeral: string | null = null;
   errosPorCampo: Record<string, string> = {};
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private pacienteService: PacienteService,
     private profissionalService: ProfissionalService,
     private agendamentoService: AgendamentoService,
   ) {}
 
   ngOnInit(): void {
+    this.agendamentoOriginalId = Number(this.route.snapshot.queryParamMap.get('agendamentoOriginalId')) || null;
     this.carregarProfissionais();
+    if (this.agendamentoOriginalId) {
+      this.carregarAgendamentoOriginal(this.agendamentoOriginalId);
+    }
   }
+  carregarAgendamentoOriginal(id: number): void {
+    this.carregandoRemarcacao = true;
+    this.agendamentoService.buscarPorId(id).subscribe({
+      next: (agendamento) => {
+        this.pacienteSelecionado = { idPublico: agendamento.pacienteId, nome: agendamento.nomePaciente, tipoAcompanhamento: agendamento.tipoAcompanhamento } as PacientePayload;
+        this.profissionalSelecionadoId = agendamento.usuarioId;
+        this.turnoSelecionado = agendamento.turnoAgendamento;
+        this.carregandoRemarcacao = false;
+        this.agendamentoService.sugerirDatasRemarcacao(id).subscribe({ next: (datas) => this.sugestoesRemarcacao = datas, error: () => this.sugestoesRemarcacao = [] });
+      },
+      error: (erro) => {
+        console.error('Erro ao carregar agendamento original', erro);
+        this.erroGeral = 'Não foi possível carregar o agendamento original para remarcação.';
+        this.carregandoRemarcacao = false;
+      },
+    });
+  }
+
+  get modoRemarcacao(): boolean { return this.agendamentoOriginalId !== null; }
 
   carregarProfissionais(): void {
     this.profissionalService.listar().subscribe({
@@ -164,6 +192,7 @@ export class NovoAgendamento implements OnInit {
       dataAgendamento: this.dataSelecionada,
       turnoAgendamento: this.turnoSelecionado!,
       horaAtendimento: this.horaAtendimento,
+      agendamentoOriginalId: this.agendamentoOriginalId ?? undefined,
     };
 
     this.agendamentoService.criarAgendamento(payload).subscribe({

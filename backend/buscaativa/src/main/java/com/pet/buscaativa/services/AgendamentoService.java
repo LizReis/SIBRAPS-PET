@@ -15,6 +15,8 @@ public interface AgendamentoService {
 
     AgendamentoDTO save(AgendamentoDTO agendamentoDTO);
 
+    AgendamentoDTO findById(Long id, String emailLogado);
+
     List<LocalDate> sugerirDataRemarcacao(Long agendamento);
 
     Map<TurnoEnum, Integer> calcularVagasDisponiveis(UUID usuarioIdPublico, LocalDate data);

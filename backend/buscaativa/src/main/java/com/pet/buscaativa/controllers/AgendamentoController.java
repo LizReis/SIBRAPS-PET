@@ -47,6 +47,13 @@ public class AgendamentoController {
         return ResponseEntity.created(uri).body(agendamentoCriado);
     }
 
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
+    @GetMapping("/{id}")
+    public ResponseEntity<AgendamentoDTO> buscarPorId(@PathVariable Long id) {
+        String emailLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(agendamentoService.findById(id, emailLogado));
+    }
+
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO')")
     @GetMapping("/{id}/remarcacao")
     public ResponseEntity<List<LocalDate>> sugerirRemarcacao(@PathVariable Long id) {
