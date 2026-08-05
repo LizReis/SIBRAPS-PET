@@ -64,6 +64,18 @@ public class AgendamentoController {
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
+    @GetMapping("/agenda")
+    public ResponseEntity<List<AgendamentoDTO>> buscarAgendaPorPeriodo(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) UUID profissionalId) {
+
+        String emailLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        return ResponseEntity.ok(agendamentoService.buscarAgendaPorPeriodo(dataInicio, dataFim, emailLogado, profissionalId));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @GetMapping("/agenda/{data}")
     public ResponseEntity<List<AgendamentoDTO>> buscarAgendaDoDia(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,

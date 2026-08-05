@@ -64,6 +64,14 @@ export class AgendamentoService {
     return this.http.get<AgendamentoDTO[]>(`${this.apiUrl}/agenda/${data}`, { params });
   }
 
+  buscarAgendaPorPeriodo(dataInicio: string, dataFim: string, profissionalId?: string): Observable<AgendamentoDTO[]> {
+    let params = new HttpParams().set('dataInicio', dataInicio).set('dataFim', dataFim);
+    if (profissionalId) {
+      params = params.set('profissionalId', profissionalId);
+    }
+    return this.http.get<AgendamentoDTO[]>(`${this.apiUrl}/agenda`, { params });
+  }
+
   atualizarStatus(id: number, novoStatus: string, version: number): Observable<AgendamentoDTO> {
     const params = new HttpParams().set('novoStatus', novoStatus).set('version', String(version));
 

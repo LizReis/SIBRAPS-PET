@@ -1,337 +1,671 @@
-* {
-  box-sizing: border-box;
+.agenda-page {
+    padding: 56px clamp(20px, 4vw, 64px);
+    background: #f4f7fb;
+    min-height: 100%;
+    color: #0f1b3d
 }
 
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-}
-
-/* CABEÇALHO */
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 24px
 }
 
 .page-title h1 {
-  font-size: 28px;
-  color: #0f172a;
-  margin-bottom: 6px;
+    margin: 0 0 8px;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0b163f
 }
 
 .page-title p {
-  color: #64748b;
-  font-size: 15px;
+    margin: 0;
+    color: #53627d
 }
 
-.header-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+.toolbar-card,
+.card {
+    background: #fff;
+    border: 1px solid #e4eaf3;
+    border-radius: 18px;
+    box-shadow: 0 14px 34px rgba(11, 31, 68, .08)
 }
 
-/* BOTÃO BASE */
+.toolbar-card {
+    display: flex;
+    align-items: end;
+    gap: 22px;
+    padding: 22px;
+    margin-bottom: 24px
+}
+
+.field,
+.view-switch {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #5a6680;
+    font-weight: 600;
+    font-size: 13px
+}
+
+.field-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 46px;
+    border: 1px solid #d8e1ef;
+    border-radius: 10px;
+    padding: 0 12px;
+    background: #fbfdff
+}
+
+.field-control .material-symbols-outlined {
+    font-size: 20px;
+    color: #004aad
+}
+
+.field-control select {
+    border: 0;
+    background: transparent;
+    min-width: 260px;
+    outline: 0;
+    color: #101936;
+    font-weight: 700
+}
+
+.field-control strong {
+    color: #101936
+}
+
+.segmented {
+    display: flex;
+    background: #f0f4fa;
+    border: 1px solid #dfe6f1;
+    border-radius: 10px;
+    padding: 3px
+}
+
+.segmented button {
+    border: 0;
+    background: transparent;
+    padding: 11px 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    color: #1b2948;
+    cursor: pointer
+}
+
+.segmented button.active {
+    background: #004aad;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(0, 74, 173, .22)
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto
+}
+
 .btn {
-  border: none;
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-  white-space: nowrap;
-}
-
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+    border: 0;
+    border-radius: 10px;
+    padding: 13px 20px;
+    font-weight: 800;
+    cursor: pointer
 }
 
 .btn-config {
-  background: #f1f5f9;
-  color: #334155;
-}
-
-.btn-config:hover {
-  background: #e2e8f0;
+    background: #eef3fa;
+    color: #1b2948
 }
 
 .btn-new {
-  background: #003fa3;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 63, 163, 0.25);
+    background: #004aad;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(0, 74, 173, .24)
 }
 
-.btn-new:hover {
-  background: #001f52;
+.agenda-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 22px
 }
 
-/* ÁREA DE FILTROS */
-.search-area {
-  background: #ffffff;
-  padding: 18px;
-  border-radius: 14px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+.agenda-main {
+    padding: 22px;
+    position: relative;
+    overflow: visible
 }
 
-.filtro-data {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.agenda-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    border-bottom: 1px solid #edf1f6;
+    padding-bottom: 18px;
+    margin-bottom: 18px
 }
 
-.filtro-data input[type='date'] {
-  padding: 12px 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  font-size: 14px;
-  outline: none;
+.agenda-head h2 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    text-transform: capitalize
 }
 
-.btn-nav {
-  background: #f1f5f9;
-  color: #334155;
-  border: none;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
+.agenda-head p {
+    margin: 0;
+    color: #65718a
 }
 
-.btn-nav:hover {
-  background: #e2e8f0;
+.period-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px
 }
 
-.btn-hoje {
-  background: #e0f2fe;
-  color: #003fa3;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
+.period-nav button,
+.calendar-card header button {
+    border: 0;
+    background: #eef4fb;
+    color: #0d2454;
+    border-radius: 10px;
+    min-width: 38px;
+    height: 38px;
+    font-weight: 900;
+    cursor: pointer
 }
 
-.btn-hoje:hover {
-  background: #bae6fd;
-}
-
-.filtro-profissional select {
-  padding: 12px 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  font-size: 14px;
-  min-width: 220px;
-  outline: none;
-}
-
-/* CARDS DE AGENDA */
-.detail-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 22px 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-  border-left: 5px solid #003fa3;
-}
-
-.detail-card-title {
-  font-size: 18px;
-  color: #0f172a;
-  font-weight: bold;
-  margin-bottom: 16px;
-}
-
-.lista-agendamentos {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.agendamento-linha {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #f8fafc;
-  padding: 14px 16px;
-  border-radius: 10px;
-  flex-wrap: wrap;
-}
-
-.agendamento-hora {
-  font-size: 15px;
-  font-weight: bold;
-  color: #003fa3;
-  min-width: 55px;
-}
-
-.agendamento-info {
-  flex: 1;
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.agendamento-info strong {
-  font-size: 15px;
-  color: #0f172a;
-}
-
-.agendamento-detalhe {
-  font-size: 13px;
-  color: #64748b;
-}
-
-/* BADGES DE SITUAÇÃO */
-.badge {
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: bold;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.badge-agendado {
-  background: #e0f2fe;
-  color: #0369a1;
-}
-
-.badge-presente {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.badge-faltou {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.badge-remarcado,
-.badge-remarcado-origem {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.badge-cancelado {
-  background: #e2e8f0;
-  color: #64748b;
-}
-
-/* AÇÕES DE PRESENÇA/FALTA */
-.agendamento-acoes {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-presenca,
-.btn-falta {
-  border: none;
-  padding: 9px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-  white-space: nowrap;
-}
-
-.btn-presenca:disabled,
-.btn-falta:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-presenca {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.btn-presenca:hover:not(:disabled) {
-  background: #bbf7d0;
-}
-
-.btn-falta {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.btn-falta:hover:not(:disabled) {
-  background: #fecaca;
-}
-
-/* ALERTAS E ESTADOS */
-.alert-erro {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  border-left: 5px solid #dc2626;
-  padding: 14px 16px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  font-weight: 500;
+.period-nav .today {
+    padding: 0 16px;
+    background: #dff0ff;
+    color: #004aad
 }
 
 .loading-message,
-.empty-message {
-  text-align: center;
-  background: #ffffff;
-  padding: 30px;
-  border-radius: 14px;
-  color: #64748b;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+.empty-message,
+.alert-erro {
+    padding: 18px;
+    border-radius: 14px;
+    background: #eef5ff;
+    color: #0b4aa2;
+    font-weight: 700
 }
 
-/* RESPONSIVO */
-@media (max-width: 700px) {
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.alert-erro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    background: #fff1f2;
+    color: #9f1239
+}
 
-  .header-actions {
-    flex-direction: column;
-  }
+.alert-erro button {
+    border: 1px solid #fecdd3;
+    background: #fff;
+    border-radius: 9px;
+    padding: 8px 12px;
+    color: #9f1239;
+    font-weight: 800
+}
 
-  .search-area {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.day-view {
+    position: relative
+}
 
-  .filtro-profissional select {
+.time-row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    min-height: 74px;
+    border-bottom: 1px solid #edf1f6
+}
+
+.time-label {
+    padding-top: 16px;
+    color: #0f1b3d;
+    font-weight: 700
+}
+
+.time-slot {
+    border-left: 2px solid #e7edf6;
+    padding: 10px 0 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px
+}
+
+.appointment-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    justify-content: space-between;
+    background: #fbfcfe;
+    border: 1px solid #e8eef6;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 4px 12px rgba(15, 35, 80, .04);
+    z-index: 1
+}
+
+.appointment-main {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0
+}
+
+.appointment-main strong {
+    color: #101936
+}
+
+.appointment-main span {
+    color: #53627d
+}
+
+.appointment-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap
+}
+
+.appointment-meta .badge {
+    font-size: 11px;
+    padding: 5px 10px
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 900
+}
+
+.status-presente {
+    background: #dcfce7;
+    color: #166534
+}
+
+.status-agendado {
+    background: #dff0ff;
+    color: #004aad
+}
+
+.status-faltou {
+    background: #fee2e2;
+    color: #991b1b
+}
+
+.status-remarcado {
+    background: #ffedd5;
+    color: #9a3412
+}
+
+.status-cancelado {
+    background: #e5e7eb;
+    color: #374151
+}
+
+.status-remarcado-origem {
+    background: #ede9fe;
+    color: #5b21b6
+}
+
+.status-neutro {
+    background: #eef2f7;
+    color: #475569
+}
+
+.actions {
+    position: relative
+}
+
+.more {
+    border: 0;
+    background: transparent;
+    color: #0f1b3d;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    cursor: pointer
+}
+
+.actions-menu {
+    position: absolute;
+    right: 0;
+    top: 34px;
+    min-width: 190px;
+    background: #fff;
+    border: 1px solid #dfe6f1;
+    border-radius: 12px;
+    box-shadow: 0 16px 32px rgba(11, 31, 68, .16);
+    padding: 8px;
+    z-index: 20
+}
+
+.actions-menu button {
+    display: block;
     width: 100%;
-  }
+    border: 0;
+    background: #fff;
+    text-align: left;
+    padding: 10px;
+    border-radius: 8px;
+    color: #17213d;
+    font-weight: 700;
+    cursor: pointer
+}
 
-  .agendamento-linha {
+.actions-menu button:hover {
+    background: #f0f6ff
+}
+
+.now-line {
+    position: absolute;
+    left: 72px;
+    right: 0;
+    border-top: 1px dashed #ef4444;
+    z-index: 5
+}
+
+.now-line span {
+    position: absolute;
+    left: -46px;
+    top: -10px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-size: 12px
+}
+
+.week-view {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(130px, 1fr));
+    gap: 10px;
+    overflow: auto
+}
+
+.week-day {
+    background: #fbfcfe;
+    border: 1px solid #e8eef6;
+    border-radius: 14px;
+    padding: 12px;
+    min-height: 220px
+}
+
+.week-day h3 {
+    margin: 0 0 12px;
+    text-transform: capitalize
+}
+
+.week-day h3 span {
+    display: block;
+    color: #64748b;
+    font-size: 13px
+}
+
+.week-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #edf1f6
+}
+
+.week-item .badge {
+    grid-column: 1/-1;
+    width: max-content
+}
+
+.mini-empty {
+    color: #94a3b8
+}
+
+.month-view {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(110px, 1fr));
+    gap: 8px;
+    overflow: auto
+}
+
+.month-weekdays {
+    display: contents
+}
+
+.month-weekdays span {
+    font-weight: 900;
+    text-align: center;
+    color: #64748b
+}
+
+.month-cell {
+    min-height: 126px;
+    text-align: left;
+    background: #fbfcfe;
+    border: 1px solid #e8eef6;
+    border-radius: 12px;
+    padding: 10px;
+    cursor: pointer;
+    color: #111827;
+    overflow: hidden
+}
+
+.month-cell.outside {
+    opacity: .46
+}
+
+.month-cell.selected {
+    outline: 2px solid #004aad
+}
+
+.month-cell strong {
+    display: block;
+    margin-bottom: 4px
+}
+
+.count,
+.more-count {
+    display: block;
+    color: #004aad;
+    font-weight: 800;
+    font-size: 12px
+}
+
+.month-item {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    color: #475569;
+    margin-top: 4px
+}
+
+.month-item i,
+.legend-item i {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    padding: 0;
+    margin-right: 6px
+}
+
+.agenda-sidebar {
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
-  }
+    gap: 16px
+}
 
-  .agendamento-acoes {
-    width: 100%;
-  }
+.calendar-card,
+.summary-card,
+.legend-card {
+    padding: 18px
+}
 
-  .btn-presenca,
-  .btn-falta {
-    flex: 1;
-  }
+.calendar-card header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px
+}
+
+.calendar-card h2,
+.summary-card h2,
+.legend-card h2 {
+    font-size: 17px;
+    margin: 0;
+    text-transform: capitalize
+}
+
+.calendar-weekdays,
+.calendar-card {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px
+}
+
+.calendar-card header {
+    grid-column: 1/-1
+}
+
+.calendar-weekdays {
+    grid-column: 1/-1
+}
+
+.calendar-weekdays span {
+    text-align: center;
+    color: #64748b;
+    font-weight: 800;
+    font-size: 12px
+}
+
+.calendar-day {
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #17213d;
+    cursor: pointer
+}
+
+.calendar-day.outside {
+    color: #a8b2c4
+}
+
+.calendar-day.today {
+    box-shadow: inset 0 0 0 1px #004aad
+}
+
+.calendar-day.selected {
+    background: #004aad;
+    color: #fff;
+    font-weight: 900
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid #edf1f6;
+    color: #4b5875
+}
+
+.summary-line.total {
+    color: #0f1b3d;
+    font-weight: 900
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    color: #34415e;
+    font-weight: 700
+}
+
+button:focus-visible,
+select:focus-visible {
+    outline: 3px solid rgba(0, 74, 173, .35);
+    outline-offset: 2px
+}
+
+@media(max-width:1100px) {
+    .agenda-layout {
+        grid-template-columns: 1fr
+    }
+
+    .agenda-sidebar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr)
+    }
+}
+
+@media(max-width:760px) {
+    .agenda-page {
+        padding: 28px 14px
+    }
+
+    .toolbar-card,
+    .page-header,
+    .agenda-head {
+        flex-direction: column;
+        align-items: stretch
+    }
+
+    .toolbar-actions {
+        margin-left: 0;
+        flex-wrap: wrap
+    }
+
+    .field-control select {
+        min-width: 0;
+        width: 100%
+    }
+
+    .segmented button {
+        flex: 1;
+        padding: 11px 14px
+    }
+
+    .agenda-sidebar {
+        display: flex
+    }
+
+    .time-row {
+        grid-template-columns: 54px minmax(0, 1fr)
+    }
+
+    .appointment-card {
+        align-items: flex-start;
+        flex-wrap: wrap
+    }
+
+    .week-view,
+    .month-view {
+        grid-template-columns: repeat(7, 150px)
+    }
+
+    .now-line {
+        left: 54px
+    }
+
+    .btn {
+        flex: 1
+    }
 }

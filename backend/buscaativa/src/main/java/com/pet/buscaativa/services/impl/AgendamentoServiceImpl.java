@@ -47,6 +47,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AgendamentoServiceImpl implements AgendamentoService {
 
+    private static final long LIMITE_DIAS_CONSULTA_AGENDA = 62;
+
     private final AgendamentoRepository agendamentoRepository;
     private final BloqueioAgendaRepository bloqueioAgendaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -319,23 +321,36 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
     @Override
     public List<AgendamentoDTO> buscarAgendaDoDia(LocalDate data, String emailLogado, UUID profissionalIdPublico) {
+       return buscarAgendaPorPeriodo(data, data, emailLogado, profissionalIdPublico);
+    }
+
+    @Override
+    public List<AgendamentoDTO> buscarAgendaPorPeriodo(LocalDate dataInicio, LocalDate dataFim, String emailLogado,
+                                                       UUID profissionalIdPublico) {
+        if (dataInicio.isAfter(dataFim)) {
+            throw new ValidationException("A data inicial não pode ser posterior à data final.");
+        }
+        if (dataInicio.plusDays(LIMITE_DIAS_CONSULTA_AGENDA).isBefore(dataFim)) {
+            throw new ValidationException("O intervalo da agenda não pode ultrapassar 62 dias.");
+        }
+
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailLogado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário logado não encontrado"));
 
-        List<Agendamento> agendamentos;
-
+        Usuario profissionalAlvo = null;
         if (usuarioLogado.getTipoUsuario() == TipoUsuario.PROFISSIONAL) {
-            agendamentos = agendamentoRepository.findByDataAgendamentoAndUsuario(data, usuarioLogado);
-        } else {
-            if (profissionalIdPublico != null) {
-                Usuario profissionalAlvo = usuarioRepository.findByIdPublico(profissionalIdPublico)
-                        .orElseThrow(() -> new ResourceNotFoundException("Profissional não encontrado"));
-
-                agendamentos = agendamentoRepository.findByDataAgendamentoAndUsuario(data, profissionalAlvo);
-            } else {
-                agendamentos = agendamentoRepository.findByDataAgendamento(data);
+            if (profissionalIdPublico != null && !profissionalIdPublico.equals(usuarioLogado.getIdPublico())) {
+                throw new ValidationException("Profissional não pode consultar a agenda de outro profissional.");
             }
+            profissionalAlvo = usuarioLogado;
+        } else if (profissionalIdPublico != null) {
+            profissionalAlvo = usuarioRepository.findByIdPublico(profissionalIdPublico)
+                    .orElseThrow(() -> new ResourceNotFoundException("Profissional não encontrado"));
         }
+
+        List<Agendamento> agendamentos = profissionalAlvo != null
+                ? agendamentoRepository.findAgendaByUsuarioAndDataAgendamentoBetween(profissionalAlvo, dataInicio, dataFim)
+                : agendamentoRepository.findAgendaByDataAgendamentoBetween(dataInicio, dataFim);
 
         return agendamentos.stream()
                 .filter(a -> a.getPaciente() != null && a.getPaciente().getStatusPaciente() == StatusPaciente.ATIVO)

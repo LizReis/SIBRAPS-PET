@@ -1,133 +1,132 @@
-<main class="container">
 
+
+<main class="agenda-page">
   <section class="page-header">
     <div class="page-title">
       <h1>Agenda do Dia</h1>
-      <p>Acompanhe os atendimentos agendados e registre presença ou falta.</p>
-    </div>
-
-    <div class="header-actions">
-      <button class="btn btn-config" routerLink="/agenda/configuracoes" *ngIf="podeConfigurarAgenda">
-        Configurar Agenda
-      </button>
-
-      <button class="btn btn-new" routerLink="/agenda/novo" *ngIf="podeCriarAgendamento">
-        + Novo Agendamento
-      </button>
+      <p>Visualize e gerencie os atendimentos da unidade.</p>
     </div>
   </section>
 
-  <div class="loading-message" *ngIf="carregandoUsuarioLogado">
-    Carregando...
-  </div>
-
-  <div class="alert-erro" *ngIf="erroGeral">
-    {{ erroGeral }}
-  </div>
+ 
+  <div class="loading-message" *ngIf="carregandoUsuarioLogado">Carregando...</div>
 
   <ng-container *ngIf="!carregandoUsuarioLogado">
+    <section class="toolbar-card" aria-label="Controles da agenda">
+      <label class="field profissional-field">
+        <span>Profissional</span>
+        <div class="field-control">
+          <span class="material-symbols-outlined" aria-hidden="true">person</span>
+          <select *ngIf="podeFiltrarProfissional" [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalAlterado()" [disabled]="carregandoProfissionais">
+            <option [ngValue]="null">Todos os profissionais</option>
+            <option *ngFor="let profissional of profissionais" [value]="profissional.idPublico">{{ profissional.nome }}</option>
+          </select>
+          <strong *ngIf="!podeFiltrarProfissional">{{ usuarioLogado?.nome }}</strong>
+        </div>
+      </label>
 
-    <section class="search-area">
-
-      <div class="filtro-data">
-        <button class="btn-nav" (click)="mudarDia(-1)">‹</button>
-
-        <input type="date" [(ngModel)]="dataSelecionada" (change)="onDataAlterada()" />
-
-        <button class="btn-nav" (click)="mudarDia(1)">›</button>
-
-        <button class="btn-hoje" (click)="irParaHoje()">Hoje</button>
+      <div class="view-switch" aria-label="Visualização">
+        <span>Visualização</span>
+        <div class="segmented">
+          <button type="button" *ngFor="let v of visualizacoes" [class.active]="visualizacao === v.valor" [attr.aria-pressed]="visualizacao === v.valor" (click)="alterarVisualizacao(v.valor)">{{ v.label }}</button>
+        </div>
       </div>
 
-      <div class="filtro-profissional" *ngIf="podeFiltrarProfissional">
-        <select [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalAlterado()">
-          <option [ngValue]="null">Todos os profissionais</option>
-          <option *ngFor="let profissional of profissionais" [value]="profissional.idPublico">
-            {{ profissional.nome }}
-          </option>
-        </select>
+      <div class="toolbar-actions">
+        <button type="button" class="btn btn-config" routerLink="/agenda/configuracoes" *ngIf="podeConfigurarAgenda">Configurar Agenda</button>
+        <button type="button" class="btn btn-new" routerLink="/agenda/novo" *ngIf="podeCriarAgendamento">+ Novo Atendimento</button>
       </div>
 
     </section>
 
-    <div class="loading-message" *ngIf="carregando">
-      Carregando agenda...
+    <div class="alert-erro" *ngIf="erroGeral">
+      <span>{{ erroGeral }}</span>
+      <button type="button" (click)="tentarNovamente()">Tentar novamente</button>
     </div>
 
-    <ng-container *ngIf="!carregando">
+    <section class="agenda-layout">
+      <div class="agenda-main card">
+        <header class="agenda-head">
+          <div>
+            <h2>{{ periodoTitulo }}</h2>
+            <p>{{ contagemTitulo }}</p>
+          </div>
 
-      <div class="empty-message" *ngIf="agendamentos.length === 0">
-        Nenhum atendimento agendado para esta data.
+          <nav class="period-nav" aria-label="Navegação do período">
+            <button type="button" (click)="navegarPeriodo(-1)" aria-label="Período anterior">‹</button>
+            <button type="button" class="today" (click)="irParaHoje()">Hoje</button>
+            <button type="button" (click)="navegarPeriodo(1)" aria-label="Próximo período">›</button>
+          </nav>
+        </header>
+
+        <div class="loading-message" *ngIf="carregando">Carregando agenda...</div>
+        <div class="empty-message" *ngIf="!carregando && agendamentos.length === 0">{{ mensagemVazia }}</div>
+
+        <section class="day-view" *ngIf="!carregando && visualizacao === 'dia' && agendamentos.length > 0">
+          <div class="now-line" *ngIf="mostrarIndicadorAtual" [style.top.%]="posicaoIndicadorAtual"><span>{{ formatarHora(horarioAtual.toTimeString()) }}</span></div>
+          <div class="time-row" *ngFor="let hora of horariosTimeline">
+            <div class="time-label">{{ hora }}</div>
+            <div class="time-slot">
+              <article class="appointment-card" *ngFor="let a of agendamentosPorHora(hora)">
+                <div class="appointment-main">
+                  <strong>{{ a.nomePaciente }}</strong>
+                  <span class="appointment-meta">
+                    <span>{{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}<ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container></span>
+                    <span class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">{{ labelSituacao(a.situacaoAtendimento) }}</span>
+                  </span>
+                </div>
+                <div class="actions" *ngIf="podeRegistrarFrequencia(a)">
+                  <button type="button" class="more" (click)="toggleMenu($event, a.id)" [attr.aria-label]="'Mais opções para ' + a.nomePaciente" [attr.aria-expanded]="menuAbertoId === a.id">•••</button>
+                  <div class="actions-menu" *ngIf="menuAbertoId === a.id" (click)="$event.stopPropagation()">
+                    <button type="button" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">Marcar como PRESENTE</button>
+                    <button type="button" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">Marcar como FALTOU</button>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="week-view" *ngIf="!carregando && visualizacao === 'semana' && agendamentos.length > 0">
+          <article class="week-day" *ngFor="let dia of diasDaSemana">
+            <h3>{{ dia.titulo }} <span>{{ dia.subtitulo }}</span></h3>
+            <p class="mini-empty" *ngIf="dia.agendamentos.length === 0">Sem atendimentos</p>
+            <div class="week-item" *ngFor="let a of dia.agendamentos">
+              <strong>{{ formatarHora(a.horaAtendimento) }}</strong><span>{{ a.nomePaciente }}</span><em class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">{{ a.situacaoAtendimento }}</em>
+            </div>
+          </article>
+        </section>
+
+        <section class="month-view" *ngIf="!carregando && visualizacao === 'mes' && agendamentos.length > 0">
+          <div class="month-weekdays"><span *ngFor="let d of diasSemanaCurtos">{{ d }}</span></div>
+          <button type="button" class="month-cell" *ngFor="let dia of gradeMes" [class.outside]="dia.foraDoMes" [class.selected]="dia.selecionado" (click)="selecionarDiaDoMes(dia.iso)">
+            <strong>{{ dia.dia }}</strong>
+            <span class="count" *ngIf="dia.agendamentos.length">{{ dia.agendamentos.length }} atendimento{{ dia.agendamentos.length === 1 ? '' : 's' }}</span>
+            <span class="month-item" *ngFor="let a of dia.agendamentos.slice(0, 2)"><i [ngClass]="classeSituacao(a.situacaoAtendimento)"></i>{{ formatarHora(a.horaAtendimento) }} {{ a.nomePaciente }}</span>
+            <span class="more-count" *ngIf="dia.agendamentos.length > 2">+{{ dia.agendamentos.length - 2 }} atendimentos</span>
+          </button>
+        </section>
       </div>
 
-      <section class="detail-card" *ngIf="agendamentosManha.length > 0">
-        <h2 class="detail-card-title">Manhã</h2>
+      <aside class="agenda-sidebar">
+        <section class="card calendar-card">
+          <header><button type="button" (click)="mudarMesCalendario(-1)" aria-label="Mês anterior">‹</button><h2>{{ formatarMesAno(mesCalendario) }}</h2><button type="button" (click)="mudarMesCalendario(1)" aria-label="Próximo mês">›</button></header>
+          <div class="calendar-weekdays"><span *ngFor="let d of diasSemanaCurtos">{{ d }}</span></div>
+          <button type="button" class="calendar-day" *ngFor="let dia of calendario" [class.outside]="dia.foraDoMes" [class.today]="dia.hoje" [class.selected]="dia.selecionado" [attr.aria-label]="dia.selecionado ? 'Data selecionada ' + dia.iso : 'Selecionar ' + dia.iso" (click)="selecionarData(dia.iso)">{{ dia.dia }}</button>
+        </section>
 
-        <div class="lista-agendamentos">
-          <div class="agendamento-linha" *ngFor="let a of agendamentosManha">
+        <section class="card summary-card">
+          <h2>{{ resumoTitulo }}</h2>
+          <div class="summary-line total"><span>Total de atendimentos</span><strong>{{ agendamentos.length }}</strong></div>
+          <div class="summary-line" *ngFor="let item of resumoSituacoes()"><span>{{ item.situacao }}</span><strong>{{ item.total }}</strong></div>
+        </section>
 
-            <div class="agendamento-hora">{{ formatarHora(a.horaAtendimento) }}</div>
-
-            <div class="agendamento-info">
-              <strong>{{ a.nomePaciente }}</strong>
-              <span class="agendamento-detalhe">
-                {{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}
-                <ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container>
-              </span>
-            </div>
-
-            <span class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">
-              {{ labelSituacao(a.situacaoAtendimento) }}
-            </span>
-
-            <div class="agendamento-acoes" *ngIf="podeRegistrarFrequencia(a)">
-              <button class="btn-presenca" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">
-                Presente
-              </button>
-              <button class="btn-falta" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">
-                Faltou
-              </button>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      <section class="detail-card" *ngIf="agendamentosTarde.length > 0">
-        <h2 class="detail-card-title">Tarde</h2>
-
-        <div class="lista-agendamentos">
-          <div class="agendamento-linha" *ngFor="let a of agendamentosTarde">
-
-            <div class="agendamento-hora">{{ formatarHora(a.horaAtendimento) }}</div>
-
-            <div class="agendamento-info">
-              <strong>{{ a.nomePaciente }}</strong>
-              <span class="agendamento-detalhe">
-                {{ labelTipoAcompanhamento(a.tipoAcompanhamento) }}
-                <ng-container *ngIf="podeFiltrarProfissional"> — {{ a.nomeProfissional }}</ng-container>
-              </span>
-            </div>
-
-            <span class="badge" [ngClass]="classeSituacao(a.situacaoAtendimento)">
-              {{ labelSituacao(a.situacaoAtendimento) }}
-            </span>
-
-            <div class="agendamento-acoes" *ngIf="podeRegistrarFrequencia(a)">
-              <button class="btn-presenca" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">
-                Presente
-              </button>
-              <button class="btn-falta" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">
-                Faltou
-              </button>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-    </ng-container>
-
+        <section class="card legend-card">
+          <h2>Legenda</h2>
+          <div class="legend-item" *ngFor="let situacao of situacoesLegenda"><i [ngClass]="classeSituacao(situacao)"></i><span>{{ situacao }}</span></div>
+        </section>
+      </aside>
+    </section>
   </ng-container>
 
 </main>
