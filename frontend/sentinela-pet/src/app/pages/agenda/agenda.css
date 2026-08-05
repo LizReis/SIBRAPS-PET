@@ -576,8 +576,8 @@
 .month-item i,
 .legend-item i {
     display: inline-block;
-    width: 15px;
-    height: 15px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     padding: 0;
     margin-right: 8px;
@@ -607,7 +607,7 @@
 .calendar-card h2,
 .summary-card h2,
 .legend-card h2 {
-    font-size: 17px;
+    font-size: 20px;
     margin: 0;
     text-transform: capitalize
 }

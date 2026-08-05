@@ -23,8 +23,8 @@ type StatusUi = { label: string; classe: string; patternClass: string; descricao
   styleUrl: './agenda.css',
 })
 export class Agenda implements OnInit, OnDestroy {
-  private readonly horaInicial = 8;
-  private readonly horaFinal = 18;
+  private readonly horaInicialPadrao = 8;
+  private readonly horaFinalPadrao = 18;
   readonly alturaPorMinuto = 2.2;
   private relogioId: ReturnType<typeof setInterval> | null = null;
   private ultimaConsulta = '';
