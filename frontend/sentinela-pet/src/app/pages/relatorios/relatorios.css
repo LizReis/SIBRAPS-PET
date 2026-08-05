@@ -1,3 +1,18 @@
-.relatorios-page { background:#fff; border:1px solid var(--sibrasp-border); border-radius:14px; padding:28px; color:var(--sibrasp-text); box-shadow:0 8px 24px rgba(6,41,89,.07); }
-.relatorios-page h1 { font-size:1.8rem; font-weight:800; margin-bottom:8px; }
-.relatorios-page p { color:var(--sibrasp-muted); }
+.relatorios-page {
+    background: #fff;
+    border: 1px solid var(--sibrasp-border);
+    border-radius: 14px;
+    padding: 28px;
+    color: var(--sibrasp-text);
+    box-shadow: 0 8px 24px rgba(6, 41, 89, .07);
+}
+
+.relatorios-page h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.relatorios-page p {
+    color: var(--sibrasp-muted);
+}
