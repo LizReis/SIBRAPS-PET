@@ -2,6 +2,7 @@ package com.pet.buscaativa.repositories;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.time.LocalTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
