@@ -35,10 +35,9 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
     );
 
     component.isAdmin = true;
-    component.profissionalSelecionadoId = '61e45a3c-f6df-4f54-8c56-6b46f874e092';
+    component.profissionalSelecionadoId =
+      '61e45a3c-f6df-4f54-8c56-6b46f874e092';
   });
-
-  
 
   it('envia horário com idPublico do profissional e capacidade numérica', () => {
     component.disponibilidadeForm = {
@@ -127,7 +126,9 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
 
     component.salvarExcecao();
 
-    expect(excecao.salvar).toHaveBeenCalledWith(expect.objectContaining({ capacidade: 0 }));
+    expect(excecao.salvar).toHaveBeenCalledWith(
+      expect.objectContaining({ capacidade: 0 }),
+    );
   });
 
   it('rejeita capacidade negativa na exceção', () => {
@@ -142,7 +143,7 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
     expect(excecao.salvar).not.toHaveBeenCalled();
   });
 
-  it('mantém modal e campos quando backend retorna conflito', () => {
+  it('mantém o formulário inline e os campos quando backend retorna conflito', () => {
     disponibilidade.salvar.mockReturnValue(
       throwError(
         () =>
@@ -152,7 +153,6 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
           }),
       ),
     );
-    component.modal = 'horario';
     component.disponibilidadeForm = {
       diaSemana: 'MONDAY',
       turno: 'MANHA',
@@ -163,7 +163,9 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
 
     expect(component.modal).toBeNull();
     expect(component.disponibilidadeForm.capacidade).toBe(5);
-    expect(component.erroHorario).toBe('Já existe disponibilidade cadastrada.');
+    expect(component.erroHorario).toBe(
+      'Já existe disponibilidade cadastrada.',
+    );
   });
 
   it('impede duplo envio enquanto a primeira requisição está pendente', () => {
@@ -206,11 +208,23 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
     expect(component.excecoes).toHaveLength(1);
     expect(component.excecoes[0].capacidade).toBe(0);
   });
+
   it('preenche e cancela a edição inline de horário', () => {
-    component.abrirHorario({ id: 1, diaSemana: 'MONDAY', turno: 'MANHA', capacidade: 4 });
+    component.abrirHorario({
+      id: 1,
+      diaSemana: 'MONDAY',
+      turno: 'MANHA',
+      capacidade: 4,
+    });
     expect(component.disponibilidadeForm.id).toBe(1);
+
     component.cancelarEdicaoHorario();
-    expect(component.disponibilidadeForm).toEqual({ diaSemana: '', turno: '', capacidade: 1 });
+
+    expect(component.disponibilidadeForm).toEqual({
+      diaSemana: '',
+      turno: '',
+      capacidade: 1,
+    });
   });
 
   it('preenche e cancela a edição inline de bloqueio', () => {
@@ -221,21 +235,40 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
       motivoBloqueio: 'Curso',
     });
     expect(component.bloqueioForm.id).toBe(2);
+
     component.cancelarEdicaoBloqueio();
-    expect(component.bloqueioForm).toEqual({ dataInicio: '', dataFim: '', motivoBloqueio: '' });
+
+    expect(component.bloqueioForm).toEqual({
+      dataInicio: '',
+      dataFim: '',
+      motivoBloqueio: '',
+    });
   });
 
   it('preenche e cancela a edição inline de exceção', () => {
-    component.abrirExcecao({ id: 3, data: '2026-08-20', turno: 'TARDE', capacidade: 0 });
+    component.abrirExcecao({
+      id: 3,
+      data: '2026-08-20',
+      turno: 'TARDE',
+      capacidade: 0,
+    });
     expect(component.excecaoForm.id).toBe(3);
+
     component.cancelarEdicaoExcecao();
-    expect(component.excecaoForm).toEqual({ data: '', turno: '', capacidade: 1 });
+
+    expect(component.excecaoForm).toEqual({
+      data: '',
+      turno: '',
+      capacidade: 1,
+    });
   });
 
   it('mantém a confirmação segura e exclui pelo serviço atual', () => {
     component.confirmarExclusao('horarios', 9);
     expect(component.modal).toBe('confirmacao');
+
     component.excluir();
+
     expect(disponibilidade.remover).toHaveBeenCalledWith(9);
     expect(component.modal).toBeNull();
   });
