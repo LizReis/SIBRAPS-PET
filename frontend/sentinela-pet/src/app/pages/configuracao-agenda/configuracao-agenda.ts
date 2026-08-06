@@ -111,7 +111,7 @@ export class ConfiguracaoAgenda implements OnInit {
     private readonly disponibilidadeService: DisponibilidadeService,
     private readonly bloqueioAgendaService: BloqueioAgendaService,
     private readonly disponibilidadeExcecaoService: DisponibilidadeExcecaoService,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.usuarioLogadoService.obterUsuarioLogado().subscribe({
@@ -172,25 +172,28 @@ export class ConfiguracaoAgenda implements OnInit {
     forkJoin({
       disponibilidades: this.disponibilidadeService.listar(usuarioId).pipe(
         catchError((erro) =>
-          this.recuperarFalhaDeCarregamento(
+          this.recuperarFalhaDeCarregamento<DisponibilidadeDTO>(
             erro,
             'os horários',
             erros,
           ),
         ),
       ),
+
       bloqueios: this.bloqueioAgendaService.listar(usuarioId).pipe(
         catchError((erro) =>
-          this.recuperarFalhaDeCarregamento(
+          this.recuperarFalhaDeCarregamento<BloqueioAgendaDTO>(
             erro,
             'os bloqueios',
             erros,
           ),
         ),
       ),
+
+      
       excecoes: this.disponibilidadeExcecaoService.listar(usuarioId).pipe(
         catchError((erro) =>
-          this.recuperarFalhaDeCarregamento(
+          this.recuperarFalhaDeCarregamento<DisponibilidadeExcecaoDTO>(
             erro,
             'as exceções',
             erros,
@@ -255,10 +258,10 @@ export class ConfiguracaoAgenda implements OnInit {
     this.disponibilidadeForm = disponibilidade
       ? { ...disponibilidade }
       : {
-          diaSemana: '',
-          turno: '',
-          capacidade: 1,
-        };
+        diaSemana: '',
+        turno: '',
+        capacidade: 1,
+      };
     this.modal = 'horario';
   }
 
@@ -267,10 +270,10 @@ export class ConfiguracaoAgenda implements OnInit {
     this.bloqueioForm = bloqueio
       ? { ...bloqueio }
       : {
-          dataInicio: '',
-          dataFim: '',
-          motivoBloqueio: '',
-        };
+        dataInicio: '',
+        dataFim: '',
+        motivoBloqueio: '',
+      };
     this.modal = 'bloqueio';
   }
 
@@ -279,10 +282,10 @@ export class ConfiguracaoAgenda implements OnInit {
     this.excecaoForm = excecao
       ? { ...excecao }
       : {
-          data: '',
-          turno: '',
-          capacidade: 1,
-        };
+        data: '',
+        turno: '',
+        capacidade: 1,
+      };
     this.modal = 'excecao';
   }
 
