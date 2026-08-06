@@ -2,18 +2,10 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  catchError,
-  finalize,
-  forkJoin,
-  Observable,
-  of,
-} from 'rxjs';
+import { catchError, finalize, forkJoin, Observable, of } from 'rxjs';
 
-import {
-  BloqueioAgendaDTO,
-  BloqueioAgendaService,
-} from '../../services/bloqueio-agenda-service';
+
+import { BloqueioAgendaDTO, BloqueioAgendaService } from '../../services/bloqueio-agenda-service';
 import {
   DisponibilidadeExcecaoDTO,
   DisponibilidadeExcecaoService,
@@ -30,7 +22,7 @@ import {
 import { UsuarioLogadoService } from '../../services/usuario-logado-service';
 
 type Aba = 'horarios' | 'bloqueios' | 'excecoes';
-type Modal = 'horario' | 'bloqueio' | 'excecao' | 'confirmacao' | null;
+type Modal = 'confirmacao' | null;
 
 type AcaoExclusao = {
   tipo: Aba;
@@ -70,7 +62,10 @@ export class ConfiguracaoAgenda implements OnInit {
   isProfissional = false;
   carregandoUsuarioLogado = true;
   carregandoDados = false;
-  salvando = false;
+  salvandoHorario = false;
+  salvandoBloqueio = false;
+  salvandoExcecao = false;
+  salvandoExclusao = false;
 
   nomeUsuario = '';
   profissionais: ProfissionalPayload[] = [];
@@ -82,6 +77,9 @@ export class ConfiguracaoAgenda implements OnInit {
 
   erroGeral: string | null = null;
   sucesso: string | null = null;
+  erroHorario: string | null = null;
+  erroBloqueio: string | null = null;
+  erroExcecao: string | null = null;
   erroModal: string | null = null;
 
   disponibilidadeForm: DisponibilidadeDTO = {
@@ -111,7 +109,7 @@ export class ConfiguracaoAgenda implements OnInit {
     private readonly disponibilidadeService: DisponibilidadeService,
     private readonly bloqueioAgendaService: BloqueioAgendaService,
     private readonly disponibilidadeExcecaoService: DisponibilidadeExcecaoService,
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.usuarioLogadoService.obterUsuarioLogado().subscribe({
@@ -170,54 +168,48 @@ export class ConfiguracaoAgenda implements OnInit {
     const erros: string[] = [];
 
     forkJoin({
-      disponibilidades: this.disponibilidadeService.listar(usuarioId).pipe(
-        catchError((erro) =>
-          this.recuperarFalhaDeCarregamento<DisponibilidadeDTO>(
-            erro,
-            'os horários',
-            erros,
+      disponibilidades: this.disponibilidadeService
+        .listar(usuarioId)
+        .pipe(
+          catchError((erro) =>
+            this.recuperarFalhaDeCarregamento<DisponibilidadeDTO>(erro, 'os horários', erros),
           ),
         ),
-      ),
 
-      bloqueios: this.bloqueioAgendaService.listar(usuarioId).pipe(
-        catchError((erro) =>
-          this.recuperarFalhaDeCarregamento<BloqueioAgendaDTO>(
-            erro,
-            'os bloqueios',
-            erros,
+      bloqueios: this.bloqueioAgendaService
+        .listar(usuarioId)
+        .pipe(
+          catchError((erro) =>
+            this.recuperarFalhaDeCarregamento<BloqueioAgendaDTO>(erro, 'os bloqueios', erros),
           ),
         ),
-      ),
 
       
-      excecoes: this.disponibilidadeExcecaoService.listar(usuarioId).pipe(
-        catchError((erro) =>
-          this.recuperarFalhaDeCarregamento<DisponibilidadeExcecaoDTO>(
-            erro,
-            'as exceções',
-            erros,
+      excecoes: this.disponibilidadeExcecaoService
+        .listar(usuarioId)
+        .pipe(
+          catchError((erro) =>
+            this.recuperarFalhaDeCarregamento<DisponibilidadeExcecaoDTO>(
+              erro,
+              'as exceções',
+              erros,
+            ),
           ),
         ),
-      ),
     })
       .pipe(finalize(() => (this.carregandoDados = false)))
       .subscribe({
         next: (dados) => {
           this.disponibilidades = this.ordenarHorarios(dados.disponibilidades);
           this.bloqueios = dados.bloqueios;
-          this.excecoes = [...dados.excecoes].sort((a, b) =>
-            a.data.localeCompare(b.data),
-          );
+          this.excecoes = [...dados.excecoes].sort((a, b) => a.data.localeCompare(b.data));
           this.erroGeral = erros.length ? erros.join(' ') : null;
         },
       });
   }
 
   get usuarioIdAtivo(): string | undefined {
-    return this.isAdmin
-      ? (this.profissionalSelecionadoId ?? undefined)
-      : undefined;
+    return this.isAdmin ? (this.profissionalSelecionadoId ?? undefined) : undefined;
   }
 
   get podeGerenciar(): boolean {
@@ -243,8 +235,7 @@ export class ConfiguracaoAgenda implements OnInit {
     event.preventDefault();
 
     const deslocamento = event.key === 'ArrowRight' ? 1 : -1;
-    const proximoIndice =
-      (indiceAtual + deslocamento + abas.length) % abas.length;
+    const proximoIndice = (indiceAtual + deslocamento + abas.length) % abas.length
 
     this.abaAtiva = abas[proximoIndice];
 
@@ -253,40 +244,66 @@ export class ConfiguracaoAgenda implements OnInit {
     });
   }
 
-  abrirHorario(disponibilidade?: DisponibilidadeDTO, origem?: Event): void {
-    this.prepararModal(origem);
+  abrirHorario(disponibilidade?: DisponibilidadeDTO): void {
+    this.erroHorario = null;
+    this.sucesso = null;
     this.disponibilidadeForm = disponibilidade
       ? { ...disponibilidade }
       : {
         diaSemana: '',
-        turno: '',
-        capacidade: 1,
-      };
-    this.modal = 'horario';
+          turno: '',
+          capacidade: 1,
+        };
+    this.rolarParaFormulario('form-horario', 'capacidade-horario');
   }
 
-  abrirBloqueio(bloqueio?: BloqueioAgendaDTO, origem?: Event): void {
-    this.prepararModal(origem);
+  abrirBloqueio(bloqueio?: BloqueioAgendaDTO): void {
+    this.erroBloqueio = null;
+    this.sucesso = null;
     this.bloqueioForm = bloqueio
       ? { ...bloqueio }
       : {
         dataInicio: '',
-        dataFim: '',
-        motivoBloqueio: '',
-      };
-    this.modal = 'bloqueio';
+          dataFim: '',
+          motivoBloqueio: '',
+        };
+    this.rolarParaFormulario('form-bloqueio', 'data-inicio-bloqueio');
   }
 
-  abrirExcecao(excecao?: DisponibilidadeExcecaoDTO, origem?: Event): void {
-    this.prepararModal(origem);
+  abrirExcecao(excecao?: DisponibilidadeExcecaoDTO): void {
+    this.erroExcecao = null;
+    this.sucesso = null;
     this.excecaoForm = excecao
       ? { ...excecao }
       : {
         data: '',
-        turno: '',
-        capacidade: 1,
-      };
-    this.modal = 'excecao';
+          turno: '',
+          capacidade: 1,
+        };
+    this.rolarParaFormulario('form-excecao', 'capacidade-excecao');
+  }
+
+  cancelarEdicaoHorario(): void {
+    this.abrirHorario();
+  }
+
+  cancelarEdicaoBloqueio(): void {
+    this.abrirBloqueio();
+  }
+
+  cancelarEdicaoExcecao(): void {
+    this.abrirExcecao();
+  }
+
+  private rolarParaFormulario(formularioId: string, campoEdicaoId: string): void {
+    setTimeout(() => {
+      const formulario = document.getElementById(formularioId);
+      formulario?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const primeiroEditavel = formulario?.querySelector<HTMLElement>(
+        'input:not([readonly]):not([disabled]), select:not([disabled])',
+      );
+      (document.getElementById(campoEdicaoId) ?? primeiroEditavel)?.focus();
+    });
   }
 
   confirmarExclusao(tipo: Aba, id: number | undefined, origem?: Event): void {
@@ -314,7 +331,7 @@ export class ConfiguracaoAgenda implements OnInit {
   }
 
   fecharModal(): void {
-    if (this.salvando) {
+    if (this.salvandoExclusao) {
       return;
     }
 
@@ -359,32 +376,16 @@ export class ConfiguracaoAgenda implements OnInit {
     }
   }
 
-  confirmarModal(): void {
-    switch (this.modal) {
-      case 'horario':
-        this.salvarHorario();
-        break;
-      case 'bloqueio':
-        this.salvarBloqueio();
-        break;
-      case 'excecao':
-        this.salvarExcecao();
-        break;
-      case 'confirmacao':
-        this.excluir();
-        break;
-    }
-  }
 
   salvarHorario(): void {
-    if (this.salvando) {
+    if (this.salvandoHorario) {
       return;
     }
 
     const formulario = this.disponibilidadeForm;
     const capacidade = Number(formulario.capacidade);
 
-    if (!this.validarProfissionalSelecionado()) {
+    if (!this.validarProfissionalSelecionado('horarios')) {
       return;
     }
 
@@ -394,8 +395,7 @@ export class ConfiguracaoAgenda implements OnInit {
       !Number.isInteger(capacidade) ||
       capacidade < 1
     ) {
-      this.erroModal =
-        'Informe dia, turno e uma quantidade inteira de vagas maior que zero.';
+      this.erroHorario = 'Informe dia, turno e uma quantidade inteira de vagas maior que zero.';
       return;
     }
 
@@ -409,32 +409,28 @@ export class ConfiguracaoAgenda implements OnInit {
       ? 'Horário atualizado com sucesso.'
       : 'Horário adicionado com sucesso.';
 
-    this.executar(
-      this.disponibilidadeService.salvar(payload),
-      mensagem,
-      'horarios',
-    );
+    this.executar(this.disponibilidadeService.salvar(payload), mensagem, 'horarios');
   }
 
   salvarBloqueio(): void {
-    if (this.salvando) {
+    if (this.salvandoBloqueio) {
       return;
     }
 
     const formulario = this.bloqueioForm;
     const motivo = formulario.motivoBloqueio?.trim();
 
-    if (!this.validarProfissionalSelecionado()) {
+    if (!this.validarProfissionalSelecionado('bloqueios')) {
       return;
     }
 
     if (!formulario.dataInicio || !formulario.dataFim || !motivo) {
-      this.erroModal = 'Preencha as datas e o motivo do bloqueio.';
+      this.erroBloqueio = 'Preencha as datas e o motivo do bloqueio.';
       return;
     }
 
     if (formulario.dataFim < formulario.dataInicio) {
-      this.erroModal = 'A data final não pode ser anterior à data inicial.';
+      this.erroBloqueio = 'A data final não pode ser anterior à data inicial.';
       return;
     }
 
@@ -454,14 +450,14 @@ export class ConfiguracaoAgenda implements OnInit {
   }
 
   salvarExcecao(): void {
-    if (this.salvando) {
+    if (this.salvandoExcecao) {
       return;
     }
 
     const formulario = this.excecaoForm;
     const capacidade = Number(formulario.capacidade);
 
-    if (!this.validarProfissionalSelecionado()) {
+    if (!this.validarProfissionalSelecionado('excecoes')) {
       return;
     }
 
@@ -472,8 +468,7 @@ export class ConfiguracaoAgenda implements OnInit {
       !Number.isInteger(capacidade) ||
       capacidade < 0
     ) {
-      this.erroModal =
-        'Informe data, turno e uma capacidade inteira igual ou maior que zero.';
+      this.erroExcecao = 'Informe data, turno e uma capacidade inteira igual ou maior que zero.';
       return;
     }
 
@@ -487,48 +482,38 @@ export class ConfiguracaoAgenda implements OnInit {
       ? 'Exceção atualizada com sucesso.'
       : 'Exceção criada com sucesso.';
 
-    this.executar(
-      this.disponibilidadeExcecaoService.salvar(payload),
-      mensagem,
-      'excecoes',
-    );
+    this.executar(this.disponibilidadeExcecaoService.salvar(payload), mensagem, 'excecoes');
   }
 
-  executar<T>(
-    observable: Observable<T>,
-    mensagem: string,
-    tipo?: Aba,
-  ): void {
-    if (this.salvando) {
+  executar<T>(observable: Observable<T>, mensagem: string, tipo?: Aba): void {
+    if (this.estaSalvando(tipo)) {
       return;
     }
 
-    this.salvando = true;
-    this.erroModal = null;
+    this.definirSalvando(tipo, true);
+    this.definirErro(tipo, null);
 
-    observable
-      .pipe(finalize(() => (this.salvando = false)))
-      .subscribe({
-        next: () => {
-          this.modal = null;
-          this.acaoExclusao = null;
-          this.sucesso = mensagem;
-          this.limparFormulario(tipo);
-          this.carregarDados(this.usuarioIdAtivo);
+    observable.pipe(finalize(() => this.definirSalvando(tipo, false))).subscribe({
+      next: () => {
+        this.modal = null;
+        this.acaoExclusao = null;
+        this.sucesso = mensagem;
+        this.limparFormulario(tipo);
+        this.carregarDados(this.usuarioIdAtivo);
 
-          setTimeout(() => this.elementoOrigem?.focus());
-        },
-        error: (erro: HttpErrorResponse) => {
-          this.erroModal = this.extrairMensagemErro(
-            erro,
-            'Não foi possível concluir a operação.',
-          );
-        },
-      });
+        setTimeout(() => this.elementoOrigem?.focus());
+      },
+      error: (erro: HttpErrorResponse) => {
+        this.definirErro(
+          tipo,
+          this.extrairMensagemErro(erro, 'Não foi possível concluir a operação.'),
+        );
+      },
+    });
   }
 
   excluir(): void {
-    if (!this.acaoExclusao || this.salvando) {
+    if (!this.acaoExclusao || this.salvandoExclusao) {
       return;
     }
 
@@ -554,9 +539,7 @@ export class ConfiguracaoAgenda implements OnInit {
   capacidade(dia: string, turno: string): number | null {
     return (
       this.disponibilidades.find(
-        (disponibilidade) =>
-          disponibilidade.diaSemana === dia &&
-          disponibilidade.turno === turno,
+        (disponibilidade) => disponibilidade.diaSemana === dia && disponibilidade.turno === turno,
       )?.capacidade ?? null
     );
   }
@@ -583,18 +566,40 @@ export class ConfiguracaoAgenda implements OnInit {
       return this.formatarData(bloqueio.dataInicio);
     }
 
-    return `${this.formatarData(bloqueio.dataInicio)} até ${this.formatarData(
-      bloqueio.dataFim,
-    )}`;
+    return `${this.formatarData(bloqueio.dataInicio)} até ${this.formatarData(bloqueio.dataFim)}`;
   }
 
-  private validarProfissionalSelecionado(): boolean {
+  private validarProfissionalSelecionado(tipo: Aba): boolean {
     if (this.isAdmin && !this.profissionalSelecionadoId) {
-      this.erroModal = 'Selecione um profissional antes de salvar.';
+      this.definirErro(tipo, 'Selecione um profissional antes de salvar.');
       return false;
     }
 
     return true;
+  }
+
+  private estaSalvando(tipo?: Aba): boolean {
+    return tipo === 'horarios'
+      ? this.salvandoHorario
+      : tipo === 'bloqueios'
+        ? this.salvandoBloqueio
+        : tipo === 'excecoes'
+          ? this.salvandoExcecao
+          : this.salvandoExclusao;
+  }
+
+  private definirSalvando(tipo: Aba | undefined, valor: boolean): void {
+    if (tipo === 'horarios') this.salvandoHorario = valor;
+    else if (tipo === 'bloqueios') this.salvandoBloqueio = valor;
+    else if (tipo === 'excecoes') this.salvandoExcecao = valor;
+    else this.salvandoExclusao = valor;
+  }
+
+  private definirErro(tipo: Aba | undefined, mensagem: string | null): void {
+    if (tipo === 'horarios') this.erroHorario = mensagem;
+    else if (tipo === 'bloqueios') this.erroBloqueio = mensagem;
+    else if (tipo === 'excecoes') this.erroExcecao = mensagem;
+    else this.erroModal = mensagem;
   }
 
   private limparFormulario(tipo?: Aba): void {
@@ -625,46 +630,29 @@ export class ConfiguracaoAgenda implements OnInit {
     erros: string[],
   ): Observable<T[]> {
     console.error(`Erro ao carregar ${recurso}`, erro);
-    erros.push(
-      this.extrairMensagemErro(
-        erro,
-        `Não foi possível carregar ${recurso}.`,
-      ),
-    );
+    erros.push(this.extrairMensagemErro(erro, `Não foi possível carregar ${recurso}.`));
     return of([] as T[]);
   }
 
-  private ordenarHorarios(
-    disponibilidades: DisponibilidadeDTO[],
-  ): DisponibilidadeDTO[] {
+  private ordenarHorarios(disponibilidades: DisponibilidadeDTO[]): DisponibilidadeDTO[] {
     const ordemTurnos = new Map<string, number>([
       ['MANHA', 0],
       ['TARDE', 1],
     ]);
 
     return [...disponibilidades].sort((a, b) => {
-      const diaA = this.diasSemana.findIndex(
-        (dia) => dia.valor === a.diaSemana,
-      );
-      const diaB = this.diasSemana.findIndex(
-        (dia) => dia.valor === b.diaSemana,
-      );
+      const diaA = this.diasSemana.findIndex((dia) => dia.valor === a.diaSemana);
+      const diaB = this.diasSemana.findIndex((dia) => dia.valor === b.diaSemana);
 
       if (diaA !== diaB) {
         return diaA - diaB;
       }
 
-      return (
-        (ordemTurnos.get(a.turno) ?? 99) -
-        (ordemTurnos.get(b.turno) ?? 99)
-      );
+      return (ordemTurnos.get(a.turno) ?? 99) - (ordemTurnos.get(b.turno) ?? 99);
     });
   }
 
-  private extrairMensagemErro(
-    erro: HttpErrorResponse,
-    mensagemPadrao: string,
-  ): string {
+  private extrairMensagemErro(erro: HttpErrorResponse, mensagemPadrao: string): string {
     const corpo = erro.error as
       | (StandardError & { errors?: Array<{ message: string }> })
       | undefined;

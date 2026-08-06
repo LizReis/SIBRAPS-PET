@@ -3,7 +3,7 @@ import { of, Subject, throwError } from 'rxjs';
 
 import { ConfiguracaoAgenda } from './configuracao-agenda';
 
-describe('ConfiguracaoAgenda - integração dos modais', () => {
+describe('ConfiguracaoAgenda - formulários inline', () => {
   let component: ConfiguracaoAgenda;
   let disponibilidade: any;
   let bloqueio: any;
@@ -35,31 +35,12 @@ describe('ConfiguracaoAgenda - integração dos modais', () => {
     );
 
     component.isAdmin = true;
-    component.profissionalSelecionadoId =
-      '61e45a3c-f6df-4f54-8c56-6b46f874e092';
+    component.profissionalSelecionadoId = '61e45a3c-f6df-4f54-8c56-6b46f874e092';
   });
 
-  it.each([
-    ['horario', 'salvarHorario'],
-    ['bloqueio', 'salvarBloqueio'],
-    ['excecao', 'salvarExcecao'],
-    ['confirmacao', 'excluir'],
-  ] as const)(
-    'encaminha o modal %s ao método %s',
-    (modal, metodo) => {
-      component.modal = modal;
-      const spy = vi
-        .spyOn(component, metodo)
-        .mockImplementation(() => undefined);
-
-      component.confirmarModal();
-
-      expect(spy).toHaveBeenCalledOnce();
-    },
-  );
+  
 
   it('envia horário com idPublico do profissional e capacidade numérica', () => {
-    component.modal = 'horario';
     component.disponibilidadeForm = {
       diaSemana: 'MONDAY',
       turno: 'MANHA',
@@ -104,7 +85,7 @@ describe('ConfiguracaoAgenda - integração dos modais', () => {
     component.salvarHorario();
 
     expect(disponibilidade.salvar).not.toHaveBeenCalled();
-    expect(component.erroModal).toContain('Selecione um profissional');
+    expect(component.erroHorario).toContain('Selecione um profissional');
   });
 
   it('envia datas ISO e motivo obrigatório no bloqueio', () => {
@@ -146,9 +127,7 @@ describe('ConfiguracaoAgenda - integração dos modais', () => {
 
     component.salvarExcecao();
 
-    expect(excecao.salvar).toHaveBeenCalledWith(
-      expect.objectContaining({ capacidade: 0 }),
-    );
+    expect(excecao.salvar).toHaveBeenCalledWith(expect.objectContaining({ capacidade: 0 }));
   });
 
   it('rejeita capacidade negativa na exceção', () => {
@@ -182,11 +161,9 @@ describe('ConfiguracaoAgenda - integração dos modais', () => {
 
     component.salvarHorario();
 
-    expect(component.modal).toBe('horario');
+    expect(component.modal).toBeNull();
     expect(component.disponibilidadeForm.capacidade).toBe(5);
-    expect(component.erroModal).toBe(
-      'Já existe disponibilidade cadastrada.',
-    );
+    expect(component.erroHorario).toBe('Já existe disponibilidade cadastrada.');
   });
 
   it('impede duplo envio enquanto a primeira requisição está pendente', () => {
@@ -202,7 +179,7 @@ describe('ConfiguracaoAgenda - integração dos modais', () => {
     component.salvarHorario();
 
     expect(disponibilidade.salvar).toHaveBeenCalledOnce();
-    expect(component.salvando).toBe(true);
+    expect(component.salvandoHorario).toBe(true);
   });
 
   it('preserva aba ativa e atualiza coleções após sucesso', () => {
@@ -228,5 +205,38 @@ describe('ConfiguracaoAgenda - integração dos modais', () => {
     expect(component.abaAtiva).toBe('excecoes');
     expect(component.excecoes).toHaveLength(1);
     expect(component.excecoes[0].capacidade).toBe(0);
+  });
+  it('preenche e cancela a edição inline de horário', () => {
+    component.abrirHorario({ id: 1, diaSemana: 'MONDAY', turno: 'MANHA', capacidade: 4 });
+    expect(component.disponibilidadeForm.id).toBe(1);
+    component.cancelarEdicaoHorario();
+    expect(component.disponibilidadeForm).toEqual({ diaSemana: '', turno: '', capacidade: 1 });
+  });
+
+  it('preenche e cancela a edição inline de bloqueio', () => {
+    component.abrirBloqueio({
+      id: 2,
+      dataInicio: '2026-08-10',
+      dataFim: '2026-08-11',
+      motivoBloqueio: 'Curso',
+    });
+    expect(component.bloqueioForm.id).toBe(2);
+    component.cancelarEdicaoBloqueio();
+    expect(component.bloqueioForm).toEqual({ dataInicio: '', dataFim: '', motivoBloqueio: '' });
+  });
+
+  it('preenche e cancela a edição inline de exceção', () => {
+    component.abrirExcecao({ id: 3, data: '2026-08-20', turno: 'TARDE', capacidade: 0 });
+    expect(component.excecaoForm.id).toBe(3);
+    component.cancelarEdicaoExcecao();
+    expect(component.excecaoForm).toEqual({ data: '', turno: '', capacidade: 1 });
+  });
+
+  it('mantém a confirmação segura e exclui pelo serviço atual', () => {
+    component.confirmarExclusao('horarios', 9);
+    expect(component.modal).toBe('confirmacao');
+    component.excluir();
+    expect(disponibilidade.remover).toHaveBeenCalledWith(9);
+    expect(component.modal).toBeNull();
   });
 });
