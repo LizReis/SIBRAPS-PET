@@ -331,6 +331,13 @@ dd small {
     font-weight: 700
 }
 
+.actions .save {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px
+}
+
 .cancel {
     background: #fff;
     border: 1px solid #c8d2df
