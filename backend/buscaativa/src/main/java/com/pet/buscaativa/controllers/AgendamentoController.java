@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.pet.buscaativa.entities.dto.AgendamentoDTO;
+import com.pet.buscaativa.entities.dto.HorariosDisponiveisDTO;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.TurnoEnum;
 import com.pet.buscaativa.services.AgendamentoService;
@@ -69,6 +70,15 @@ public class AgendamentoController {
 
         return ResponseEntity.ok(agendamentoService.calcularVagasDisponiveis(usuarioId, data));
     }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
+    @GetMapping("/horarios-disponiveis")
+    public ResponseEntity<HorariosDisponiveisDTO> horariosDisponiveis(@RequestParam UUID usuarioId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            @RequestParam TurnoEnum turno) {
+        return ResponseEntity.ok(agendamentoService.buscarHorariosDisponiveis(usuarioId, data, turno));
+    }
+
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @GetMapping("/agenda")

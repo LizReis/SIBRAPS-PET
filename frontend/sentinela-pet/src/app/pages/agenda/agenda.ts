@@ -58,7 +58,7 @@ type BlocoHoraAgenda = {
     styleUrl: './agenda.css',
 })
 export class Agenda implements OnInit, OnDestroy {
-    private readonly horaInicialPadrao = 8;
+    private readonly horaInicialPadrao = 7;
     private readonly horaFinalPadrao = 18;
     private relogioId: ReturnType < typeof setInterval > | null = null;
     private ultimaConsulta = '';

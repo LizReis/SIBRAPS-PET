@@ -32,6 +32,14 @@ export interface VagasPorTurno {
   TARDE: number;
 }
 
+export interface HorarioDisponivel { hora: string; disponivel: boolean; }
+export interface HorariosDisponiveisPayload {
+  turno: 'MANHA' | 'TARDE';
+  vagasRestantesTurno: number;
+  motivoIndisponibilidade: 'AGENDA_BLOQUEADA' | 'TURNO_NAO_CONFIGURADO' | 'CAPACIDADE_ESGOTADA' | null;
+  horarios: HorarioDisponivel[];
+}
+
 export interface FieldMessage {
   fieldName: string;
   message: string;
@@ -92,6 +100,10 @@ export class AgendamentoService {
     return this.http.get<VagasPorTurno>(`${this.apiUrl}/vagas`, { params });
   }
 
+  buscarHorariosDisponiveis(usuarioId: string, data: string, turno: string): Observable<HorariosDisponiveisPayload> {
+    const params = new HttpParams().set('usuarioId', usuarioId).set('data', data).set('turno', turno);
+    return this.http.get<HorariosDisponiveisPayload>(`${this.apiUrl}/horarios-disponiveis`, { params });
+  }
   criarAgendamento(payload: NovoAgendamentoPayload): Observable<AgendamentoDTO> {
     return this.http.post<AgendamentoDTO>(this.apiUrl, payload);
   }

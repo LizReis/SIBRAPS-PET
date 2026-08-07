@@ -85,4 +85,11 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
     boolean existsAgendamentoAtivoNoMesmoHorario(@Param("usuario") Usuario usuario,
                                                  @Param("data") LocalDate data, @Param("hora") LocalTime hora,
                                                  @Param("situacoes") List<SituacaoAtendimento> situacoes);
+
+    @Query("SELECT COUNT(a) > 0 FROM Agendamento a WHERE a.paciente = :paciente AND a.dataAgendamento = :data AND a.horaAtendimento = :hora AND a.situacaoAtendimento IN :situacoes")
+    boolean existsAtivoDoPacienteNoMesmoHorario(@Param("paciente") Paciente paciente, @Param("data") LocalDate data,
+            @Param("hora") LocalTime hora, @Param("situacoes") List<SituacaoAtendimento> situacoes);
+    @Query("SELECT a.horaAtendimento FROM Agendamento a WHERE a.usuario = :usuario AND a.dataAgendamento = :data AND a.turnoAgendamento = :turno AND a.situacaoAtendimento IN :situacoes ORDER BY a.horaAtendimento")
+    List<LocalTime> findHorariosOcupados(@Param("usuario") Usuario usuario, @Param("data") LocalDate data,
+            @Param("turno") TurnoEnum turno, @Param("situacoes") List<SituacaoAtendimento> situacoes);
 }

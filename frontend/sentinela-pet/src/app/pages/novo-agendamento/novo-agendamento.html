@@ -1,110 +1,226 @@
 <main class="container">
 
-  <section class="page-header">
-    <div class="page-title">
-      <h1>{{ modoRemarcacao ? 'Remarcar Atendimento' : 'Novo Agendamento' }}</h1>
-      <p>{{ modoRemarcacao ? 'Escolha a nova data, turno e horário sem alterar o original antes da confirmação.' : 'Selecione o paciente, o profissional e o horário do atendimento.' }}</p>
+  <main class="container">
+
+    <section class="page-header">
+      <div class="page-title">
+        <h1>{{ modoRemarcacao ? 'Remarcar Atendimento' : 'Novo Agendamento' }}</h1>
+        <p>{{ modoRemarcacao ? 'Escolha a nova data, turno e horário sem alterar o original antes da confirmação.' :
+          'Selecione o paciente, o profissional e o horário do atendimento.' }}</p>
+      </div>
+    </section>
+
+    <div class="empty-inline" *ngIf="carregandoRemarcacao">Carregando dados da remarcação...</div>
+
+    <div class="alert-erro" *ngIf="erroGeral">
+      {{ erroGeral }}
     </div>
-  </section>
 
-  <div class="empty-inline" *ngIf="carregandoRemarcacao">Carregando dados da remarcação...</div>
+    <!-- PASSO 1: PACIENTE -->
+    <section class="detail-card">
+      <h2 class="detail-card-title">1. Paciente</h2>
 
-  <div class="alert-erro" *ngIf="erroGeral">
-    {{ erroGeral }}
-  </div>
+      <div *ngIf="!pacienteSelecionado">
+        <input type="text" class="search-input" placeholder="Digite o nome do paciente"
+          [(ngModel)]="termoPesquisaPaciente" (input)="pesquisarPaciente()" />
 
-  <!-- PASSO 1: PACIENTE -->
-  <section class="detail-card">
-    <h2 class="detail-card-title">1. Paciente</h2>
-
-    <div *ngIf="!pacienteSelecionado">
-      <input type="text" class="search-input" placeholder="Digite o nome do paciente"
-        [(ngModel)]="termoPesquisaPaciente" (input)="pesquisarPaciente()" />
-
-      <div class="lista-itens" *ngIf="resultadosPacientes.length > 0">
-        <div class="item-linha item-clicavel" *ngFor="let p of resultadosPacientes" (click)="selecionarPaciente(p)">
-          <span class="item-info">
-            <strong>{{ p.nome }}</strong> — CPF: {{ formatarCpf(p.cpf) }}
-          </span>
-          <span class="item-selecionar">Selecionar</span>
+        <div class="lista-itens" *ngIf="resultadosPacientes.length > 0">
+          <div class="item-linha item-clicavel" *ngFor="let p of resultadosPacientes" (click)="selecionarPaciente(p)">
+            <span class="item-info">
+              <strong>{{ p.nome }}</strong> — CPF: {{ formatarCpf(p.cpf) }}
+            </span>
+            <span class="item-selecionar">Selecionar</span>
+          </div>
         </div>
+
+        <p class="empty-inline"
+          *ngIf="!buscandoPaciente && termoPesquisaPaciente.length >= 2 && resultadosPacientes.length === 0">
+          Nenhum paciente encontrado.
+        </p>
       </div>
 
-      <p class="empty-inline"
-        *ngIf="!buscandoPaciente && termoPesquisaPaciente.length >= 2 && resultadosPacientes.length === 0">
-        Nenhum paciente encontrado.
-      </p>
-    </div>
-
-    <div class="paciente-selecionado" *ngIf="pacienteSelecionado">
-      <div>
-        <strong>{{ pacienteSelecionado.nome }}</strong>
-        <span class="item-info-secundaria">
-          CPF: {{ formatarCpf(pacienteSelecionado.cpf) }} —
-          {{ labelEnum(pacienteSelecionado.tipoAcompanhamento) }}
-        </span>
+      <div class="paciente-selecionado" *ngIf="pacienteSelecionado">
+        <div>
+          <strong>{{ pacienteSelecionado.nome }}</strong>
+          <span class="item-info-secundaria">
+            CPF: {{ formatarCpf(pacienteSelecionado.cpf) }} —
+            {{ labelEnum(pacienteSelecionado.tipoAcompanhamento) }}
+          </span>
+        </div>
+        <button class="btn-remover" (click)="trocarPaciente()">Trocar</button>
       </div>
-      <button class="btn-remover" (click)="trocarPaciente()">Trocar</button>
-    </div>
-  </section>
+    </section>
 
-  <!-- PASSO 2 e 3: PROFISSIONAL E DATA -->
-  <section class="detail-card">
-    <h2 class="detail-card-title">2. Profissional e Data</h2>
+    <!-- PASSO 2 e 3: PROFISSIONAL E DATA -->
+    <section class="detail-card">
+      <h2 class="detail-card-title">2. Profissional e Data</h2>
 
-    <div class="form-inline">
-      <select [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalOuDataAlterado()">
-        <option [ngValue]="null" disabled>Selecione o profissional</option>
-        <option *ngFor="let p of profissionais" [value]="p.idPublico">
-          {{ p.nome }}
-        </option>
-      </select>
+      <div class="form-inline">
+        <select [(ngModel)]="profissionalSelecionadoId" (change)="onProfissionalOuDataAlterado()">
+          <option [ngValue]="null" disabled>Selecione o profissional</option>
+          <option *ngFor="let p of profissionais" [value]="p.idPublico">
+            {{ p.nome }}
+          </option>
+        </select>
 
-      <input type="date" [(ngModel)]="dataSelecionada" (change)="onProfissionalOuDataAlterado()" />
-    </div>
+        <input type="date" [(ngModel)]="dataSelecionada" (change)="onProfissionalOuDataAlterado()" />
+      </div>
 
-    <p class="empty-inline" *ngIf="consultandoVagas">Consultando vagas disponíveis...</p>
+      <p class="empty-inline" *ngIf="consultandoVagas">Consultando vagas disponíveis...</p>
 
-    <div class="turnos-opcoes" *ngIf="vagas && !consultandoVagas">
-      <button type="button" class="turno-card" [class.turno-selecionado]="turnoSelecionado === 'MANHA'"
-        [class.turno-indisponivel]="vagasDoTurno('MANHA') <= 0" (click)="selecionarTurno('MANHA')">
-        <span class="turno-nome">Manhã</span>
-        <span class="turno-vagas">{{ vagasDoTurno('MANHA') }} vaga(s)</span>
+      <div class="turnos-opcoes" *ngIf="vagas && !consultandoVagas">
+        <button type="button" class="turno-card" [class.turno-selecionado]="turnoSelecionado === 'MANHA'"
+          [class.turno-indisponivel]="vagasDoTurno('MANHA') <= 0" (click)="selecionarTurno('MANHA')">
+          <span class="turno-nome">Manhã</span>
+          <span class="turno-vagas">{{ vagasDoTurno('MANHA') }} vaga(s)</span>
+        </button>
+
+        <button type="button" class="turno-card" [class.turno-selecionado]="turnoSelecionado === 'TARDE'"
+          [class.turno-indisponivel]="vagasDoTurno('TARDE') <= 0" (click)="selecionarTurno('TARDE')">
+          <span class="turno-nome">Tarde</span>
+          <span class="turno-vagas">{{ vagasDoTurno('TARDE') }} vaga(s)</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- PASSO 4: HORÁRIO -->
+    <section class="detail-card" *ngIf="turnoSelecionado">
+      <h2 class="detail-card-title">3. Horário</h2>
+
+      <div class="sugestoes-remarcacao" *ngIf="modoRemarcacao && sugestoesRemarcacao.length > 0">
+        <span>Datas sugeridas:</span>
+        <button type="button" *ngFor="let data of sugestoesRemarcacao"
+          (click)="dataSelecionada = data; onProfissionalOuDataAlterado()">{{ data }}</button>
+      </div>
+
+      <div class="form-inline">
+        <input type="time" [(ngModel)]="horaAtendimento" />
+      </div>
+      <small *ngIf="errosPorCampo['horaAtendimento']" class="erro-campo">
+        {{ errosPorCampo['horaAtendimento'] }}
+      </small>
+    </section>
+
+    <section class="form-actions">
+      <button type="button" class="btn btn-cancel" (click)="cancelar()" [disabled]="salvando">
+        Cancelar
       </button>
 
-      <button type="button" class="turno-card" [class.turno-selecionado]="turnoSelecionado === 'TARDE'"
-        [class.turno-indisponivel]="vagasDoTurno('TARDE') <= 0" (click)="selecionarTurno('TARDE')">
-        <span class="turno-nome">Tarde</span>
-        <span class="turno-vagas">{{ vagasDoTurno('TARDE') }} vaga(s)</span>
+      <button type="button" class="btn btn-save" [disabled]="!podeConfirmar" (click)="confirmarAgendamento()">
+        {{ salvando ? 'Salvando...' : (modoRemarcacao ? 'Confirmar Remarcação' : 'Confirmar Agendamento') }}
       </button>
+    </section>
+
+  </main>
+  <header class="page-header"><span class="title-icon" aria-hidden="true">▣</span>
+    <div>
+      <h1>{{ modoRemarcacao ? 'Remarcar Atendimento' : 'Novo Agendamento' }}</h1>
+      <p>{{ modoRemarcacao ? 'Escolha a nova data, o turno e o horário do atendimento.' : 'Siga os passos abaixo para
+        criar um agendamento de forma rápida e segura.' }}</p>
     </div>
-  </section>
-
-  <!-- PASSO 4: HORÁRIO -->
-  <section class="detail-card" *ngIf="turnoSelecionado">
-    <h2 class="detail-card-title">3. Horário</h2>
-
-    <div class="sugestoes-remarcacao" *ngIf="modoRemarcacao && sugestoesRemarcacao.length > 0">
-      <span>Datas sugeridas:</span>
-      <button type="button" *ngFor="let data of sugestoesRemarcacao" (click)="dataSelecionada = data; onProfissionalOuDataAlterado()">{{ data }}</button>
+  </header>
+  <div class="alert error" role="alert" *ngIf="erroGeral">{{erroGeral}}</div>
+  <div class="alert" aria-live="polite" *ngIf="carregandoRemarcacao">Carregando dados da remarcação...</div>
+  <div class="page-grid">
+    <div class="steps">
+      <section class="step-card">
+        <h2><span class="step-number">1</span>Selecionar paciente</h2>
+        <ng-container *ngIf="!pacienteSelecionado; else selected"><label for="busca">Paciente</label><input id="busca"
+            type="search" [(ngModel)]="termoPesquisaPaciente" (input)="pesquisarPaciente()"
+            placeholder="Buscar paciente por nome, CPF ou CNS">
+          <p class="helper">Digite 3 letras, um CPF com 11 dígitos ou CNS com 15 dígitos.</p>
+          <div class="results" role="listbox" *ngIf="resultadosPacientes.length"><button type="button" role="option"
+              aria-selected="false" *ngFor="let p of resultadosPacientes"
+              (click)="selecionarPaciente(p)"><span><strong>{{p.nome}}</strong><small>CPF: {{formatarCpf(p.cpf)}} <i
+                    *ngIf="p.cns">• CNS: {{p.cns}}</i></small><small
+                  *ngIf="p.dataNascimento">{{formatarData(p.dataNascimento)}} ({{idade(p.dataNascimento)}} anos) •
+                  {{labelEnum(p.tipoAcompanhamento)}}</small></span><b>Selecionar</b></button></div>
+          <p class="state" aria-live="polite" *ngIf="buscandoPaciente">Buscando pacientes...</p>
+          <p class="state" aria-live="polite" *ngIf="pesquisaRealizada&&!buscandoPaciente&&!resultadosPacientes.length">
+            Nenhum paciente encontrado.</p>
+        </ng-container>
+        <ng-template #selected>
+          <div class="selected"><span class="avatar" aria-hidden="true">♙</span><span
+              class="info"><strong>{{pacienteSelecionado!.nome}}</strong><small>CPF:
+                {{formatarCpf(pacienteSelecionado!.cpf)}} <i *ngIf="pacienteSelecionado!.cns">• CNS:
+                  {{pacienteSelecionado!.cns}}</i></small><small
+                *ngIf="pacienteSelecionado!.dataNascimento">{{formatarData(pacienteSelecionado!.dataNascimento)}}
+                ({{idade(pacienteSelecionado!.dataNascimento)}}
+                anos)</small><small>{{labelEnum(pacienteSelecionado!.tipoAcompanhamento)}}</small></span><b
+              class="badge">✓ Selecionado</b><button type="button" class="secondary" *ngIf="!modoRemarcacao"
+              (click)="trocarPaciente()">Trocar paciente</button><small *ngIf="modoRemarcacao">Somente leitura</small>
+          </div>
+        </ng-template>
+      </section>
+      <section class="step-card">
+        <h2><span class="step-number">2</span>Escolher profissional e data</h2>
+        <div class="fields">
+          <div><label for="prof">Profissional</label><select id="prof" [(ngModel)]="profissionalSelecionadoId"
+              (change)="onProfissionalOuDataAlterado()" [disabled]="modoRemarcacao">
+              <option [ngValue]="null">Selecione o profissional</option>
+              <option *ngFor="let p of profissionais" [value]="p.idPublico">{{p.nome}}</option>
+            </select></div>
+          <div><label for="data">Data do atendimento</label><input id="data" type="date" [(ngModel)]="dataSelecionada"
+              [min]="dataMinima" (change)="onProfissionalOuDataAlterado()"></div>
+        </div>
+        <div class="suggestions" *ngIf="modoRemarcacao&&sugestoesRemarcacao.length">Datas sugeridas: <button
+            type="button" *ngFor="let d of sugestoesRemarcacao"
+            (click)="selecionarDataSugerida(d)">{{formatarData(d)}}</button></div>
+        <p class="state" *ngIf="consultandoVagas">Consultando vagas disponíveis...</p>
+        <div class="turns" *ngIf="vagas&&!consultandoVagas"><button type="button" *ngFor="let t of ['MANHA','TARDE']"
+            [class.active]="turnoSelecionado===t" [disabled]="vagasDoTurno(t)<=0"
+            [attr.aria-pressed]="turnoSelecionado===t" (click)="selecionarTurno(t)"><span
+              aria-hidden="true">{{t==='MANHA'?'☀':'◐'}}</span><strong>{{labelEnum(t)}}</strong><small>{{vagasDoTurno(t)>0?vagasDoTurno(t)+'
+              vagas disponíveis':'Sem vagas disponíveis'}}</small><i *ngIf="turnoSelecionado===t">✓</i></button></div>
+      </section>
+      <section class="step-card">
+        <h2><span class="step-number">3</span>Selecionar horário disponível</h2>
+        <p class="state" *ngIf="!turnoSelecionado">Selecione profissional, data e turno para consultar os horários.</p>
+        <p class="state" *ngIf="consultandoHorarios">Consultando horários disponíveis...</p>
+        <p class="state error-text" role="alert" *ngIf="erroHorarios">{{erroHorarios}}</p>
+        <p class="state" *ngIf="turnoSelecionado&&!consultandoHorarios&&!erroHorarios&&!horarios.length">
+          {{mensagemHorarios()}}</p>
+        <div class="times" *ngIf="horarios.length"><button type="button" *ngFor="let h of horarios"
+            [disabled]="!h.disponivel" [class.active]="horaAtendimento===h.hora.slice(0,5)"
+            [attr.aria-pressed]="horaAtendimento===h.hora.slice(0,5)"
+            [attr.aria-label]="h.hora.slice(0,5)+(h.disponivel?' disponível':' indisponível')"
+            (click)="selecionarHorario(h)">{{h.hora.slice(0,5)}} <i
+              *ngIf="horaAtendimento===h.hora.slice(0,5)">✓</i><small *ngIf="!h.disponivel">Ocupado</small></button>
+        </div>
+      </section>
     </div>
-
-    <div class="form-inline">
-      <input type="time" [(ngModel)]="horaAtendimento" />
-    </div>
-    <small *ngIf="errosPorCampo['horaAtendimento']" class="erro-campo">
-      {{ errosPorCampo['horaAtendimento'] }}
-    </small>
-  </section>
-
-  <section class="form-actions">
-    <button type="button" class="btn btn-cancel" (click)="cancelar()" [disabled]="salvando">
-      Cancelar
-    </button>
-
-    <button type="button" class="btn btn-save" [disabled]="!podeConfirmar" (click)="confirmarAgendamento()">
-      {{ salvando ? 'Salvando...' : (modoRemarcacao ? 'Confirmar Remarcação' : 'Confirmar Agendamento') }}
-    </button>
-  </section>
-
+    <aside class="summary">
+      <h2>▤ Resumo do agendamento</h2>
+      <dl>
+        <div>
+          <dt>Paciente</dt>
+          <dd><strong>{{pacienteSelecionado?.nome||'Não selecionado'}}</strong><small
+              *ngIf="pacienteSelecionado">{{pacienteSelecionado.cpf?formatarCpf(pacienteSelecionado.cpf):pacienteSelecionado.cns}}</small>
+          </dd>
+        </div>
+        <div>
+          <dt>Profissional</dt>
+          <dd><strong>{{profissionalSelecionado()?.nome||'Não selecionado'}}</strong><small
+              *ngIf="profissionalSelecionado()">{{labelEnum(profissionalSelecionado()?.unidadeAtuacao)}}</small></dd>
+        </div>
+        <div>
+          <dt>Data</dt>
+          <dd>{{formatarData(dataSelecionada)}}</dd>
+        </div>
+        <div>
+          <dt>Turno</dt>
+          <dd><strong>{{turnoSelecionado?labelEnum(turnoSelecionado):'Não selecionado'}}</strong><small
+              *ngIf="turnoSelecionado">{{vagasDoTurno(turnoSelecionado)}} vagas restantes</small></dd>
+        </div>
+        <div>
+          <dt>Horário</dt>
+          <dd>{{horaAtendimento||'Não selecionado'}}</dd>
+        </div>
+      </dl>
+      <p class="note">ⓘ Confira os dados antes de confirmar o agendamento.</p>
+    </aside>
+  </div>
+  <footer class="actions"><button type="button" class="cancel" (click)="cancelar()" [disabled]="salvando">×
+      Cancelar</button><button type="button" class="save" [disabled]="!podeConfirmar" (click)="confirmarAgendamento()">▣
+      {{salvando?'Salvando...':(modoRemarcacao?'Confirmar remarcação':'Confirmar agendamento')}}</button></footer>
 </main>

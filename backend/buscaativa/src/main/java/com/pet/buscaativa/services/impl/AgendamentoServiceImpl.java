@@ -2,6 +2,7 @@ package com.pet.buscaativa.services.impl;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +21,9 @@ import com.pet.buscaativa.entities.DisponibilidadeExcecao;
 import com.pet.buscaativa.entities.Paciente;
 import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.dto.AgendamentoDTO;
+import com.pet.buscaativa.entities.dto.HorariosDisponiveisDTO;
+import com.pet.buscaativa.entities.dto.HorariosDisponiveisDTO.HorarioDisponivelDTO;
+import com.pet.buscaativa.config.AgendaHorarioProperties;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
@@ -60,11 +64,15 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
     private final PacienteService pacienteService;
     private final HistoricoPacienteService historicoPacienteService;
+    private final AgendaHorarioProperties agendaHorarioProperties;
+    private static final List<SituacaoAtendimento> SITUACOES_ATIVAS = List.of(
+            SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO, SituacaoAtendimento.PRESENTE);
 
     @Override
     @Transactional
     public AgendamentoDTO save(AgendamentoDTO agendamentoDTO) {
-        Usuario usuario = usuarioRepository.findByIdPublico(agendamentoDTO.usuarioId())
+        // Serializa criações do mesmo profissional entre a consulta e o save.
+        Usuario usuario = usuarioRepository.findByIdPublicoForUpdate(agendamentoDTO.usuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
         if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL) {
@@ -83,16 +91,48 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
         boolean horarioJaOcupado = agendamentoRepository.existsAgendamentoAtivoNoMesmoHorario(
                 usuario, agendamentoDTO.dataAgendamento(), agendamentoDTO.horaAtendimento(),
-                List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO, SituacaoAtendimento.PRESENTE));
+                SITUACOES_ATIVAS);
 
         if (horarioJaOcupado) {
             throw new ConflictException(
                     "Já existe um atendimento marcado para este profissional nesta data e horário.");
         }
 
+        if (agendamentoRepository.existsAtivoDoPacienteNoMesmoHorario(paciente,
+                agendamentoDTO.dataAgendamento(), agendamentoDTO.horaAtendimento(), SITUACOES_ATIVAS)) {
+            throw new ConflictException("O paciente já possui um atendimento ativo nesta data e horário.");
+        }
+
         if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, agendamentoDTO.dataAgendamento())) {
             throw new ConflictException("A agenda do profissional está bloqueada na data informada.");
         }
+
+        @Override
+    public HorariosDisponiveisDTO buscarHorariosDisponiveis(UUID usuarioIdPublico, LocalDate data, TurnoEnum turno) {
+        if (data.isBefore(LocalDate.now()))
+            throw new ValidationException("Não é permitido consultar horários em data passada.");
+        Usuario usuario = usuarioRepository.findByIdPublico(usuarioIdPublico)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL)
+            throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
+        if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, data))
+            return new HorariosDisponiveisDTO(turno, 0, "AGENDA_BLOQUEADA", List.of());
+        Integer capacidade = resolverCapacidade(usuario, data, data.getDayOfWeek(), turno);
+        if (capacidade == null)
+            return new HorariosDisponiveisDTO(turno, 0, "TURNO_NAO_CONFIGURADO", List.of());
+        int ocupadas = agendamentoRepository.contarVagasOcupadasBySituacoes(usuario, data, turno, SITUACOES_ATIVAS);
+        int restantes = Math.max(0, capacidade - ocupadas);
+        if (restantes == 0)
+            return new HorariosDisponiveisDTO(turno, 0, "CAPACIDADE_ESGOTADA", List.of());
+        var periodo = turno == TurnoEnum.MANHA ? agendaHorarioProperties.getHorarios().getManha()
+                : agendaHorarioProperties.getHorarios().getTarde();
+        Set<LocalTime> ocupados = new HashSet<>(agendamentoRepository.findHorariosOcupados(usuario, data, turno, SITUACOES_ATIVAS));
+        List<HorarioDisponivelDTO> horarios = new ArrayList<>();
+        for (LocalTime hora = periodo.getInicio(); !hora.isAfter(periodo.getFim());
+                hora = hora.plusMinutes(agendaHorarioProperties.getIntervaloMinutos()))
+            horarios.add(new HorarioDisponivelDTO(hora, !ocupados.contains(hora)));
+        return new HorariosDisponiveisDTO(turno, restantes, null, horarios);
+    }
 
         // Resolve a capacidade considerando exceção de data específica (prioridade)
         // e, na ausência dela, o padrão semanal.
