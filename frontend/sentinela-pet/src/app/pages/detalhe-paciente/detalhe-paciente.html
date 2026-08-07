@@ -21,7 +21,8 @@
     <div><small>ATENÇÃO NECESSÁRIA</small><b>{{d.atencaoNecessaria}}</b></div>
   </section>
   <nav class="tabs"><a aria-current="page">Visão geral</a><a
-      [routerLink]="['/pacientes/detalhes',id,'historico']">Histórico</a><a href="#agendamentos">Agendamentos</a></nav>
+      [routerLink]="['/pacientes/detalhes',id,'historico']">Histórico</a><a
+      [routerLink]="['/pacientes/detalhes',id,'agendamentos']">Agendamentos</a></nav>
   <div class="columns">
     <div>
       <section class="card">
@@ -116,7 +117,8 @@
     <aside>
       <section class="card attention">
         <h2>Situação do acompanhamento</h2>
-        <h3>{{d.atencaoNecessaria}}</h3>
+        <h3 [class.regular]="ativo && d.classificacaoRisco === 'VERDE'"
+          [class.alerta]="!(ativo && d.classificacaoRisco === 'VERDE')">{{d.atencaoNecessaria}}</h3>
         <p>{{d.classificacaoRisco==='VERMELHO'?'Faltas recorrentes ou ausência conforme critérios do
           sistema.':d.classificacaoRisco==='AMARELO'?'Acompanhe presença e próximos atendimentos.':'Sem alerta de busca
           ativa no momento.'}}</p><button *ngIf="ativo&&d.classificacaoRisco==='VERMELHO'&&podeGerenciar"
@@ -129,30 +131,6 @@
       </section>
     </aside>
   </div>
-  <section id="agendamentos" class="card appointments">
-    <h2>Agendamentos</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Horário</th>
-          <th>Profissional</th>
-          <th>Tipo</th>
-          <th>Situação</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let a of agendamentos">
-          <td>{{a.dataAgendamento|date:'dd/MM/yyyy'}}</td>
-          <td>{{a.horaAtendimento.slice(0,5)}}</td>
-          <td>{{a.nomeProfissional}}</td>
-          <td>{{label(a.tipoAcompanhamento)}}</td>
-          <td>{{label(a.situacaoAtendimento)}}</td>
-        </tr>
-      </tbody>
-    </table>
-    <p *ngIf="!agendamentos.length">Nenhum agendamento encontrado.</p>
-  </section>
 </main>
 <p class="loading" aria-live="polite" *ngIf="carregando">Carregando paciente…</p>
 <p class="error" role="alert" *ngIf="erro">{{erro}}</p>

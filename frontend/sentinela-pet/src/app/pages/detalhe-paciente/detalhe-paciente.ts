@@ -15,7 +15,6 @@ import {
     RouterLink
 } from '@angular/router';
 import {
-    AgendamentoPaciente,
     PacienteDetalhe,
     PacienteService
 } from '../../services/paciente/paciente-service';
@@ -39,7 +38,6 @@ export class DetalhePaciente implements OnInit {
     descricao = '';
     salvando = false;
     podeGerenciar = false;
-    agendamentos: AgendamentoPaciente[] = [];
     constructor(private route: ActivatedRoute, private router: Router, private service: PacienteService, usuario: UsuarioLogadoService) {
         usuario.obterUsuarioLogado().subscribe(u => this.podeGerenciar = ['ADMINISTRADOR', 'PROFISSIONAL'].includes(u.tipoUsuario))
     }
@@ -61,8 +59,7 @@ export class DetalhePaciente implements OnInit {
                 this.erro = 'Não foi possível carregar os dados deste paciente.';
                 this.carregando = false
             }
-        });
-        this.service.listarAgendamentos(this.id).subscribe(a => this.agendamentos = a)
+        })
     }
     get p() {
         return this.detalhe?.paciente

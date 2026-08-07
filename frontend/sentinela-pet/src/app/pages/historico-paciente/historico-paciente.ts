@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import {
   HistoricoPacienteEvento,
@@ -11,7 +11,7 @@ import {
 @Component({
   selector: 'app-historico-paciente',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   providers: [DatePipe],
   templateUrl: './historico-paciente.html',
   styleUrl: './historico-paciente.css',
@@ -69,5 +69,11 @@ export class HistoricoPaciente implements OnInit {
 
   classeEvento(evento: HistoricoPacienteEvento): string {
     return `evento-${evento.tipo.toLowerCase().replaceAll('_', '-')}`;
+  }
+  
+  iniciais(): string {
+    return (this.historico?.nomePaciente ?? '')
+      .trim().split(/\s+/).slice(0, 2)
+      .map((parte) => parte.charAt(0)).join('').toUpperCase();
   }
 }

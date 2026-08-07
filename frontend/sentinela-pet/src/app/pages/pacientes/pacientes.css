@@ -253,6 +253,56 @@ select:focus-visible {
     outline-offset: 2px
 }
 
+table {
+    table-layout: fixed
+}
+
+.person {
+    min-width: 0
+}
+
+.person>span:last-child {
+    min-width: 0
+}
+
+.person b {
+    overflow-wrap: anywhere
+}
+
+.avatar {
+    min-width: 38px;
+    min-height: 38px;
+    flex: 0 0 38px
+}
+
+.table-wrap th:nth-child(1) {
+    width: 24%
+}
+
+.table-wrap th:nth-child(2) {
+    width: 16%
+}
+
+.table-wrap th:nth-child(3) {
+    width: 16%
+}
+
+.table-wrap th:nth-child(4) {
+    width: 8%
+}
+
+.table-wrap th:nth-child(5) {
+    width: 13%
+}
+
+.table-wrap th:nth-child(6) {
+    width: 15%
+}
+
+.table-wrap th:nth-child(7) {
+    width: 8%
+}
+
 @media(max-width:950px) {
     .filters {
         grid-template-columns: repeat(2, 1fr)
@@ -264,6 +314,10 @@ select:focus-visible {
 }
 
 @media(max-width:650px) {
+    .table-wrap table {
+        table-layout: auto
+    }
+
     .page {
         padding: 18px
     }

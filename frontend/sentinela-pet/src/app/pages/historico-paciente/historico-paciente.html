@@ -20,6 +20,7 @@
         <span aria-hidden="true">←</span> Voltar para os detalhes
       </button>
       <div class="titulo-linha">
+        <span class="avatar" aria-hidden="true">{{ iniciais() }}</span>
         <h1>{{ historico.nomePaciente }}</h1>
         <span class="risco-badge" [class]="'risco-badge risco-' + historico.classificacaoAtual.toLowerCase()">
           {{ formatarEnum(historico.classificacaoAtual) }}
@@ -29,8 +30,9 @@
     </header>
 
     <nav class="abas" aria-label="Navegação do paciente">
-      <button type="button" (click)="voltarParaDetalhes()">Resumo</button>
-      <button type="button" class="ativa" aria-current="page">Histórico do Paciente</button>
+      <a [routerLink]="['/pacientes/detalhes', idPublico]">Visão geral</a>
+      <a class="ativa" aria-current="page">Histórico</a>
+      <a [routerLink]="['/pacientes/detalhes', idPublico, 'agendamentos']">Agendamentos</a>
     </nav>
 
     <section class="situacao-card" aria-labelledby="situacao-titulo">
