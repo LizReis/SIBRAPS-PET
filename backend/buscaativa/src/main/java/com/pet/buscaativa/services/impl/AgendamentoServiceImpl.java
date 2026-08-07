@@ -106,33 +106,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, agendamentoDTO.dataAgendamento())) {
             throw new ConflictException("A agenda do profissional está bloqueada na data informada.");
         }
-
-        @Override
-    public HorariosDisponiveisDTO buscarHorariosDisponiveis(UUID usuarioIdPublico, LocalDate data, TurnoEnum turno) {
-        if (data.isBefore(LocalDate.now()))
-            throw new ValidationException("Não é permitido consultar horários em data passada.");
-        Usuario usuario = usuarioRepository.findByIdPublico(usuarioIdPublico)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
-        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL)
-            throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
-        if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, data))
-            return new HorariosDisponiveisDTO(turno, 0, "AGENDA_BLOQUEADA", List.of());
-        Integer capacidade = resolverCapacidade(usuario, data, data.getDayOfWeek(), turno);
-        if (capacidade == null)
-            return new HorariosDisponiveisDTO(turno, 0, "TURNO_NAO_CONFIGURADO", List.of());
-        int ocupadas = agendamentoRepository.contarVagasOcupadasBySituacoes(usuario, data, turno, SITUACOES_ATIVAS);
-        int restantes = Math.max(0, capacidade - ocupadas);
-        if (restantes == 0)
-            return new HorariosDisponiveisDTO(turno, 0, "CAPACIDADE_ESGOTADA", List.of());
-        var periodo = turno == TurnoEnum.MANHA ? agendaHorarioProperties.getHorarios().getManha()
-                : agendaHorarioProperties.getHorarios().getTarde();
-        Set<LocalTime> ocupados = new HashSet<>(agendamentoRepository.findHorariosOcupados(usuario, data, turno, SITUACOES_ATIVAS));
-        List<HorarioDisponivelDTO> horarios = new ArrayList<>();
-        for (LocalTime hora = periodo.getInicio(); !hora.isAfter(periodo.getFim());
-                hora = hora.plusMinutes(agendaHorarioProperties.getIntervaloMinutos()))
-            horarios.add(new HorarioDisponivelDTO(hora, !ocupados.contains(hora)));
-        return new HorariosDisponiveisDTO(turno, restantes, null, horarios);
-    }
+        
 
         // Resolve a capacidade considerando exceção de data específica (prioridade)
         // e, na ausência dela, o padrão semanal.
@@ -240,6 +214,33 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         }
 
         return vagasPorTurno;
+    }
+
+    @Override
+    public HorariosDisponiveisDTO buscarHorariosDisponiveis(UUID usuarioIdPublico, LocalDate data, TurnoEnum turno) {
+        if (data.isBefore(LocalDate.now()))
+            throw new ValidationException("Não é permitido consultar horários em data passada.");
+        Usuario usuario = usuarioRepository.findByIdPublico(usuarioIdPublico)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL)
+            throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
+        if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, data))
+            return new HorariosDisponiveisDTO(turno, 0, "AGENDA_BLOQUEADA", List.of());
+        Integer capacidade = resolverCapacidade(usuario, data, data.getDayOfWeek(), turno);
+        if (capacidade == null)
+            return new HorariosDisponiveisDTO(turno, 0, "TURNO_NAO_CONFIGURADO", List.of());
+        int ocupadas = agendamentoRepository.contarVagasOcupadasBySituacoes(usuario, data, turno, SITUACOES_ATIVAS);
+        int restantes = Math.max(0, capacidade - ocupadas);
+        if (restantes == 0)
+            return new HorariosDisponiveisDTO(turno, 0, "CAPACIDADE_ESGOTADA", List.of());
+        var periodo = turno == TurnoEnum.MANHA ? agendaHorarioProperties.getHorarios().getManha()
+                : agendaHorarioProperties.getHorarios().getTarde();
+        Set<LocalTime> ocupados = new HashSet<>(agendamentoRepository.findHorariosOcupados(usuario, data, turno, SITUACOES_ATIVAS));
+        List<HorarioDisponivelDTO> horarios = new ArrayList<>();
+        for (LocalTime hora = periodo.getInicio(); !hora.isAfter(periodo.getFim());
+                hora = hora.plusMinutes(agendaHorarioProperties.getIntervaloMinutos()))
+            horarios.add(new HorarioDisponivelDTO(hora, !ocupados.contains(hora)));
+        return new HorariosDisponiveisDTO(turno, restantes, null, horarios);
     }
 
     /**
