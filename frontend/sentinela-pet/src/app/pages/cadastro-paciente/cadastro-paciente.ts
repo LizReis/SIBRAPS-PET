@@ -50,6 +50,25 @@ enum CapsEnum {
   styleUrl: './cadastro-paciente.css',
 })
 export class CadastroPaciente implements OnInit {
+  readonly estados = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
+    'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',
+    'SP', 'SE', 'TO',
+  ];
+
+  readonly camposIdentificacao = [
+    'nome', 'nomeMae', 'dataNascimento', 'sexo', 'racacor', 'situacaoRua',
+  ];
+
+  readonly camposDocumentos = [
+    'cpf', 'cns', 'telefone', 'usfReferencia', 'capsReferencia',
+    'tipoAcompanhamento',
+  ];
+
+  readonly camposEndereco = [
+    'endereco.cep', 'endereco.estado', 'endereco.cidade', 'endereco.bairro',
+    'endereco.logradouro', 'endereco.numero',
+  ];
   sexoOptions = Object.values(SexoEnum);
   racaCorOptions = Object.values(RacaCorEnum);
   tipoAcompanhamentoOptions = Object.values(TipoAcompanhamento);
@@ -89,7 +108,7 @@ export class CadastroPaciente implements OnInit {
 
     capsReferencia: new FormControl('', Validators.required),
 
-    situacaoRua: new FormControl(false, Validators.required),
+    situacaoRua: new FormControl<boolean | null>(null, Validators.required),
 
     tipoAcompanhamento: new FormControl('', Validators.required),
 
@@ -122,7 +141,9 @@ export class CadastroPaciente implements OnInit {
     this.modoEdicao = !!this.idPublico;
 
     this.carregarUnidadesSaude();
-    this.pacienteForm.controls.situacaoRua.valueChanges.subscribe((rua) => this.atualizarValidadoresEndereco(!!rua));
+    this.pacienteForm.controls.situacaoRua.valueChanges.subscribe((rua) => {
+      this.atualizarValidadoresEndereco(rua === true);
+    });
   }
 
   carregarUnidadesSaude(): void {
@@ -276,14 +297,62 @@ export class CadastroPaciente implements OnInit {
     });
   }
 
-  private atualizarValidadoresEndereco(situacaoRua: boolean): void {
-    const endereco=this.pacienteForm.controls.endereco;
-    ['cidade','estado','bairro','logradouro','numero','cep'].forEach(nome=>{
-      const controle=endereco.get(nome); situacaoRua?controle?.clearValidators():controle?.setValidators(Validators.required);controle?.updateValueAndValidity({emitEvent:false});
+  atualizarValidadoresEndereco(situacaoRua: boolean): void {
+    const endereco = this.pacienteForm.controls.endereco;
+
+    ['cidade', 'estado', 'bairro', 'logradouro', 'numero', 'cep'].forEach((nome) => {
+      const controle = endereco.get(nome);
+
+      if (situacaoRua) {
+        controle?.clearValidators();
+        controle?.setErrors(null);
+        controle?.markAsUntouched();
+      } else {
+        controle?.setValidators(Validators.required);
+      }
+
+      controle?.updateValueAndValidity({ emitEvent: false });
     });
   }
-  get progresso():number {const nomes=['nome','nomeMae','dataNascimento','sexo','racacor','cns','cpf','telefone','usfReferencia','capsReferencia','tipoAcompanhamento'];if(!this.pacienteForm.controls.situacaoRua.value)nomes.push('endereco.cidade','endereco.estado','endereco.bairro','endereco.logradouro','endereco.numero','endereco.cep');return Math.round(nomes.filter(n=>this.pacienteForm.get(n)?.valid&&!!this.pacienteForm.get(n)?.value).length/nomes.length*100)}
-  estadoSecao(campos:string[]):string{const validos=campos.filter(c=>this.pacienteForm.get(c)?.valid&&!!this.pacienteForm.get(c)?.value).length;return validos===0?'Incompleto':validos===campos.length?'Concluído':'Em preenchimento'}
+
+  get progresso(): number {
+    const camposObrigatorios = [
+      ...this.camposIdentificacao,
+      ...this.camposDocumentos,
+      ...(this.pacienteForm.controls.situacaoRua.value === true
+        ? []
+        : this.camposEndereco),
+    ];
+    const preenchidos = camposObrigatorios.filter((campo) =>
+      this.controlePreenchido(campo));
+
+    return Math.round((preenchidos.length / camposObrigatorios.length) * 100);
+  }
+
+  estadoSecao(campos: string[]): string {
+    const preenchidos = campos.filter((campo) => this.controlePreenchido(campo)).length;
+
+    if (preenchidos === 0) return 'Incompleto';
+    if (preenchidos === campos.length) return 'Concluído';
+    return 'Em preenchimento';
+  }
+
+  get estadoEndereco(): string {
+    return this.pacienteForm.controls.situacaoRua.value === true
+      ? 'Concluído'
+      : this.estadoSecao(this.camposEndereco);
+  }
+
+  private controlePreenchido(caminho: string): boolean {
+    const control = this.pacienteForm.get(caminho);
+
+    if (!control || control.invalid) return false;
+
+    const valor = control.value;
+    if (typeof valor === 'boolean') return true;
+    if (typeof valor === 'string') return valor.trim().length > 0;
+    return valor !== null && valor !== undefined;
+  }
 
   private tratarErro(erro: HttpErrorResponse): void {
     if (!erro.error) {
