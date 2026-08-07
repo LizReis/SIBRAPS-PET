@@ -109,7 +109,7 @@ public class PacienteServiceImpl implements PacienteService{
     public PacienteListaResponseDTO pesquisar(String q, ClassificacaoRisco classificacao, StatusPaciente status,
             TipoAcompanhamento tipo, int page, int size) {
         size = Math.min(Math.max(size, 1), 50); page = Math.max(page, 0);
-        Specification<Paciente> spec = Specification.where(null);
+        Specification<Paciente> spec = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
         if (q != null && !q.isBlank()) {
             String termo=q.trim(), digitos=termo.replaceAll("\\D", "");
             if ((!digitos.isEmpty() && digitos.length()!=11 && digitos.length()!=15) || (digitos.isEmpty() && termo.length()<3))
