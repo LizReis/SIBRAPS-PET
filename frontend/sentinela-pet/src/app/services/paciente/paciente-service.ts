@@ -38,7 +38,7 @@ export interface PacientePayload {
   cpf: string;
   telefone: string;
 
-  endereco: EnderecoPayload;
+  endereco: EnderecoPayload | null;
 
   situacaoRua: boolean;
   tipoAcompanhamento: string;
@@ -50,6 +50,12 @@ export interface PacientePayload {
 
   capsReferencia: string;
 }
+
+export interface PacienteLista extends Pick<PacientePayload, 'idPublico'|'nome'|'cpf'|'cns'|'countFaltas'|'dataUltimaPresenca'|'statusPaciente'|'tipoAcompanhamento'> { unidade?: string; classificacaoRisco: string; }
+export interface PacientePesquisa { resumo: { pacientesAtivos:number; emAtencao:number; buscaAtiva:number; semPresencaRecente:number }; pacientes:PacienteLista[]; paginaAtual:number; tamanhoPagina:number; totalRegistros:number; totalPaginas:number; }
+export interface ProximoAgendamento { id:number; data:string; hora:string; situacao:string }
+export interface PacienteDetalhe { paciente:PacientePayload; classificacaoRisco:string; proximoAgendamento?:ProximoAgendamento; atencaoNecessaria:string }
+export interface AgendamentoPaciente { id:number; dataAgendamento:string; horaAtendimento:string; nomeProfissional:string; tipoAcompanhamento:string; situacaoAtendimento:string }
 
 export interface FieldMessage {
   fieldName: string;
@@ -111,6 +117,18 @@ export class PacienteService {
   listar(): Observable<PacientePayload[]> {
     return this.http.get<PacientePayload[]>(this.apiUrl);
   }
+
+  pesquisar(params: Record<string,string|number|undefined>): Observable<PacientePesquisa> {
+    const limpos=Object.fromEntries(Object.entries(params).filter(([,v])=>v!==undefined && v!==''));
+    return this.http.get<PacientePesquisa>(`${this.apiUrl}/pesquisa`, {params: limpos as any});
+  }
+  buscarDetalhe(id:string):Observable<PacienteDetalhe>{ return this.http.get<PacienteDetalhe>(`${this.apiUrl}/${id}/detalhe`); }
+  listarAgendamentos(id:string):Observable<AgendamentoPaciente[]>{ return this.http.get<AgendamentoPaciente[]>(`${this.apiUrl}/${id}/agendamentos`); }
+  encerrar(id:string, motivo:string, descricao?:string):Observable<void>{
+    const status:Record<string,string>={ALTA_TERAPEUTICA:'ALTA_TERAPEUTICA',TRANSFERENCIA_OUTRA_UNIDADE:'TRANSFERIDO',ABANDONO_TRATAMENTO:'ABANDONO_TRATAMENTO',OBITO:'OBITO',OUTRO:'OUTRO'};
+    return this.http.patch<void>(`${this.apiUrl}/${id}/encerrar`,{motivo,statusPaciente:status[motivo],descricao});
+  }
+  registrarBuscaAtiva(id:string, descricao:string):Observable<void>{ return this.http.post<void>(`${this.apiUrl}/${id}/historico`,{tipo:'BUSCA_ATIVA',descricao}); }
 
   buscarPorNome(nome: string): Observable<PacientePayload[]> {
     return this.http.get<PacientePayload[]>(

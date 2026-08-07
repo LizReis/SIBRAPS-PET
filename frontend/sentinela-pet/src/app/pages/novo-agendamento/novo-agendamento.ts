@@ -96,6 +96,18 @@ export class NovoAgendamento implements OnInit, OnDestroy {
 
     this.carregarProfissionais();
 
+    const pacienteId = this.route.snapshot.queryParamMap.get('pacienteId');
+    if (pacienteId) {
+      this.pacienteService.buscarPorId(pacienteId).subscribe({
+        next: paciente => {
+          this.pacienteSelecionado = paciente;
+          this.termoPesquisaPaciente = paciente.nome;
+          this.resultadosPacientes = [paciente];
+        },
+        error: () => this.erroGeral = 'Não foi possível pré-selecionar o paciente informado.',
+      });
+    }
+
     if (this.agendamentoOriginalId) {
       this.carregarAgendamentoOriginal(this.agendamentoOriginalId);
     }

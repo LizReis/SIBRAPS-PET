@@ -24,6 +24,12 @@ import com.pet.buscaativa.entities.dto.HistoricoPacienteDTO;
 import com.pet.buscaativa.entities.dto.PacienteDTO;
 import com.pet.buscaativa.entities.dto.ReativacaoPacienteDTO;
 import com.pet.buscaativa.entities.dto.RegistroHistoricoPacienteDTO;
+import com.pet.buscaativa.entities.dto.PacienteListaResponseDTO;
+import com.pet.buscaativa.entities.dto.PacienteDetalheDTO;
+import com.pet.buscaativa.entities.dto.AgendamentoDTO;
+import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
+import com.pet.buscaativa.entities.enums.StatusPaciente;
+import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
 
@@ -46,6 +52,26 @@ public class PacienteController {
     @GetMapping("/{idPublico}")
     public ResponseEntity<PacienteDTO> buscaPacienteId(@PathVariable UUID idPublico){
         return ResponseEntity.ok(pacienteService.findById(idPublico));
+    }
+
+    @GetMapping("/pesquisa")
+    public ResponseEntity<PacienteListaResponseDTO> pesquisar(
+            @RequestParam(required=false) String q,
+            @RequestParam(required=false) ClassificacaoRisco classificacao,
+            @RequestParam(defaultValue="ATIVO") StatusPaciente status,
+            @RequestParam(required=false) TipoAcompanhamento tipoAcompanhamento,
+            @RequestParam(defaultValue="0") int page, @RequestParam(defaultValue="10") int size) {
+        return ResponseEntity.ok(pacienteService.pesquisar(q, classificacao, status, tipoAcompanhamento, page, size));
+    }
+
+    @GetMapping("/{idPublico}/detalhe")
+    public ResponseEntity<PacienteDetalheDTO> detalhe(@PathVariable UUID idPublico) {
+        return ResponseEntity.ok(pacienteService.findDetalhe(idPublico));
+    }
+
+    @GetMapping("/{idPublico}/agendamentos")
+    public ResponseEntity<List<AgendamentoDTO>> agendamentos(@PathVariable UUID idPublico) {
+        return ResponseEntity.ok(pacienteService.listarAgendamentos(idPublico));
     }
 
     @GetMapping("/busca/cpf/{cpf}")

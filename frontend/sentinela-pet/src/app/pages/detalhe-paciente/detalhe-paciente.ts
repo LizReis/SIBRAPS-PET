@@ -1,141 +1,130 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-
-import { PacientePayload, PacienteService } from '../../services/paciente/paciente-service';
-
+import {
+    CommonModule
+} from '@angular/common';
+import {
+    Component,
+    HostListener,
+    OnInit
+} from '@angular/core';
+import {
+    FormsModule
+} from '@angular/forms';
+import {
+    ActivatedRoute,
+    Router,
+    RouterLink
+} from '@angular/router';
+import {
+    AgendamentoPaciente,
+    PacienteDetalhe,
+    PacienteService
+} from '../../services/paciente/paciente-service';
+import {
+    UsuarioLogadoService
+} from '../../services/usuario-logado-service';
 @Component({
-  selector: 'app-detalhe-paciente',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './detalhe-paciente.html',
-  styleUrl: './detalhe-paciente.css',
+    selector: 'app-detalhe-paciente',
+    standalone: true,
+    imports: [CommonModule, FormsModule, RouterLink],
+    templateUrl: './detalhe-paciente.html',
+    styleUrl: './detalhe-paciente.css'
 })
 export class DetalhePaciente implements OnInit {
-  paciente: PacientePayload | null = null;
-
-  carregando = false;
-  erro: string | null = null;
-
-  inativando = false;
-  confirmandoInativacao = false;
-
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private pacienteService: PacienteService,
-  ) {}
-
-  ngOnInit(): void {
-    const idPublico = this.route.snapshot.paramMap.get('id');
-
-    if (!idPublico) {
-      this.erro = 'Paciente não informado.';
-      return;
+    detalhe ? : PacienteDetalhe;
+    id = '';
+    carregando = true;
+    erro = '';
+    modal: '' | 'encerrar' | 'busca' = '';
+    motivo = '';
+    descricao = '';
+    salvando = false;
+    podeGerenciar = false;
+    agendamentos: AgendamentoPaciente[] = [];
+    constructor(private route: ActivatedRoute, private router: Router, private service: PacienteService, usuario: UsuarioLogadoService) {
+        usuario.obterUsuarioLogado().subscribe(u => this.podeGerenciar = ['ADMINISTRADOR', 'PROFISSIONAL'].includes(u.tipoUsuario))
     }
-
-    this.carregarPaciente(idPublico);
-  }
-
-  carregarPaciente(idPublico: string): void {
-    this.carregando = true;
-    this.erro = null;
-
-    this.pacienteService.buscarPorId(idPublico).subscribe({
-      next: (paciente) => {
-        this.paciente = paciente;
-        this.carregando = false;
-      },
-      error: (erro) => {
-        console.error('Erro ao carregar paciente', erro);
-        this.erro = 'Não foi possível carregar os dados do paciente.';
-        this.carregando = false;
-      },
-    });
-  }
-
-  voltar(): void {
-    this.router.navigate(['/pacientes']);
-  }
-
-  editarPaciente(): void {
-    if (!this.paciente?.idPublico) return;
-    this.router.navigate(['/pacientes/editar', this.paciente.idPublico]);
-  }
-
-  abrirHistoricoPaciente(): void {
-    if (!this.paciente?.idPublico) return;
-    this.router.navigate(['/pacientes/detalhes', this.paciente.idPublico, 'historico']);
-  }
-
-
-  pedirConfirmacaoInativacao(): void {
-    this.confirmandoInativacao = true;
-  }
-
-  cancelarInativacao(): void {
-    this.confirmandoInativacao = false;
-  }
-
-  confirmarInativacao(): void {
-    if (!this.paciente?.idPublico) return;
-
-    this.inativando = true;
-
-    this.pacienteService.inativarPaciente(this.paciente.idPublico).subscribe({
-      next: () => {
-        this.inativando = false;
-        this.confirmandoInativacao = false;
-
-        if (this.paciente) {
-          this.paciente.statusPaciente = 'INATIVO';
+    ngOnInit() {
+        this.id = this.route.snapshot.paramMap.get('id') || '';
+        if (!this.id) {
+            this.erro = 'Paciente não informado';
+            return
         }
-      },
-      error: (erro) => {
-        console.error('Erro ao inativar paciente', erro);
-        this.inativando = false;
-        this.erro = 'Não foi possível inativar o paciente. Tente novamente.';
-      },
-    });
-  }
-
-  get pacienteAtivo(): boolean {
-    return this.paciente?.statusPaciente !== 'INATIVO';
-  }
-
-  formatarCpf(cpf: string | undefined): string {
-    if (!cpf) return '-';
-    const numeros = cpf.replace(/\D/g, '');
-    return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  }
-
-  formatarTelefone(telefone: string | undefined): string {
-    if (!telefone) return '-';
-    const numeros = telefone.replace(/\D/g, '');
-
-    if (numeros.length <= 10) {
-      return numeros.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+        this.carregar()
     }
-    return numeros.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-  }
-
-  formatarCep(cep: string | undefined): string {
-    if (!cep) return '-';
-    const numeros = cep.replace(/\D/g, '');
-    return numeros.replace(/(\d{5})(\d{3})/, '$1-$2');
-  }
-
-  formatarData(data: string | undefined): string {
-    if (!data) return '-';
-    const [ano, mes, dia] = data.split('-');
-    return `${dia}/${mes}/${ano}`;
-  }
-
-  labelEnum(valor: string | undefined): string {
-    if (!valor) return '-';
-    return valor
-      .replaceAll('_', ' ')
-      .toLowerCase()
-      .replace(/\b\w/g, (letra) => letra.toUpperCase());
-  }
+    carregar() {
+        this.service.buscarDetalhe(this.id).subscribe({
+            next: d => {
+                this.detalhe = d;
+                this.carregando = false
+            },
+            error: () => {
+                this.erro = 'Não foi possível carregar os dados deste paciente.';
+                this.carregando = false
+            }
+        });
+        this.service.listarAgendamentos(this.id).subscribe(a => this.agendamentos = a)
+    }
+    get p() {
+        return this.detalhe?.paciente
+    }
+    get ativo() {
+        return this.p?.statusPaciente === 'ATIVO'
+    }
+    iniciais() {
+        return (this.p?.nome || '').split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase()
+    }
+    idade() {
+        if (!this.p) return 0;
+        const n = new Date(this.p.dataNascimento + 'T00:00:00'),
+            h = new Date();
+        let i = h.getFullYear() - n.getFullYear();
+        if (h < new Date(h.getFullYear(), n.getMonth(), n.getDate())) i--;
+        return i
+    }
+    label(v ? : string) {
+        return (v || 'Não informado').replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, x => x.toUpperCase())
+    }
+    data(v ? : string) {
+        return v ? new Intl.DateTimeFormat('pt-BR').format(new Date(v + 'T00:00:00')) : 'Sem presença registrada'
+    }
+    mask(v: string | undefined, t: 'cpf' | 'cns') {
+        const d = (v || '').replace(/\D/g, '');
+        return t === 'cpf' ? `•••.${d.slice(3,6)}.${d.slice(6,9)}-••` : `•••••••••${d.slice(-6)}`
+    }
+    encerrar() {
+        if (!this.motivo || this.motivo === 'OUTRO' && !this.descricao.trim()) return;
+        this.salvando = true;
+        this.service.encerrar(this.id, this.motivo, this.descricao).subscribe({
+            next: () => {
+                this.modal = '';
+                this.salvando = false;
+                this.carregar()
+            },
+            error: e => {
+                this.erro = e.error?.message || 'Não foi possível encerrar.';
+                this.salvando = false
+            }
+        })
+    }
+    registrar() {
+        if (!this.descricao.trim()) return;
+        this.salvando = true;
+        this.service.registrarBuscaAtiva(this.id, this.descricao).subscribe({
+            next: () => {
+                this.modal = '';
+                this.descricao = '';
+                this.salvando = false
+            },
+            error: () => {
+                this.erro = 'Não foi possível registrar a busca ativa.';
+                this.salvando = false
+            }
+        })
+    }
+    abrirHistoricoPaciente() {
+        this.router.navigate(['/pacientes/detalhes', this.id, 'historico'])
+    }
+    @HostListener('document:keydown.escape') escape() {
+        this.modal = ''
+    }
 }

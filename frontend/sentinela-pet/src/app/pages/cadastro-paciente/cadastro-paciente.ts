@@ -122,6 +122,7 @@ export class CadastroPaciente implements OnInit {
     this.modoEdicao = !!this.idPublico;
 
     this.carregarUnidadesSaude();
+    this.pacienteForm.controls.situacaoRua.valueChanges.subscribe((rua) => this.atualizarValidadoresEndereco(!!rua));
   }
 
   carregarUnidadesSaude(): void {
@@ -203,6 +204,7 @@ export class CadastroPaciente implements OnInit {
 
     if (this.pacienteForm.invalid) {
       this.pacienteForm.markAllAsTouched();
+      setTimeout(() => document.querySelector<HTMLElement>('form .ng-invalid:not(form)')?.focus());
       return;
     }
 
@@ -235,7 +237,7 @@ export class CadastroPaciente implements OnInit {
 
       tipoAcompanhamento: formValue.tipoAcompanhamento ?? '',
 
-      endereco: {
+      endereco: (formValue.situacaoRua ? null : {
         cidade: formValue.endereco?.cidade?.trim() ?? '',
 
         estado: formValue.endereco?.estado?.trim().toUpperCase() ?? '',
@@ -249,7 +251,7 @@ export class CadastroPaciente implements OnInit {
         complemento: formValue.endereco?.complemento?.trim() ?? '',
 
         cep: this.somenteNumeros(formValue.endereco?.cep),
-      },
+      }),
     };
 
     const request$ = this.modoEdicao
@@ -273,6 +275,15 @@ export class CadastroPaciente implements OnInit {
       },
     });
   }
+
+  private atualizarValidadoresEndereco(situacaoRua: boolean): void {
+    const endereco=this.pacienteForm.controls.endereco;
+    ['cidade','estado','bairro','logradouro','numero','cep'].forEach(nome=>{
+      const controle=endereco.get(nome); situacaoRua?controle?.clearValidators():controle?.setValidators(Validators.required);controle?.updateValueAndValidity({emitEvent:false});
+    });
+  }
+  get progresso():number {const nomes=['nome','nomeMae','dataNascimento','sexo','racacor','cns','cpf','telefone','usfReferencia','capsReferencia','tipoAcompanhamento'];if(!this.pacienteForm.controls.situacaoRua.value)nomes.push('endereco.cidade','endereco.estado','endereco.bairro','endereco.logradouro','endereco.numero','endereco.cep');return Math.round(nomes.filter(n=>this.pacienteForm.get(n)?.valid&&!!this.pacienteForm.get(n)?.value).length/nomes.length*100)}
+  estadoSecao(campos:string[]):string{const validos=campos.filter(c=>this.pacienteForm.get(c)?.valid&&!!this.pacienteForm.get(c)?.value).length;return validos===0?'Incompleto':validos===campos.length?'Concluído':'Em preenchimento'}
 
   private tratarErro(erro: HttpErrorResponse): void {
     if (!erro.error) {

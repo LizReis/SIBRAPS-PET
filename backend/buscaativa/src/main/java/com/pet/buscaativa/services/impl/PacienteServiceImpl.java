@@ -8,6 +8,9 @@ import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import com.pet.buscaativa.entities.Endereco;
 import com.pet.buscaativa.entities.Paciente;
@@ -15,6 +18,7 @@ import com.pet.buscaativa.entities.dto.AlertaBuscaAtivaDTO;
 import com.pet.buscaativa.entities.dto.EncerramentoPacienteDTO;
 import com.pet.buscaativa.entities.dto.PacienteDTO;
 import com.pet.buscaativa.entities.dto.ReativacaoPacienteDTO;
+import com.pet.buscaativa.entities.dto.*;
 import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
 import com.pet.buscaativa.entities.enums.MotivoEncerramento;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
@@ -25,6 +29,7 @@ import com.pet.buscaativa.repositories.AgendamentoRepository;
 import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
+import com.pet.buscaativa.services.PoliticaClassificacaoPaciente;
 import com.pet.buscaativa.services.exceptions.DatabaseException;
 import com.pet.buscaativa.services.exceptions.RecursoDuplicadoException;
 import com.pet.buscaativa.services.exceptions.ResourceNotFoundException;
@@ -38,10 +43,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PacienteServiceImpl implements PacienteService{
 
-    private static final int DIAS_AMARELO_INDIVIDUAL = 60;
-    private static final int DIAS_VERMELHO_INDIVIDUAL = 120;
-    private static final int DIAS_AMARELO_GRUPO = 15;
-    private static final int DIAS_VERMELHO_GRUPO = 30;
+    
     private static final int FALTAS_AMARELO = 2;
     private static final int FALTAS_VERMELHO = 3;
 
@@ -49,6 +51,7 @@ public class PacienteServiceImpl implements PacienteService{
     private final PacienteMapper pacienteMapper;
     private final HistoricoPacienteService historicoPacienteService;
     private final AgendamentoRepository agendamentoRepository;
+    private final PoliticaClassificacaoPaciente politicaClassificacao;
 
 
     @Override
@@ -100,6 +103,53 @@ public class PacienteServiceImpl implements PacienteService{
         Paciente paciente = pacienteRepository.findByIdPublico(idPublico)
                 .orElseThrow(() -> new ResourceNotFoundException(idPublico));
         return new PacienteDTO(paciente);
+    }
+
+    @Override
+    public PacienteListaResponseDTO pesquisar(String q, ClassificacaoRisco classificacao, StatusPaciente status,
+            TipoAcompanhamento tipo, int page, int size) {
+        size = Math.min(Math.max(size, 1), 50); page = Math.max(page, 0);
+        Specification<Paciente> spec = Specification.where(null);
+        if (q != null && !q.isBlank()) {
+            String termo=q.trim(), digitos=termo.replaceAll("\\D", "");
+            if ((!digitos.isEmpty() && digitos.length()!=11 && digitos.length()!=15) || (digitos.isEmpty() && termo.length()<3))
+                throw new ValidationException("Busca deve ter ao menos 3 letras, 11 dígitos de CPF ou 15 de CNS.");
+            spec=spec.and((root,cq,cb) -> digitos.length()==11 ? cb.equal(root.get("cpf"),digitos)
+                    : digitos.length()==15 ? cb.equal(root.get("cns"),digitos)
+                    : cb.like(cb.lower(root.get("nome")), "%"+termo.toLowerCase()+"%"));
+        }
+        if (classificacao!=null) spec=spec.and((r,c,b)->b.equal(r.get("classificacaoRisco"),classificacao));
+        if (status!=null) spec=spec.and((r,c,b)->b.equal(r.get("statusPaciente"),status));
+        if (tipo!=null) spec=spec.and((r,c,b)->b.equal(r.get("tipoAcompanhamento"),tipo));
+        Sort prioridade=Sort.by(Sort.Order.desc("classificacaoRisco"), Sort.Order.desc("countFaltas"), Sort.Order.asc("nome"));
+        var resultado=pacienteRepository.findAll(spec, PageRequest.of(page,size,prioridade));
+        var ativos=pacienteRepository.findByStatusPaciente(StatusPaciente.ATIVO);
+        var resumo=new PacienteResumoDTO(ativos.size(), ativos.stream().filter(p->p.getClassificacaoRisco()==ClassificacaoRisco.AMARELO).count(),
+                ativos.stream().filter(p->p.getClassificacaoRisco()==ClassificacaoRisco.VERMELHO).count(),
+                ativos.stream().filter(p->politicaClassificacao.semPresencaRecente(p, LocalDate.now())).count());
+        return new PacienteListaResponseDTO(resumo, resultado.map(PacienteListaDTO::new).getContent(), page,size,
+                resultado.getTotalElements(), resultado.getTotalPages());
+    }
+
+    @Override
+    public PacienteDetalheDTO findDetalhe(UUID idPublico) {
+        Paciente p=pacienteRepository.findByIdPublico(idPublico).orElseThrow(()->new ResourceNotFoundException(idPublico));
+        var proximo=agendamentoRepository.findFirstByPacienteAndDataAgendamentoGreaterThanEqualAndSituacaoAtendimentoInOrderByDataAgendamentoAscHoraAtendimentoAsc(
+                p, LocalDate.now(), List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO))
+                .map(a->new ProximoAgendamentoDTO(a.getId(),a.getDataAgendamento(),a.getHoraAtendimento(),a.getSituacaoAtendimento())).orElse(null);
+        String atencao=p.getStatusPaciente()!=StatusPaciente.ATIVO ? "Acompanhamento "+p.getStatusPaciente().name().toLowerCase().replace('_',' ')
+                : p.getClassificacaoRisco()==ClassificacaoRisco.VERMELHO ? "Busca ativa recomendada"
+                : p.getClassificacaoRisco()==ClassificacaoRisco.AMARELO ? "Atenção necessária" : "Acompanhamento regular";
+        return new PacienteDetalheDTO(new PacienteDTO(p),p.getClassificacaoRisco(),proximo,atencao);
+    }
+
+    @Override
+    public List<AgendamentoDTO> listarAgendamentos(UUID idPublico) {
+        Paciente p=pacienteRepository.findByIdPublico(idPublico).orElseThrow(()->new ResourceNotFoundException(idPublico));
+        return agendamentoRepository.findDetalhesByPaciente(p).stream().map(a->new AgendamentoDTO(a.getId(),a.getUsuario().getIdPublico(),
+                a.getUsuario().getNome(),p.getIdPublico(),p.getNome(),p.getTipoAcompanhamento(),a.getDataAgendamento(),
+                a.getTurnoAgendamento(),a.getHoraAtendimento(),a.getSituacaoAtendimento(),
+                a.getAgendamentoOriginal()==null?null:a.getAgendamentoOriginal().getId(),a.getVersion())).toList();
     }
 
     @Override
@@ -270,8 +320,8 @@ public class PacienteServiceImpl implements PacienteService{
         // Os limites são regras fixas do produto; nenhum perfil pode alterá-los.
         boolean acompanhamentoEmGrupo = paciente.getTipoAcompanhamento() == TipoAcompanhamento.GRUPO_TERAPEUTICO
                 || paciente.getTipoAcompanhamento() == TipoAcompanhamento.AMBOS;
-        int limiteAmareloDias = acompanhamentoEmGrupo ? DIAS_AMARELO_GRUPO : DIAS_AMARELO_INDIVIDUAL;
-        int limiteVermelhoDias = acompanhamentoEmGrupo ? DIAS_VERMELHO_GRUPO : DIAS_VERMELHO_INDIVIDUAL;
+        int limiteAmareloDias = acompanhamentoEmGrupo ? PoliticaClassificacaoPaciente.DIAS_AMARELO_GRUPO : PoliticaClassificacaoPaciente.DIAS_AMARELO_INDIVIDUAL;
+        int limiteVermelhoDias = acompanhamentoEmGrupo ? PoliticaClassificacaoPaciente.DIAS_VERMELHO_GRUPO : PoliticaClassificacaoPaciente.DIAS_VERMELHO_INDIVIDUAL;
 
         long diasAusente = 0;
 

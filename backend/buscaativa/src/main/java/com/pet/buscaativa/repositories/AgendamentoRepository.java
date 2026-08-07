@@ -3,6 +3,7 @@ package com.pet.buscaativa.repositories;
 import java.time.LocalDate;
 import java.util.List;
 import java.time.LocalTime;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +18,11 @@ import com.pet.buscaativa.entities.enums.TurnoEnum;
 
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
+    Optional<Agendamento> findFirstByPacienteAndDataAgendamentoGreaterThanEqualAndSituacaoAtendimentoInOrderByDataAgendamentoAscHoraAtendimentoAsc(
+            Paciente paciente, LocalDate data, List<SituacaoAtendimento> situacoes);
+
+    @Query("SELECT a FROM Agendamento a JOIN FETCH a.usuario WHERE a.paciente = :paciente ORDER BY a.dataAgendamento DESC, a.horaAtendimento DESC")
+    List<Agendamento> findDetalhesByPaciente(@Param("paciente") Paciente paciente);
 
     @Query("SELECT a FROM Agendamento a JOIN FETCH a.usuario JOIN FETCH a.paciente WHERE a.id = :id")
     java.util.Optional<Agendamento> findByIdWithUsuarioAndPaciente(@Param("id") Long id);

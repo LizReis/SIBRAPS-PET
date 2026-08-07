@@ -1,268 +1,95 @@
 <main class="container">
-
-  <section class="page-header">
+  <header class="page-header">
     <div>
-      <h1>{{ modoEdicao ? 'Editar Paciente' : 'Cadastrar Paciente' }}</h1>
-      <p>{{ modoEdicao ? 'Atualize os dados do paciente.' : 'Preencha os dados abaixo para cadastrar um novo paciente
-        nosistema.' }}</p>
+      <h1>{{modoEdicao?'Editar paciente':'Cadastrar paciente'}}</h1>
+      <p>{{modoEdicao?'Atualize os dados cadastrais e assistenciais do paciente.':'Preencha os dados essenciais para
+        iniciar o acompanhamento no SIBRAPS.'}}</p>
+    </div><b>Campos com * são obrigatórios</b>
+  </header>
+  <div class="alert-erro" role="alert" *ngIf="erroGeral">{{erroGeral}}</div>
+  <div aria-live="polite" *ngIf="carregandoPaciente">Carregando dados do paciente…</div>
+  <form [formGroup]="pacienteForm" (ngSubmit)="salvarPaciente()">
+    <div class="form-main">
+      <section class="form-section">
+        <h2><span>1</span> Identificação</h2>
+        <div class="form-grid"><ng-container
+            *ngTemplateOutlet="text;context:{name:'nome',label:'Nome completo *',placeholder:'Digite o nome do paciente'}"></ng-container><ng-container
+            *ngTemplateOutlet="text;context:{name:'nomeMae',label:'Nome da mãe *',placeholder:'Digite o nome da mãe'}"></ng-container><label>Data
+            de nascimento *<input type="date" formControlName="dataNascimento"><small
+              *ngIf="campoInvalido('dataNascimento')">Data de nascimento é obrigatória.</small></label><label>Sexo
+            *<select formControlName="sexo">
+              <option value="">Selecione</option>
+              <option *ngFor="let o of sexoOptions" [value]="o">{{labelEnum(o)}}</option>
+            </select></label><label>Raça/Cor *<select formControlName="racacor">
+              <option value="">Selecione</option>
+              <option *ngFor="let o of racaCorOptions" [value]="o">{{labelEnum(o)}}</option>
+            </select></label><label>Situação de rua *<select formControlName="situacaoRua">
+              <option [ngValue]="false">Não</option>
+              <option [ngValue]="true">Sim</option>
+            </select></label></div>
+      </section>
+      <section class="form-section">
+        <h2><span>2</span> Documentos, contato e vínculo assistencial</h2>
+        <div class="form-grid"><label>CPF *<input formControlName="cpf" inputmode="numeric" maxlength="14"
+              placeholder="000.000.000-00" (input)="aplicarMascaraCpf()"><small
+              *ngIf="campoInvalido('cpf')||errosPorCampo['cpf']">{{mensagemErro('cpf','CPF é
+              obrigatório.')}}</small></label><label>CNS *<input formControlName="cns" inputmode="numeric"
+              maxlength="15" placeholder="Digite somente números" (input)="somenteNumerosCampo('cns',15)"><small
+              *ngIf="campoInvalido('cns')||errosPorCampo['cns']">{{mensagemErro('cns','CNS é
+              obrigatório.')}}</small></label><label>Telefone *<input formControlName="telefone" maxlength="15"
+              placeholder="(00) 00000-0000" (input)="aplicarMascaraTelefone()"></label><label>Unidade de saúde *<select
+              formControlName="usfReferencia">
+              <option [ngValue]="null">Selecione a unidade</option>
+              <option *ngFor="let u of unidadesSaude" [ngValue]="u">{{u.nomeUsf}}</option>
+            </select></label><label>CAPS de referência *<select formControlName="capsReferencia">
+              <option value="">Selecione</option>
+              <option *ngFor="let o of capsOptions" [value]="o">{{labelEnum(o)}}</option>
+            </select></label><label>Tipo de acompanhamento *<select formControlName="tipoAcompanhamento">
+              <option value="">Selecione</option>
+              <option *ngFor="let o of tipoAcompanhamentoOptions" [value]="o">{{labelEnum(o)}}</option>
+            </select></label></div>
+      </section>
+      <section class="form-section" formGroupName="endereco">
+        <h2><span>3</span> Endereço e referência territorial</h2>
+        <p class="notice" *ngIf="pacienteForm.controls.situacaoRua.value">Para paciente em situação de rua, o endereço
+          não é obrigatório.</p>
+        <div class="form-grid"><label>CEP <i *ngIf="!pacienteForm.controls.situacaoRua.value">*</i><input
+              formControlName="cep" maxlength="9" placeholder="00000-000"
+              (input)="aplicarMascaraCep()"></label><ng-container
+            *ngTemplateOutlet="text;context:{name:'estado',label:'Estado',group:'endereco'}"></ng-container><ng-container
+            *ngTemplateOutlet="text;context:{name:'cidade',label:'Cidade',group:'endereco'}"></ng-container><ng-container
+            *ngTemplateOutlet="text;context:{name:'bairro',label:'Bairro',group:'endereco'}"></ng-container><ng-container
+            *ngTemplateOutlet="text;context:{name:'logradouro',label:'Logradouro',group:'endereco'}"></ng-container><ng-container
+            *ngTemplateOutlet="text;context:{name:'numero',label:'Número',group:'endereco'}"></ng-container><ng-container
+            *ngTemplateOutlet="text;context:{name:'complemento',label:'Complemento',group:'endereco'}"></ng-container>
+        </div>
+      </section>
+      <div class="form-actions"><button type="button" (click)="cancelar()"
+          [disabled]="salvando">Cancelar</button><button class="save" type="submit"
+          [disabled]="salvando">{{salvando?'Salvando…':modoEdicao?'Salvar alterações':'Salvar'}}</button></div>
     </div>
-  </section>
-
-  <div class="alert-erro" *ngIf="erroGeral">
-    {{ erroGeral }}
-  </div>
-
-  <div class="loading-message" *ngIf="carregandoPaciente">
-    Carregando dados do paciente...
-  </div>
-
-  <form class="form-card" [formGroup]="pacienteForm" (ngSubmit)="salvarPaciente()">
-
-    <section class="form-section">
-      <h2>Dados Pessoais</h2>
-
-      <div class="form-grid">
-
-        <div class="form-group">
-          <label>Nome</label>
-          <input type="text" formControlName="nome" placeholder="Digite o nome do paciente" />
-          <small *ngIf="campoInvalido('nome') || errosPorCampo['nome']">
-            {{ mensagemErro('nome', 'Nome é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Nome da mãe</label>
-          <input type="text" formControlName="nomeMae" placeholder="Digite o nome da mãe" />
-          <small *ngIf="campoInvalido('nomeMae') || errosPorCampo['nomeMae']">
-            {{ mensagemErro('nomeMae', 'Nome da mãe é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Data de nascimento</label>
-          <input type="date" formControlName="dataNascimento" />
-          <small *ngIf="campoInvalido('dataNascimento') || errosPorCampo['dataNascimento']">
-            {{ mensagemErro('dataNascimento', 'Data de nascimento é obrigatória.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Sexo</label>
-          <select formControlName="sexo">
-            <option value="" disabled>Selecione</option>
-
-            <option *ngFor="let sexo of sexoOptions" [value]="sexo">
-              {{ labelEnum(sexo) }}
-            </option>
-          </select>
-
-          <small *ngIf="campoInvalido('sexo') || errosPorCampo['sexo']">
-            {{ mensagemErro('sexo', 'Sexo é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Raça/Cor</label>
-          <select formControlName="racacor">
-            <option value="" disabled>Selecione</option>
-
-            <option *ngFor="let raca of racaCorOptions" [value]="raca">
-              {{ labelEnum(raca) }}
-            </option>
-          </select>
-
-          <small *ngIf="campoInvalido('racacor') || errosPorCampo['racacor']">
-            {{ mensagemErro('racacor', 'Raça/cor é obrigatória.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Situação de rua</label>
-
-          <select formControlName="situacaoRua">
-            <option [ngValue]="false">Não</option>
-            <option [ngValue]="true">Sim</option>
-          </select>
-        </div>
-
-      </div>
-    </section>
-
-    <section class="form-section">
-      <h2>Documentos e Contato</h2>
-
-      <div class="form-grid">
-
-        <div class="form-group">
-          <label>CNS</label>
-          <input type="text" inputmode="numeric" formControlName="cns" placeholder="Digite somente números"
-            maxlength="15" (input)="somenteNumerosCampo('cns', 15)" />
-          <small *ngIf="campoInvalido('cns') || errosPorCampo['cns']">
-            {{ mensagemErro('cns', 'CNS é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>CPF</label>
-          <input type="text" inputmode="numeric" formControlName="cpf" placeholder="000.000.000-00" maxlength="14"
-            (input)="aplicarMascaraCpf()" />
-          <small *ngIf="campoInvalido('cpf') || errosPorCampo['cpf']">
-            {{ mensagemErro('cpf', 'CPF é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Telefone</label>
-          <input type="text" inputmode="numeric" formControlName="telefone" placeholder="(00) 00000-0000" maxlength="15"
-            (input)="aplicarMascaraTelefone()" />
-          <small *ngIf="campoInvalido('telefone') || errosPorCampo['telefone']">
-            {{ mensagemErro('telefone', 'Telefone é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Unidade de Saúde</label>
-
-          <select formControlName="usfReferencia">
-
-            <option [ngValue]="null" disabled>
-              Selecione a unidade de saúde
-            </option>
-
-            <option *ngFor="let unidade of unidadesSaude" [ngValue]="unidade">
-
-              {{ unidade.nomeUsf }}
-
-            </option>
-
-          </select>
-
-          <small class="info-message" *ngIf="carregandoUnidades">
-
-            Carregando unidades de saúde...
-
-          </small>
-
-          <small *ngIf="erroUnidades">
-
-            Não foi possível carregar as unidades de saúde.
-
-          </small>
-
-          <small *ngIf="campoInvalido('usfReferencia') || errosPorCampo['usfReferencia']">
-            {{ mensagemErro('usfReferencia', 'Unidade de saúde é obrigatória.') }}
-          </small>
-
-        </div>
-
-        <div class="form-group">
-          <label>CAPS de Referência</label>
-
-          <select formControlName="capsReferencia">
-            <option value="" disabled>Selecione</option>
-
-            <option *ngFor="let caps of capsOptions" [value]="caps">
-              {{ labelEnum(caps) }}
-            </option>
-          </select>
-
-          <small *ngIf="campoInvalido('capsReferencia') || errosPorCampo['capsReferencia']">
-            {{ mensagemErro('capsReferencia', 'CAPS de referência é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Tipo de acompanhamento</label>
-
-          <select formControlName="tipoAcompanhamento">
-            <option value="" disabled>Selecione</option>
-
-            <option *ngFor="let tipo of tipoAcompanhamentoOptions" [value]="tipo">
-              {{ labelEnum(tipo) }}
-            </option>
-          </select>
-
-          <small *ngIf="campoInvalido('tipoAcompanhamento') || errosPorCampo['tipoAcompanhamento']">
-            {{ mensagemErro('tipoAcompanhamento', 'Tipo de acompanhamento é obrigatório.') }}
-          </small>
-        </div>
-
-      </div>
-    </section>
-
-    <section class="form-section" formGroupName="endereco">
-      <h2>Endereço</h2>
-
-      <div class="form-grid">
-
-        <div class="form-group">
-          <label>CEP</label>
-          <input type="text" inputmode="numeric" formControlName="cep" placeholder="00000-000" maxlength="9"
-            (input)="aplicarMascaraCep()" />
-          <small *ngIf="campoInvalido('endereco.cep') || errosPorCampo['endereco.cep']">
-            {{ mensagemErro('endereco.cep', 'CEP é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Estado</label>
-          <input type="text" formControlName="estado" placeholder="Ex: SP" maxlength="2" />
-          <small *ngIf="campoInvalido('endereco.estado') || errosPorCampo['endereco.estado']">
-            {{ mensagemErro('endereco.estado', 'Estado é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Cidade</label>
-          <input type="text" formControlName="cidade" placeholder="Digite a cidade" />
-          <small *ngIf="campoInvalido('endereco.cidade') || errosPorCampo['endereco.cidade']">
-            {{ mensagemErro('endereco.cidade', 'Cidade é obrigatória.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Bairro</label>
-          <input type="text" formControlName="bairro" placeholder="Digite o bairro" />
-          <small *ngIf="campoInvalido('endereco.bairro') || errosPorCampo['endereco.bairro']">
-            {{ mensagemErro('endereco.bairro', 'Bairro é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group form-group-large">
-          <label>Logradouro</label>
-          <input type="text" formControlName="logradouro" placeholder="Rua, avenida, travessa..." />
-          <small *ngIf="campoInvalido('endereco.logradouro') || errosPorCampo['endereco.logradouro']">
-            {{ mensagemErro('endereco.logradouro', 'Logradouro é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Número</label>
-          <input type="text" formControlName="numero" placeholder="Número" />
-          <small *ngIf="campoInvalido('endereco.numero') || errosPorCampo['endereco.numero']">
-            {{ mensagemErro('endereco.numero', 'Número é obrigatório.') }}
-          </small>
-        </div>
-
-        <div class="form-group form-group-large">
-          <label>Complemento</label>
-          <input type="text" formControlName="complemento" placeholder="Casa, apartamento, referência..." />
-        </div>
-
-      </div>
-    </section>
-
-    <section class="form-actions">
-      <button type="button" class="btn btn-cancel" (click)="cancelar()" [disabled]="salvando">
-        Cancelar
-      </button>
-
-      <button type="submit" class="btn btn-save" [disabled]="salvando">
-        {{ salvando ? 'Salvando...' : (modoEdicao ? 'Salvar Alterações' : 'Salvar Paciente') }}
-      </button>
-    </section>
-
+    <aside>
+      <section>
+        <h2>Progresso do cadastro</h2><progress [value]="progresso" max="100">{{progresso}}%</progress>
+        <p>{{progresso}}% preenchido</p>
+        <ol>
+          <li>Identificação — {{estadoSecao(['nome','nomeMae','dataNascimento','sexo','racacor'])}}</li>
+          <li>Documentos e vínculo —
+            {{estadoSecao(['cpf','cns','telefone','usfReferencia','capsReferencia','tipoAcompanhamento'])}}</li>
+          <li>Endereço —
+            {{pacienteForm.controls.situacaoRua.value?'Concluído':estadoSecao(['endereco.cep','endereco.estado','endereco.cidade','endereco.bairro','endereco.logradouro','endereco.numero'])}}
+          </li>
+        </ol>
+      </section>
+      <section>
+        <h2>Antes de salvar</h2>
+        <p>Confira nome, data de nascimento, CPF e CNS antes de salvar.</p>
+        <p>O sistema verifica CPF e CNS existentes antes da confirmação.</p>
+      </section>
+    </aside>
   </form>
-
+  <ng-template #text let-name="name" let-label="label" let-placeholder="placeholder" let-group="group"><label>{{label}}
+      <i *ngIf="group&&!pacienteForm.controls.situacaoRua.value">*</i><input [formControlName]="name"
+        [placeholder]="placeholder||''"><small *ngIf="campoInvalido((group?group+'.':'')+name)">Campo
+        obrigatório.</small></label></ng-template>
 </main>

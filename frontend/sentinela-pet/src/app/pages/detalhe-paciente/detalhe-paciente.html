@@ -1,176 +1,175 @@
-<main class="container">
-
-  <div class="loading-message" *ngIf="carregando">
-    Carregando dados do paciente...
-  </div>
-
-  <div class="alert-erro" *ngIf="erro">
-    {{ erro }}
-  </div>
-
-  <ng-container *ngIf="paciente && !carregando">
-
-    <section class="page-header">
-      <div class="page-title">
-        <div class="title-row">
-          <h1>{{ paciente.nome }}</h1>
-          <span class="status-badge" [class.status-inativo]="!pacienteAtivo">
-            {{ pacienteAtivo ? 'Ativo' : 'Inativo' }}
-          </span>
-        </div>
-        <p>Detalhes completos do paciente cadastrado.</p>
-      </div>
-
-      <div class="header-actions">
-        <button type="button" class="btn btn-voltar" (click)="voltar()">
-          Voltar
-        </button>
-
-        <button type="button" class="btn btn-historico" (click)="abrirHistoricoPaciente()">
-          Histórico do Paciente
-        </button>
-
-        <button type="button" class="btn btn-edit" (click)="editarPaciente()">
-          Editar
-        </button>
-
-        <button type="button" class="btn" [class.btn-inativar]="pacienteAtivo" [class.btn-ativar]="!pacienteAtivo"
-          (click)="pedirConfirmacaoInativacao()" [disabled]="inativando || !pacienteAtivo">
-          {{ pacienteAtivo ? 'Inativar Paciente' : 'Paciente Inativo' }}
-        </button>
-      </div>
-    </section>
-
-    <div class="confirm-box" *ngIf="confirmandoInativacao">
-      <p>
-        Tem certeza que deseja inativar este paciente? Ele deixará de aparecer na
-        lista principal de pacientes até ser reativado.
-      </p>
-      <div class="confirm-actions">
-        <button type="button" class="btn btn-voltar" (click)="cancelarInativacao()" [disabled]="inativando">
-          Cancelar
-        </button>
-        <button type="button" class="btn btn-inativar" (click)="confirmarInativacao()" [disabled]="inativando">
-          {{ inativando ? 'Inativando...' : 'Confirmar Inativação' }}
-        </button>
+<main class="page" *ngIf="detalhe as d">
+  <header class="patient-head">
+    <div class="identity"><span class="avatar">{{iniciais()}}</span>
+      <div>
+        <h1>{{p?.nome}} <span class="status">{{label(p?.statusPaciente)}}</span></h1>
+        <p>{{idade()}} anos • Acompanhamento {{label(p?.tipoAcompanhamento)}} • {{p?.usfReferencia?.nomeUsf || 'Unidade
+          não informada'}}</p>
       </div>
     </div>
-
-    <section class="detail-card">
-      <h2 class="detail-card-title">Dados Pessoais</h2>
-
-      <div class="patient-data detail-grid">
-        <div class="data-item">
-          <span class="data-label">Nome</span>
-          <span class="data-value">{{ paciente.nome }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Nome da mãe</span>
-          <span class="data-value">{{ paciente.nomeMae }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Data de nascimento</span>
-          <span class="data-value">{{ formatarData(paciente.dataNascimento) }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Sexo</span>
-          <span class="data-value">{{ labelEnum(paciente.sexo) }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Raça/Cor</span>
-          <span class="data-value">{{ labelEnum(paciente.racacor) }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Situação de rua</span>
-          <span class="data-value">{{ paciente.situacaoRua ? 'Sim' : 'Não' }}</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="detail-card">
-      <h2 class="detail-card-title">Documentos e Contato</h2>
-
-      <div class="patient-data detail-grid">
-        <div class="data-item">
-          <span class="data-label">CNS</span>
-          <span class="data-value">{{ paciente.cns }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">CPF</span>
-          <span class="data-value">{{ formatarCpf(paciente.cpf) }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Telefone</span>
-          <span class="data-value">{{ formatarTelefone(paciente.telefone) }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Unidade de Saúde</span>
-          <span class="data-value">{{ paciente.usfReferencia?.nomeUsf ?? '-' }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Tipo de acompanhamento</span>
-          <span class="data-value">{{ labelEnum(paciente.tipoAcompanhamento) }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Faltas</span>
-          <span class="data-value" [class.faltas-alerta]="(paciente.countFaltas ?? 0) >= 3">
-            {{ paciente.countFaltas ?? 0 }}
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <section class="detail-card">
-      <h2 class="detail-card-title">Endereço</h2>
-
-      <div class="patient-data detail-grid">
-        <div class="data-item">
-          <span class="data-label">CEP</span>
-          <span class="data-value">{{ formatarCep(paciente.endereco?.cep) }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Estado</span>
-          <span class="data-value">{{ paciente.endereco?.estado ?? '-' }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Cidade</span>
-          <span class="data-value">{{ paciente.endereco?.cidade ?? '-' }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Bairro</span>
-          <span class="data-value">{{ paciente.endereco?.bairro ?? '-' }}</span>
-        </div>
-
-        <div class="data-item data-item-large">
-          <span class="data-label">Logradouro</span>
-          <span class="data-value">{{ paciente.endereco?.logradouro ?? '-' }}</span>
-        </div>
-
-        <div class="data-item">
-          <span class="data-label">Número</span>
-          <span class="data-value">{{ paciente.endereco?.numero ?? '-' }}</span>
-        </div>
-
-        <div class="data-item data-item-large">
-          <span class="data-label">Complemento</span>
-          <span class="data-value">{{ paciente.endereco?.complemento || '-' }}</span>
-        </div>
-      </div>
-    </section>
-
-  </ng-container>
-
+    <div class="head-actions"><a routerLink="/pacientes">Voltar</a><a [routerLink]="['/pacientes/editar',id]"
+        class="primary">Editar dados</a><button *ngIf="ativo&&podeGerenciar" class="danger"
+        (click)="modal='encerrar'">Encerrar acompanhamento</button></div>
+  </header>
+  <section class="summary">
+    <div><small>CLASSIFICAÇÃO ATUAL</small><b
+        [class]="d.classificacaoRisco.toLowerCase()">{{label(d.classificacaoRisco)}}</b></div>
+    <div><small>FALTAS</small><b>{{p?.countFaltas}}</b></div>
+    <div><small>ÚLTIMA PRESENÇA</small><b>{{data(p?.dataUltimaPresenca)}}</b></div>
+    <div><small>PRÓXIMO ATENDIMENTO</small><b>{{d.proximoAgendamento ? (d.proximoAgendamento.data|date:'dd/MM')+' •
+        '+d.proximoAgendamento.hora.slice(0,5) : 'Nenhum agendamento'}}</b></div>
+    <div><small>ATENÇÃO NECESSÁRIA</small><b>{{d.atencaoNecessaria}}</b></div>
+  </section>
+  <nav class="tabs"><a aria-current="page">Visão geral</a><a
+      [routerLink]="['/pacientes/detalhes',id,'historico']">Histórico</a><a href="#agendamentos">Agendamentos</a></nav>
+  <div class="columns">
+    <div>
+      <section class="card">
+        <h2>Dados pessoais</h2>
+        <dl>
+          <div>
+            <dt>Nome completo</dt>
+            <dd>{{p?.nome}}</dd>
+          </div>
+          <div>
+            <dt>Nome da mãe</dt>
+            <dd>{{p?.nomeMae}}</dd>
+          </div>
+          <div>
+            <dt>Data de nascimento</dt>
+            <dd>{{data(p?.dataNascimento)}}</dd>
+          </div>
+          <div>
+            <dt>Sexo</dt>
+            <dd>{{label(p?.sexo)}}</dd>
+          </div>
+          <div>
+            <dt>Raça/Cor</dt>
+            <dd>{{label(p?.racacor)}}</dd>
+          </div>
+          <div>
+            <dt>Situação de rua</dt>
+            <dd>{{p?.situacaoRua?'Sim':'Não'}}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="card">
+        <h2>Documentos e vínculo</h2>
+        <dl>
+          <div>
+            <dt>CPF</dt>
+            <dd>{{mask(p?.cpf,'cpf')}}</dd>
+          </div>
+          <div>
+            <dt>CNS</dt>
+            <dd>{{mask(p?.cns,'cns')}}</dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd>{{p?.telefone}}</dd>
+          </div>
+          <div>
+            <dt>Unidade</dt>
+            <dd>{{p?.usfReferencia?.nomeUsf}}</dd>
+          </div>
+          <div>
+            <dt>CAPS de referência</dt>
+            <dd>{{label(p?.capsReferencia)}}</dd>
+          </div>
+          <div>
+            <dt>Tipo de acompanhamento</dt>
+            <dd>{{label(p?.tipoAcompanhamento)}}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="card">
+        <h2>Endereço e referência territorial</h2>
+        <p *ngIf="p?.situacaoRua&&!p?.endereco">Paciente em situação de rua — endereço não informado.</p>
+        <dl *ngIf="p?.endereco as e">
+          <div>
+            <dt>CEP</dt>
+            <dd>{{e.cep}}</dd>
+          </div>
+          <div>
+            <dt>Cidade / UF</dt>
+            <dd>{{e.cidade}} / {{e.estado}}</dd>
+          </div>
+          <div>
+            <dt>Bairro</dt>
+            <dd>{{e.bairro}}</dd>
+          </div>
+          <div>
+            <dt>Logradouro</dt>
+            <dd>{{e.logradouro}}</dd>
+          </div>
+          <div>
+            <dt>Número</dt>
+            <dd>{{e.numero}}</dd>
+          </div>
+          <div>
+            <dt>Complemento</dt>
+            <dd>{{e.complemento||'Não informado'}}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+    <aside>
+      <section class="card attention">
+        <h2>Situação do acompanhamento</h2>
+        <h3>{{d.atencaoNecessaria}}</h3>
+        <p>{{d.classificacaoRisco==='VERMELHO'?'Faltas recorrentes ou ausência conforme critérios do
+          sistema.':d.classificacaoRisco==='AMARELO'?'Acompanhe presença e próximos atendimentos.':'Sem alerta de busca
+          ativa no momento.'}}</p><button *ngIf="ativo&&d.classificacaoRisco==='VERMELHO'&&podeGerenciar"
+          class="primary" (click)="descricao='';modal='busca'">Registrar busca ativa</button>
+      </section>
+      <section class="card quick">
+        <h2>Ações rápidas</h2><a [routerLink]="['/pacientes/detalhes',id,'historico']">Ver histórico completo</a><a
+          routerLink="/agenda/novo" [queryParams]="{pacienteId:id}">Novo agendamento</a><a
+          [routerLink]="['/pacientes/editar',id]">Atualizar contato</a>
+      </section>
+    </aside>
+  </div>
+  <section id="agendamentos" class="card appointments">
+    <h2>Agendamentos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Horário</th>
+          <th>Profissional</th>
+          <th>Tipo</th>
+          <th>Situação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of agendamentos">
+          <td>{{a.dataAgendamento|date:'dd/MM/yyyy'}}</td>
+          <td>{{a.horaAtendimento.slice(0,5)}}</td>
+          <td>{{a.nomeProfissional}}</td>
+          <td>{{label(a.tipoAcompanhamento)}}</td>
+          <td>{{label(a.situacaoAtendimento)}}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p *ngIf="!agendamentos.length">Nenhum agendamento encontrado.</p>
+  </section>
 </main>
+<p class="loading" aria-live="polite" *ngIf="carregando">Carregando paciente…</p>
+<p class="error" role="alert" *ngIf="erro">{{erro}}</p>
+<div class="backdrop" *ngIf="modal" role="dialog" aria-modal="true">
+  <section class="modal">
+    <h2>{{modal==='encerrar'?'Encerrar acompanhamento':'Registrar busca ativa'}}</h2><ng-container
+      *ngIf="modal==='encerrar'"><label>Motivo do encerramento<select [(ngModel)]="motivo">
+          <option value="">Selecione</option>
+          <option value="ALTA_TERAPEUTICA">Alta terapêutica</option>
+          <option value="TRANSFERENCIA_OUTRA_UNIDADE">Transferência para outra unidade</option>
+          <option value="ABANDONO_TRATAMENTO">Abandono de tratamento</option>
+          <option value="OBITO">Óbito</option>
+          <option value="OUTRO">Outro</option>
+        </select></label></ng-container><label *ngIf="modal==='busca'||motivo==='OUTRO'">Descrição do registro<textarea
+        [(ngModel)]="descricao"></textarea></label>
+    <div><button (click)="modal=''">Cancelar</button><button class="danger" [disabled]="salvando"
+        (click)="modal==='encerrar'?encerrar():registrar()">{{modal==='encerrar'?'Confirmar
+        encerramento':'Registrar'}}</button></div>
+  </section>
+</div>

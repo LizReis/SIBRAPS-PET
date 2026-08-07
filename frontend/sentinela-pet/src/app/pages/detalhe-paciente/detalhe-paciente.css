@@ -1,271 +1,299 @@
-* {
-  box-sizing: border-box;
+:host {
+    display: block;
+    color: #102033
 }
 
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
+.page {
+    max-width: 1280px;
+    margin: auto;
+    padding: 30px
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+.patient-head,
+.identity,
+.head-actions {
+    display: flex;
+    align-items: center
 }
 
-.page-title h1 {
-  font-size: 28px;
-  color: #0f172a;
-  margin-bottom: 6px;
+.patient-head {
+    justify-content: space-between;
+    gap: 20px
 }
 
-.page-title p {
-  color: #64748b;
-  font-size: 15px;
+.identity {
+    gap: 15px
 }
 
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+.avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #e5effb;
+    color: #123e70;
+    font-weight: 800
 }
 
-.status-badge {
-  background: #e0f2fe;
-  color: #003fa3;
-  padding: 6px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: bold;
-  text-transform: uppercase;
+.identity h1 {
+    margin: 0;
+    font-size: 29px
 }
 
-.status-inativo {
-  background: #fee2e2;
-  color: #dc2626;
+.identity p {
+    color: #64748b;
+    margin: 5px 0
 }
 
-.header-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+.status {
+    font-size: 12px;
+    color: #078548;
+    background: #e4f5e9;
+    border-radius: 20px;
+    padding: 7px 14px
 }
 
-.btn {
-  border: none;
-  padding: 11px 18px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s;
-  white-space: nowrap;
+.head-actions {
+    gap: 10px
 }
 
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+.head-actions a,
+.head-actions button,
+.quick a,
+.attention button {
+    border: 1px solid #bdcbe0;
+    border-radius: 9px;
+    padding: 12px 15px;
+    text-decoration: none;
+    font-weight: 700;
+    color: #123e70;
+    background: white
 }
 
-.btn:focus-visible {
-  outline: 3px solid rgba(0, 91, 240, 0.35);
-  outline-offset: 2px;
+.head-actions .primary,
+.attention .primary {
+    background: #1654d4;
+    color: white
 }
 
-.btn-historico {
-  background: #003fa3;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 63, 163, 0.22);
+.head-actions .danger,
+.modal .danger {
+    background: #c83b4b;
+    color: white;
+    border: 0
 }
 
-.btn-historico:hover:not(:disabled) {
-  background: #002f7a;
-  transform: translateY(-1px);
+.summary,
+.card {
+    background: white;
+    border: 1px solid #d3deeb;
+    border-radius: 14px;
+    box-shadow: 3px 5px #e7ecf2
 }
 
-.btn-voltar {
-  background: #f1f5f9;
-  color: #334155;
+.summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: 21px;
+    margin: 20px 0
 }
 
-.btn-voltar:hover:not(:disabled) {
-  background: #e2e8f0;
+.summary small {
+    display: block;
+    color: #60728d;
+    font-weight: 700;
+    font-size: 11px
 }
 
-.btn-edit {
-  background: #fef3c7;
-  color: #92400e;
+.summary b {
+    display: block;
+    margin-top: 12px
 }
 
-.btn-edit:hover:not(:disabled) {
-  background: #fde68a;
+.vermelho {
+    color: #bd2e41
 }
 
-.btn-inativar {
-  background: #dc2626;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+.amarelo {
+    color: #9c5c00
 }
 
-.btn-inativar:hover:not(:disabled) {
-  background: #b91c1c;
-  transform: translateY(-1px);
+.verde {
+    color: #087e45
 }
 
-.btn-ativar {
-  background: #e2e8f0;
-  color: #64748b;
+.tabs {
+    display: flex;
+    gap: 28px;
+    border-bottom: 1px solid #d5dfeb;
+    margin-bottom: 20px
 }
 
-/* Card de confirmação */
-.confirm-box {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: 14px;
-  padding: 18px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+.tabs a {
+    padding: 14px 3px;
+    text-decoration: none;
+    color: #65758b;
+    font-weight: 700
 }
 
-.confirm-box p {
-  color: #92400e;
-  font-size: 15px;
-  margin-bottom: 12px;
+.tabs a[aria-current] {
+    color: #1751d0;
+    border-bottom: 3px solid #1751d0
 }
 
-.confirm-actions {
-  display: flex;
-  gap: 10px;
+.columns {
+    display: grid;
+    grid-template-columns: 2.2fr .8fr;
+    gap: 16px
 }
 
-/* Cards de detalhes */
-.detail-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 22px 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-  border-left: 5px solid #003fa3;
+.card {
+    padding: 19px;
+    margin-bottom: 16px
 }
 
-.detail-card-title {
-  font-size: 18px;
-  color: #0f172a;
-  font-weight: bold;
-  margin-bottom: 16px;
+.card h2 {
+    font-size: 18px;
+    margin: 0 0 20px;
+    color: #123e70
 }
 
-.detail-grid {
-  grid-template-columns: repeat(3, minmax(160px, 1fr));
+.card dl {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin: 0
 }
 
-.patient-data {
-  display: grid;
-  gap: 12px;
+.card dt {
+    font-size: 11px;
+    color: #60728d;
+    font-weight: 700;
+    text-transform: uppercase
 }
 
-.data-item {
-  background: #f8fafc;
-  padding: 10px 12px;
-  border-radius: 10px;
+.card dd {
+    margin: 6px 0 0;
+    font-weight: 600
 }
 
-.data-item-large {
-  grid-column: span 2;
+.attention h3 {
+    color: #c33749
 }
 
-.data-label {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-  font-weight: bold;
-  text-transform: uppercase;
+.quick a {
+    display: block;
+    margin-top: 8px
 }
 
-.data-value {
-  font-size: 14px;
-  color: #1e293b;
-  font-weight: 600;
+.appointments {
+    overflow: auto
 }
 
-.faltas-alerta {
-  color: #dc2626;
-}
-
-.alert-erro {
-  background: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-  padding: 14px 18px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-}
-
-.loading-message {
-  text-align: center;
-  background: #ffffff;
-  padding: 30px;
-  border-radius: 14px;
-  color: #64748b;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-}
-
-/* Tablet */
-@media (max-width: 900px) {
-  .container {
-    padding: 18px;
-  }
-
-  .detail-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .header-actions {
+.appointments table {
     width: 100%;
-  }
-
-  .btn {
-    flex: 1;
-  }
+    border-collapse: collapse
 }
 
-/* Celular */
-@media (max-width: 600px) {
-  .container {
-    padding: 14px;
-  }
+.appointments th,
+.appointments td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0
+}
 
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: #10203399;
+    display: grid;
+    place-items: center;
+    z-index: 20
+}
 
-  .page-title h1 {
-    font-size: 24px;
-  }
+.modal {
+    width: min(480px, 90vw);
+    background: white;
+    border-radius: 14px;
+    padding: 25px
+}
 
-  .header-actions {
-    flex-direction: column;
-  }
+.modal label,
+.modal select,
+.modal textarea {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 10px 0
+}
 
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
+.modal select,
+.modal textarea {
+    padding: 12px
+}
 
-  .data-item-large {
-    grid-column: span 1;
-  }
+.modal textarea {
+    min-height: 100px
+}
 
-  .confirm-actions {
-    flex-direction: column;
-  }
+.modal>div {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px
+}
+
+.modal button {
+    padding: 11px;
+    border-radius: 8px;
+    border: 1px solid #bbb
+}
+
+.loading,
+.error {
+    text-align: center;
+    padding: 30px
+}
+
+.error {
+    color: #b42334
+}
+
+@media(max-width:900px) {
+    .patient-head {
+        align-items: flex-start;
+        flex-direction: column
+    }
+
+    .summary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px
+    }
+
+    .columns {
+        grid-template-columns: 1fr
+    }
+}
+
+@media(max-width:600px) {
+    .page {
+        padding: 16px
+    }
+
+    .head-actions {
+        flex-wrap: wrap
+    }
+
+    .summary {
+        grid-template-columns: 1fr
+    }
+
+    .card dl {
+        grid-template-columns: 1fr
+    }
+
+    .tabs {
+        overflow: auto;
+        white-space: nowrap
+    }
 }
