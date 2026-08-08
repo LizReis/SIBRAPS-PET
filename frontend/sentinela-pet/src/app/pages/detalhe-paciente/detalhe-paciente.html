@@ -7,7 +7,7 @@
           não informada'}}</p>
       </div>
     </div>
-    <div class="head-actions"><a routerLink="/pacientes">Voltar</a><a [routerLink]="['/pacientes/editar',id]"
+    <div class="head-actions"><a routerLink="/pacientes">Voltar</a><a *ngIf="podeEditar" [routerLink]="['/pacientes/editar',id]"
         class="primary">Editar dados</a><button *ngIf="ativo&&podeGerenciar" class="danger"
         (click)="modal='encerrar'">Encerrar acompanhamento</button></div>
   </header>
@@ -127,7 +127,7 @@
       <section class="card quick">
         <h2>Ações rápidas</h2><a [routerLink]="['/pacientes/detalhes',id,'historico']">Ver histórico completo</a><a
           routerLink="/agenda/novo" [queryParams]="{pacienteId:id}">Novo agendamento</a><a
-          [routerLink]="['/pacientes/editar',id]">Atualizar contato</a>
+          *ngIf="podeEditar" [routerLink]="['/pacientes/editar',id]">Atualizar contato</a>
       </section>
     </aside>
   </div>

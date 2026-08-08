@@ -3,6 +3,7 @@ package com.pet.buscaativa.repositories;
 import com.pet.buscaativa.entities.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import com.pet.buscaativa.entities.enums.TipoUsuario;
 
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
@@ -20,6 +21,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
 
     Optional<Usuario> findByIdPublico(UUID idPublico);
+
+    List<Usuario> findAllByTipoUsuarioOrderByNome(TipoUsuario tipoUsuario);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from Usuario u where u.idPublico = :idPublico")

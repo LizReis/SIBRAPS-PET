@@ -1,6 +1,7 @@
 package com.pet.buscaativa.controllers;
 
 import com.pet.buscaativa.entities.dto.UsuarioDTO;
+import com.pet.buscaativa.entities.dto.ProfissionalSelecaoDTO;
 import com.pet.buscaativa.services.UsuarioService;
 
 import jakarta.validation.Valid;
@@ -30,14 +31,23 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
+    
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO')")
     public ResponseEntity<List<UsuarioDTO>> findAll() {
         return ResponseEntity.ok(usuarioService.findAll());
     }
 
     @GetMapping("/{idPublico}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO')")
     public ResponseEntity<UsuarioDTO> findById(@PathVariable UUID idPublico) {
         return ResponseEntity.ok(usuarioService.findById(idPublico));
+    }
+
+    @GetMapping("/profissionais-selecao")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO', 'PROFISSIONAL')")
+    public ResponseEntity<List<ProfissionalSelecaoDTO>> listarProfissionaisParaSelecao() {
+        return ResponseEntity.ok(usuarioService.listarProfissionaisParaSelecao());
     }
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")

@@ -21,6 +21,8 @@ import {
 import {
     UsuarioLogadoService
 } from '../../services/usuario-logado-service';
+import { podeEditarPaciente } from '../../auth/permissoes';
+
 @Component({
     selector: 'app-detalhe-paciente',
     standalone: true,
@@ -38,8 +40,12 @@ export class DetalhePaciente implements OnInit {
     descricao = '';
     salvando = false;
     podeGerenciar = false;
+    podeEditar = false;
     constructor(private route: ActivatedRoute, private router: Router, private service: PacienteService, usuario: UsuarioLogadoService) {
-        usuario.obterUsuarioLogado().subscribe(u => this.podeGerenciar = ['ADMINISTRADOR', 'PROFISSIONAL'].includes(u.tipoUsuario))
+        usuario.obterUsuarioLogado().subscribe(u => {
+            this.podeGerenciar = ['ADMINISTRADOR', 'PROFISSIONAL'].includes(u.tipoUsuario);
+            this.podeEditar = podeEditarPaciente(u.tipoUsuario);
+        })
     }
     ngOnInit() {
         this.id = this.route.snapshot.paramMap.get('id') || '';

@@ -1,6 +1,8 @@
 package com.pet.buscaativa.services;
 
+import com.pet.buscaativa.entities.dto.ProfissionalSelecaoDTO;
 import com.pet.buscaativa.entities.dto.UsuarioDTO;
+import com.pet.buscaativa.entities.dto.ProfissionalSelecaoDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,6 +16,8 @@ public interface UsuarioService {
     void removerUsuario(UUID idPublico);
 
     public List<UsuarioDTO> findAll();
+
+    List<ProfissionalSelecaoDTO> listarProfissionaisParaSelecao();
 
     public UsuarioDTO findById(UUID idPublico);
 

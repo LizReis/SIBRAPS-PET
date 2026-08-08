@@ -29,6 +29,9 @@ import {
 import {
     UsuarioLogadoService
 } from '../../services/usuario-logado-service';
+
+import { podeCadastrarPaciente, podeEditarPaciente } from '../../auth/permissoes';
+
 @Component({
     selector: 'app-pacientes',
     standalone: true,
@@ -47,11 +50,15 @@ export class Pacientes implements OnInit, OnDestroy {
     dados ? : PacientePesquisa;
     carregando = false;
     podeCadastrar = false;
+    podeEditar = false;
     menu ? : string;
     private busca$ = new Subject < string > ();
     private destroy$ = new Subject < void > ();
     constructor(private service: PacienteService, usuario: UsuarioLogadoService) {
-        usuario.obterUsuarioLogado().subscribe(u => this.podeCadastrar = u.tipoUsuario === 'ADMINISTRADOR');
+        usuario.obterUsuarioLogado().subscribe(u => {
+            this.podeCadastrar = podeCadastrarPaciente(u.tipoUsuario);
+            this.podeEditar = podeEditarPaciente(u.tipoUsuario);
+        });
     }
     ngOnInit() {
         this.busca$.pipe(debounceTime(350), distinctUntilChanged(), filter(v => this.buscaValida(v)), switchMap(() => {

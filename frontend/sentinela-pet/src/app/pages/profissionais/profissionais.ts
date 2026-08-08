@@ -8,6 +8,8 @@ import {
   ProfissionalService,
 } from '../../services/profissional/profissional-service';
 
+import { UsuarioLogadoService } from '../../services/usuario-logado-service';
+
 @Component({
   selector: 'app-profissionais',
   standalone: true,
@@ -25,13 +27,18 @@ export class Profissionais implements OnInit {
 
   carregando = false;
   erro: string | null = null;
+  podeGerenciar = false;
 
   constructor(
     private router: Router,
     private profissionalService: ProfissionalService,
+    private usuarioLogadoService: UsuarioLogadoService,
   ) {}
 
   ngOnInit(): void {
+    this.usuarioLogadoService.obterUsuarioLogado().subscribe(
+      (usuario) => (this.podeGerenciar = usuario.tipoUsuario === 'ADMINISTRADOR'),
+    );
     this.carregarProfissionais();
   }
 

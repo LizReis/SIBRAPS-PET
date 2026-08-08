@@ -7,6 +7,8 @@ import {
   ProfissionalService,
 } from '../../services/profissional/profissional-service';
 
+import { UsuarioLogadoService } from '../../services/usuario-logado-service';
+
 @Component({
   selector: 'app-detalhe-profissional',
   standalone: true,
@@ -22,14 +24,20 @@ export class DetalheProfissional implements OnInit {
 
   excluindo = false;
   confirmandoExclusao = false;
+  podeGerenciar = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private profissionalService: ProfissionalService,
+    private usuarioLogadoService: UsuarioLogadoService,
   ) {}
 
   ngOnInit(): void {
+    this.usuarioLogadoService.obterUsuarioLogado().subscribe(
+      (usuario) => (this.podeGerenciar = usuario.tipoUsuario === 'ADMINISTRADOR'),
+    );
+
     const idPublico = this.route.snapshot.paramMap.get('id');
 
     if (!idPublico) {

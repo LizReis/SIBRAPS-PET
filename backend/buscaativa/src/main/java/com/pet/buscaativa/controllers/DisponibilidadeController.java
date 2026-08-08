@@ -23,7 +23,7 @@ public class DisponibilidadeController {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @PostMapping("/disponibilidade")
     public ResponseEntity<DisponibilidadeDTO> salvarDisponibilidade(@RequestBody @Valid DisponibilidadeDTO disponibilidadeDTO) {
         return ResponseEntity.ok(disponibilidadeService.save(disponibilidadeDTO, getEmailLogado()));
@@ -35,7 +35,7 @@ public class DisponibilidadeController {
         return ResponseEntity.ok(disponibilidadeService.listarDisponibilidades(getEmailLogado(), usuarioId));
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @DeleteMapping("/disponibilidade/{id}")
     public ResponseEntity<Void> deletarDisponibilidade(@PathVariable Long id) {
         disponibilidadeService.deletarDisponibilidade(id, getEmailLogado());

@@ -94,7 +94,7 @@ public class PacienteController {
         return ResponseEntity.ok(pacienteService.findByNome(termo));
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO')")
     @PostMapping
     public ResponseEntity<PacienteDTO> insert(@Valid @RequestBody PacienteDTO pacienteDTO, 
         @RequestParam(value = "ignorarSimilaridade", defaultValue = "false") boolean ignorarSimilaridade){
@@ -106,7 +106,7 @@ public class PacienteController {
             return ResponseEntity.created(uri).body(novoPacienteDTO);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO')")
     @PutMapping("/{idPublico}")
     public ResponseEntity<PacienteDTO> update(@PathVariable UUID idPublico, @Valid @RequestBody PacienteDTO pacienteDTO, 
         @RequestParam(value = "ignorarSimilaridade", defaultValue = "false") boolean ignorarSimilaridade){

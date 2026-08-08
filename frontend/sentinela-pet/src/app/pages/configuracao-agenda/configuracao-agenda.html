@@ -12,7 +12,7 @@
     <section class="overview-card">
       <div class="professional-field">
         <label for="profissional">Profissional</label>
-        <select id="profissional" *ngIf="isAdmin; else profissionalAtual" [(ngModel)]="profissionalSelecionadoId"
+        <select id="profissional" *ngIf="isAdmin || isRecepcao; else profissionalAtual" [(ngModel)]="profissionalSelecionadoId"
           (change)="onProfissionalSelecionado()">
           <option [ngValue]="null" disabled>Selecione um profissional</option>
           <option *ngFor="let p of profissionais" [value]="p.idPublico">{{ p.nome }}</option>
@@ -23,6 +23,11 @@
           </div>
         </ng-template>
       </div>
+
+      <p class="feedback" *ngIf="(isAdmin || isRecepcao) && !profissionalSelecionadoId">
+        Selecione um profissional para configurar a agenda.
+      </p>
+
       <div class="summary blue">
         <span class="material-symbols-outlined">calendar_month</span>
         <div>

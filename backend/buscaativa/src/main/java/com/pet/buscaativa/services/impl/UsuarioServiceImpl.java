@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.dto.UsuarioDTO;
+import com.pet.buscaativa.entities.dto.ProfissionalSelecaoDTO;
 import com.pet.buscaativa.entities.enums.TipoUsuario;
 import com.pet.buscaativa.mapping.UsuarioMapper;
 import com.pet.buscaativa.repositories.UsuarioRepository;
@@ -71,6 +72,13 @@ public class UsuarioServiceImpl implements UsuarioService {
         List<Usuario> list = usuarioRepository.findAll();
         return list.stream()
                 .map(UsuarioDTO::new)
+                .toList();
+    }
+
+    @Override
+    public List<ProfissionalSelecaoDTO> listarProfissionaisParaSelecao() {
+        return usuarioRepository.findAllByTipoUsuarioOrderByNome(TipoUsuario.PROFISSIONAL).stream()
+                .map(ProfissionalSelecaoDTO::new)
                 .toList();
     }
 

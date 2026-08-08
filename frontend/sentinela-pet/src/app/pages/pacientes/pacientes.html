@@ -68,7 +68,7 @@
                 (click)="$event.stopPropagation();menu=menu===p.idPublico?undefined:p.idPublico">•••</button>
               <div class="menu" role="menu" *ngIf="menu===p.idPublico"><a role="menuitem"
                   [routerLink]="['/pacientes/detalhes',p.idPublico]">Ver</a><a role="menuitem"
-                  [routerLink]="['/pacientes/editar',p.idPublico]">Editar</a><a role="menuitem"
+                  *ngIf="podeEditar" [routerLink]="['/pacientes/editar',p.idPublico]">Editar</a><a role="menuitem"
                   [routerLink]="['/pacientes/detalhes',p.idPublico,'historico']">Ver histórico</a></div>
             </td>
           </tr>

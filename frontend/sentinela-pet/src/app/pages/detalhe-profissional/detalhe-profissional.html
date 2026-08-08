@@ -21,11 +21,11 @@
           Voltar
         </button>
 
-        <button class="btn btn-edit" (click)="editarProfissional()">
+        <button *ngIf="podeGerenciar" class="btn btn-edit" (click)="editarProfissional()">
           Editar
         </button>
 
-        <button class="btn btn-excluir" (click)="pedirConfirmacaoExclusao()" [disabled]="excluindo">
+        <button *ngIf="podeGerenciar" class="btn btn-excluir" (click)="pedirConfirmacaoExclusao()" [disabled]="excluindo">
           Excluir Profissional
         </button>
       </div>

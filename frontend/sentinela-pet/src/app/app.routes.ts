@@ -18,6 +18,11 @@ import { NovoAgendamento } from './pages/novo-agendamento/novo-agendamento';
 import { HistoricoPaciente } from './pages/historico-paciente/historico-paciente';
 import { AgendamentosPaciente } from './pages/agendamentos-paciente/agendamentos-paciente';
 import { Relatorios } from './pages/relatorios/relatorios';
+import { roleGuard } from './auth/role-guard';
+
+const TODOS = ['ADMINISTRADOR', 'RECEPCAO', 'PROFISSIONAL'];
+const ADMIN_RECEPCAO = ['ADMINISTRADOR', 'RECEPCAO'];
+const ADMIN = ['ADMINISTRADOR'];
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -36,18 +41,18 @@ export const routes: Routes = [
       { path: 'inicio', component: Inicio },
       { path: 'painel', component: Painel },
       { path: 'agenda', component: Agenda },
-      { path: 'agenda/configuracoes', component: ConfiguracaoAgenda },
+      { path: 'agenda/configuracoes', component: ConfiguracaoAgenda, canActivate: [roleGuard], data: { roles: TODOS } },
       { path: 'agenda/novo', component: NovoAgendamento },
-      { path: 'pacientes', component: Pacientes },
-      { path: 'pacientes/detalhes/:id', component: DetalhePaciente },
-      { path: 'pacientes/detalhes/:id/historico', component: HistoricoPaciente },
-      { path: 'pacientes/detalhes/:id/agendamentos', component: AgendamentosPaciente },
-      { path: 'pacientes/novo', component: CadastroPaciente },
-      { path: 'pacientes/editar/:id', component: CadastroPaciente },
-      { path: 'profissionais', component: Profissionais },
-      { path: 'profissionais/novo', component: CadastroProfissional },
-      { path: 'profissionais/detalhes/:id', component: DetalheProfissional },
-      { path: 'profissionais/editar/:id', component: CadastroProfissional },
+      { path: 'pacientes', component: Pacientes, canActivate: [roleGuard], data: { roles: TODOS } },
+      { path: 'pacientes/detalhes/:id', component: DetalhePaciente, canActivate: [roleGuard], data: { roles: TODOS } },
+      { path: 'pacientes/detalhes/:id/historico', component: HistoricoPaciente, canActivate: [roleGuard], data: { roles: TODOS } },
+      { path: 'pacientes/detalhes/:id/agendamentos', component: AgendamentosPaciente, canActivate: [roleGuard], data: { roles: TODOS } },
+      { path: 'pacientes/novo', component: CadastroPaciente, canActivate: [roleGuard], data: { roles: ADMIN_RECEPCAO } },
+      { path: 'pacientes/editar/:id', component: CadastroPaciente, canActivate: [roleGuard], data: { roles: ADMIN_RECEPCAO } },
+      { path: 'profissionais', component: Profissionais, canActivate: [roleGuard], data: { roles: ADMIN_RECEPCAO } },
+      { path: 'profissionais/novo', component: CadastroProfissional, canActivate: [roleGuard], data: { roles: ADMIN } },
+      { path: 'profissionais/detalhes/:id', component: DetalheProfissional, canActivate: [roleGuard], data: { roles: ADMIN_RECEPCAO } },
+      { path: 'profissionais/editar/:id', component: CadastroProfissional, canActivate: [roleGuard], data: { roles: ADMIN } },
       { path: 'relatorios', component: Relatorios },
     ],
   },

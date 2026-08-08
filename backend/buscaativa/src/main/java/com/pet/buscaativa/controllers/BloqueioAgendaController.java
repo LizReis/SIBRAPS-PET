@@ -23,7 +23,7 @@ public class BloqueioAgendaController {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @PostMapping
     public ResponseEntity<BloqueioAgendaDTO> salvarBloqueio(@RequestBody @Valid BloqueioAgendaDTO bloqueioAgendaDTO) {
         return ResponseEntity.ok(bloqueioAgendaService.save(bloqueioAgendaDTO, getEmailLogado()));
@@ -35,7 +35,7 @@ public class BloqueioAgendaController {
         return ResponseEntity.ok(bloqueioAgendaService.listarBloqueios(getEmailLogado(), usuarioId));
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletarBloqueio(@PathVariable Long id) {
         bloqueioAgendaService.deletarBloqueio(id, getEmailLogado());

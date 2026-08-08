@@ -59,6 +59,7 @@ export class ConfiguracaoAgenda implements OnInit {
   modal: Modal = null;
 
   isAdmin = false;
+  isRecepcao = false;
   isProfissional = false;
   carregandoUsuarioLogado = true;
   carregandoDados = false;
@@ -115,11 +116,12 @@ export class ConfiguracaoAgenda implements OnInit {
     this.usuarioLogadoService.obterUsuarioLogado().subscribe({
       next: (usuario) => {
         this.isAdmin = usuario.tipoUsuario === 'ADMINISTRADOR';
+        this.isRecepcao = usuario.tipoUsuario === 'RECEPCAO';
         this.isProfissional = usuario.tipoUsuario === 'PROFISSIONAL';
         this.nomeUsuario = usuario.nome;
         this.carregandoUsuarioLogado = false;
 
-        if (this.isAdmin) {
+        if (this.isAdmin || this.isRecepcao) {
           this.carregarProfissionais();
         } else if (this.isProfissional) {
           this.carregarDados();
@@ -133,11 +135,9 @@ export class ConfiguracaoAgenda implements OnInit {
   }
 
   carregarProfissionais(): void {
-    this.profissionalService.listar().subscribe({
+    this.profissionalService.listarParaSelecao().subscribe({
       next: (profissionais) => {
-        this.profissionais = profissionais.filter(
-          (profissional) => profissional.tipoUsuario === 'PROFISSIONAL',
-        );
+        this.profissionais = profissionais;
       },
       error: () => {
         this.erroGeral = 'Não foi possível carregar a lista de profissionais.';
@@ -209,11 +209,13 @@ export class ConfiguracaoAgenda implements OnInit {
   }
 
   get usuarioIdAtivo(): string | undefined {
-    return this.isAdmin ? (this.profissionalSelecionadoId ?? undefined) : undefined;
+    return this.isAdmin || this.isRecepcao
+      ? (this.profissionalSelecionadoId ?? undefined)
+      : undefined;
   }
 
   get podeGerenciar(): boolean {
-    const possuiProfissionalAlvo = this.isAdmin
+    const possuiProfissionalAlvo = this.isAdmin || this.isRecepcao
       ? !!this.profissionalSelecionadoId
       : this.isProfissional;
 
@@ -570,7 +572,7 @@ export class ConfiguracaoAgenda implements OnInit {
   }
 
   private validarProfissionalSelecionado(tipo: Aba): boolean {
-    if (this.isAdmin && !this.profissionalSelecionadoId) {
+    if ((this.isAdmin || this.isRecepcao) && !this.profissionalSelecionadoId) {
       this.definirErro(tipo, 'Selecione um profissional antes de salvar.');
       return false;
     }

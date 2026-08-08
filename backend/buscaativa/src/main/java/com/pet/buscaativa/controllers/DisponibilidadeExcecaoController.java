@@ -23,7 +23,7 @@ public class DisponibilidadeExcecaoController {
         return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @PostMapping
     public ResponseEntity<DisponibilidadeExcecaoDTO> salvar(@RequestBody @Valid DisponibilidadeExcecaoDTO dto) {
         return ResponseEntity.ok(excecaoService.save(dto, getEmailLogado()));
@@ -35,7 +35,7 @@ public class DisponibilidadeExcecaoController {
         return ResponseEntity.ok(excecaoService.listar(getEmailLogado(), usuarioId));
     }
 
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         excecaoService.deletar(id, getEmailLogado());

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { UsuarioLogadoService } from '../../services/usuario-logado-service';
 
@@ -9,13 +9,13 @@ import { UsuarioLogadoService } from '../../services/usuario-logado-service';
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
-export class Sidebar {
+export class Sidebar implements OnInit {
   constructor(
     private router: Router,
     private usuarioLogadoService: UsuarioLogadoService,
   ) {}
 
-  menuItems = [
+  private readonly todosMenuItems = [
     { label: 'Início', route: '/inicio', icon: 'home' },
     { label: 'Painel', route: '/painel', icon: 'bar_chart' },
     { label: 'Agenda', route: '/agenda', icon: 'calendar_today' },
@@ -23,6 +23,18 @@ export class Sidebar {
     { label: 'Profissionais', route: '/profissionais', icon: 'person_add' },
     { label: 'Relatórios', route: '/relatorios', icon: 'clinical_notes' },
   ];
+
+  menuItems = this.todosMenuItems.filter((item) => item.route !== '/profissionais');
+
+  ngOnInit(): void {
+    this.usuarioLogadoService.obterUsuarioLogado().subscribe({
+      next: (usuario) => {
+        this.menuItems = usuario.tipoUsuario === 'PROFISSIONAL'
+          ? this.todosMenuItems.filter((item) => item.route !== '/profissionais')
+          : [...this.todosMenuItems];
+      },
+    });
+  }
 
   logout() {
     const confirmado = confirm('Deseja realmente sair?');

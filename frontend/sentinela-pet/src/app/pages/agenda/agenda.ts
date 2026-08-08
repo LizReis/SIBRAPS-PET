@@ -152,7 +152,7 @@ export class Agenda implements OnInit, OnDestroy {
             next: (usuario) => {
                 this.usuarioLogado = usuario;
                 this.podeFiltrarProfissional = usuario.tipoUsuario !== 'PROFISSIONAL';
-                this.podeConfigurarAgenda = usuario.tipoUsuario === 'ADMINISTRADOR' || usuario.tipoUsuario === 'PROFISSIONAL';
+                this.podeConfigurarAgenda = ['ADMINISTRADOR', 'RECEPCAO', 'PROFISSIONAL'].includes(usuario.tipoUsuario);
                 this.podeCriarAgendamento = usuario.tipoUsuario === 'ADMINISTRADOR' || usuario.tipoUsuario === 'RECEPCAO';
                 this.carregandoUsuarioLogado = false;
 
@@ -180,9 +180,9 @@ export class Agenda implements OnInit, OnDestroy {
 
     carregarProfissionais(): void {
         this.carregandoProfissionais = true;
-        this.profissionalService.listar().subscribe({
+        this.profissionalService.listarParaSelecao().subscribe({
             next: (profissionais) => {
-                this.profissionais = profissionais.filter((p) => p.tipoUsuario === 'PROFISSIONAL');
+                this.profissionais = profissionais;
                 this.carregandoProfissionais = false;
             },
             error: (erro) => {

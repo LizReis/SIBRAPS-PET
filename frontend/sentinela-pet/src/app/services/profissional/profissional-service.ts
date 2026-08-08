@@ -13,6 +13,13 @@ export interface ProfissionalPayload {
   unidadeAtuacao: string;
 }
 
+export interface ProfissionalSelecao {
+  idPublico: string;
+  nome: string;
+  unidadeAtuacao: string;
+  tipoUsuario: 'PROFISSIONAL';
+}
+
 export interface FieldMessage {
   fieldName: string;
   message: string;
@@ -41,6 +48,11 @@ export class ProfissionalService {
   listar(): Observable<ProfissionalPayload[]> {
     return this.http.get<ProfissionalPayload[]>(this.apiUrl);
   }
+
+  listarParaSelecao(): Observable<ProfissionalPayload[]> {
+    return this.http.get<ProfissionalPayload[]>(`${this.apiUrl}/profissionais-selecao`);
+  }
+
 
   buscarPorId(idPublico: string): Observable<ProfissionalPayload> {
     return this.http.get<ProfissionalPayload>(`${this.apiUrl}/${idPublico}`);

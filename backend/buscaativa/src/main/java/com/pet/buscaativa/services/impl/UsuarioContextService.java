@@ -27,7 +27,11 @@ public class UsuarioContextService {
         Usuario logado = usuarioRepository.findByEmail(emailLogado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário logado não encontrado: " + emailLogado));
 
-        if(usuarioIdPublico != null && (logado.getTipoUsuario() == TipoUsuario.ADMINISTRADOR || logado.getTipoUsuario() == TipoUsuario.RECEPCAO)) {
+        if (logado.getTipoUsuario() == TipoUsuario.ADMINISTRADOR
+                || logado.getTipoUsuario() == TipoUsuario.RECEPCAO) {
+            if (usuarioIdPublico == null) {
+                throw new ValidationException("Selecione um profissional para configurar a agenda.");
+            }
             Usuario alvo = usuarioRepository.findByIdPublico(usuarioIdPublico)
                     .orElseThrow(() -> new ResourceNotFoundException("Usuário alvo não encontrado para id: " + usuarioIdPublico));
             if (alvo.getTipoUsuario() != TipoUsuario.PROFISSIONAL) {
@@ -46,8 +50,12 @@ public class UsuarioContextService {
     public void validarAlteracao(Usuario proprietario, String emailLogado) {
         Usuario logado = usuarioRepository.findByEmail(emailLogado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário autenticado não encontrado."));
-        if (logado.getTipoUsuario() != TipoUsuario.ADMINISTRADOR
-                && !logado.getId().equals(proprietario.getId())) {
+        boolean gestorDeAgenda = (logado.getTipoUsuario() == TipoUsuario.ADMINISTRADOR
+                || logado.getTipoUsuario() == TipoUsuario.RECEPCAO)
+                && proprietario.getTipoUsuario() == TipoUsuario.PROFISSIONAL;
+        boolean profissionalProprietario = logado.getTipoUsuario() == TipoUsuario.PROFISSIONAL
+                && logado.getId().equals(proprietario.getId());
+        if (!gestorDeAgenda && !profissionalProprietario) {
             throw new AccessDeniedException("Você não pode alterar este recurso.");
         }
     }

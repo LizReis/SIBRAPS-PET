@@ -222,11 +222,9 @@ export class NovoAgendamento implements OnInit, OnDestroy {
   }
 
   carregarProfissionais(): void {
-    this.profissionalService.listar().subscribe({
+    this.profissionalService.listarParaSelecao().subscribe({
       next: (profissionais) => {
-        this.profissionais = profissionais.filter(
-          (profissional) => profissional.tipoUsuario !== 'RECEPCAO',
-        );
+        this.profissionais = profissionais;
       },
       error: (erro) => {
         console.error('Erro ao carregar profissionais', erro);
