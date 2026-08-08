@@ -126,11 +126,14 @@
 .tabs {
     display: flex;
     gap: 28px;
+    overflow-x: auto;
+    white-space: nowrap;
     border-bottom: 1px solid #d5dfeb;
     margin-bottom: 20px
 }
 
 .tabs a {
+    flex: 0 0 auto;
     padding: 14px 3px;
     text-decoration: none;
     color: #65758b;
@@ -280,8 +283,4 @@
         grid-template-columns: 1fr
     }
 
-    .tabs {
-        overflow: auto;
-        white-space: nowrap
-    }
 }

@@ -87,11 +87,14 @@
 .tabs {
   display: flex;
   gap: 28px;
+  overflow-x: auto;
+  white-space: nowrap;
   border-bottom: 1px solid #d5dfeb;
   margin-bottom: 20px;
 }
 
 .tabs a {
+  flex: 0 0 auto;
   padding: 14px 3px;
   text-decoration: none;
   color: #65758b;
@@ -171,10 +174,6 @@ th {
     flex-direction: column;
   }
 
-  .tabs {
-    overflow-x: auto;
-    white-space: nowrap;
-  }
 
   .table-wrap table,
   .table-wrap tbody,

@@ -26,8 +26,7 @@
     color: #64748b
 }
 
-.primary,
-.actions a {
+.primary {
     background: #1554d1;
     color: white;
     text-decoration: none;
@@ -199,21 +198,27 @@ td {
 
 .actions {
     position: relative;
+    text-align: center;
     white-space: nowrap
 }
 
-.actions a {
-    padding: 9px 14px;
-    background: white;
-    color: #123c6d;
-    border: 1px solid #b9c9de
+.actions>button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-grid;
+    place-items: center;
+    cursor: pointer
 }
 
 .menu {
     position: absolute;
-    right: 12px;
-    top: 52px;
-    z-index: 3;
+    right: 8px;
+    top: calc(50% + 20px);
+    min-width: 150px;
+    z-index: 20;
+    overflow: hidden;
+    text-align: left;
     background: white;
     border: 1px solid #ccd7e5;
     border-radius: 8px;
@@ -222,7 +227,18 @@ td {
 
 .menu a {
     display: block;
-    border: 0
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border: 0;
+    color: #123c6d;
+    background: white;
+    text-decoration: none;
+    font-weight: 600
+}
+
+.menu a:hover {
+    background: #f1f5f9
 }
 
 .state,

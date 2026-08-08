@@ -91,35 +91,25 @@ h1 {
     background: #fee2e2;
 }
 
-.abas button {
-    min-height: 40px;
-    padding: 8px 16px;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    color: #64748b;
-    cursor: pointer;
-    font-weight: 600;
+.tabs {
+    display: flex;
+    gap: 28px;
+    overflow-x: auto;
+    white-space: nowrap;
+    border-bottom: 1px solid #d5dfeb;
+    margin-bottom: 20px;
 }
 
-.abas a {
-    min-height: 40px;
-    display: grid;
-    place-items: center;
-    padding: 8px 16px;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    color: #64748b;
-    cursor: pointer;
-    font-weight: 600;
-    text-decoration: none;
+.tabs a {
+    flex: 0 0 auto;
+    padding: 14px 3px;
+    color: #65758b;
+    font-weight: 700;
 }
 
-.abas .ativa {
-    background: #fff;
-    color: #003fa3;
-    box-shadow: 0 1px 4px rgba(15, 23, 42, .12);
+.tabs a[aria-current] {
+    color: #1751d0;
+    border-bottom: 3px solid #1751d0;
 }
 
 .situacao-card,
@@ -380,17 +370,6 @@ button:focus-visible {
         font-size: 24px;
     }
 
-    .abas {
-        display: flex;
-        width: 100%;
-        overflow-x: auto;
-    }
-
-    .abas a {
-        flex: 1;
-        padding-inline: 8px;
-        white-space: nowrap;
-    }
 
     .situacao-grid,
     .indicadores {

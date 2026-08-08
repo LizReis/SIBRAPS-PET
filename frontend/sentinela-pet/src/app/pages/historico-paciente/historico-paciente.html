@@ -29,9 +29,9 @@
       <p>Histórico completo do acompanhamento do paciente.</p>
     </header>
 
-    <nav class="abas" aria-label="Navegação do paciente">
+    <nav class="tabs" aria-label="Navegação do paciente">
       <a [routerLink]="['/pacientes/detalhes', idPublico]">Visão geral</a>
-      <a class="ativa" aria-current="page">Histórico</a>
+      <a aria-current="page">Histórico</a>
       <a [routerLink]="['/pacientes/detalhes', idPublico, 'agendamentos']">Agendamentos</a>
     </nav>
 
