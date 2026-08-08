@@ -34,6 +34,7 @@ input,
 select {
   font: inherit;
 }
+
 .btn-new {
   border: 0;
   border-radius: 9px;
@@ -67,6 +68,7 @@ select {
   border-radius: 13px;
   box-shadow: 0 3px 12px #0f172a0d;
 }
+
 .summary-icon {
   flex: 0 0 42px;
   height: 42px;
@@ -77,11 +79,19 @@ select {
   background: #eff6ff;
   font-size: 21px;
 }
+
+.summary-icon i {
+  display: block;
+  font-size: 21px;
+  line-height: 1;
+}
+
 .summary-card div {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
+
 .summary-label {
   color: #64748b;
   font-size: 11px;
@@ -90,15 +100,18 @@ select {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+
 .summary-card strong {
   margin: 5px 0 1px;
   font-size: 25px;
   color: #0b1d3a;
 }
+
 .summary-card small {
   color: #64748b;
   font-size: 12px;
 }
+
 .filter-card {
   display: grid;
   grid-template-columns: minmax(280px, 2fr) minmax(190px, 1fr) minmax(190px, 1fr);
@@ -125,23 +138,28 @@ select {
 .filter-card select {
   padding: 0 38px 0 13px;
 }
+
 .search-field {
   position: relative;
 }
+
 .search-field i {
   position: absolute;
   left: 14px;
   top: 13px;
   color: #64748b;
 }
+
 .search-field input {
   padding: 0 14px 0 40px;
 }
+
 .filter-card input:focus,
 .filter-card select:focus {
   border-color: #60a5fa;
   box-shadow: 0 0 0 3px #60a5fa24;
 }
+
 .table-card {
   overflow: hidden;
   border: 1px solid #e7edf5;
@@ -149,13 +167,16 @@ select {
   background: white;
   box-shadow: 0 3px 12px #0f172a0d;
 }
+
 .table-scroll {
   overflow-x: auto;
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
 }
+
 th {
   padding: 13px 16px;
   background: #f8fafc;
@@ -185,7 +206,6 @@ tbody tr:hover {
   min-width: 180px;
 }
 
-
 .avatar {
   flex: 0 0 36px;
   height: 36px;
@@ -197,13 +217,16 @@ tbody tr:hover {
   font-size: 12px;
   font-weight: 800;
 }
+
 .email {
   word-break: break-word;
 }
+
 .actions {
   display: flex;
   gap: 8px;
 }
+
 .action {
   display: flex;
   gap: 6px;
@@ -220,13 +243,16 @@ tbody tr:hover {
   border: 1px solid #bfdbfe;
   color: #1d4ed8;
 }
+
 .edit {
   border: 1px solid #93c5fd;
   color: #1d4ed8;
 }
+
 .action:hover {
   background: #eff6ff;
 }
+
 .pagination {
   display: flex;
   justify-content: space-between;
@@ -242,6 +268,7 @@ tbody tr:hover {
   display: flex;
   gap: 5px;
 }
+
 .pagination button {
   min-width: 34px;
   height: 34px;
@@ -251,15 +278,18 @@ tbody tr:hover {
   color: #475569;
   cursor: pointer;
 }
+
 .pagination button.active {
   border-color: #1d4ed8;
   background: #1d4ed8;
   color: white;
 }
+
 .pagination button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
 .empty-message,
 .loading-message {
   display: flex;
@@ -272,10 +302,12 @@ tbody tr:hover {
   border-radius: 13px;
   color: #64748b;
 }
+
 .empty-message i {
   font-size: 30px;
   color: #94a3b8;
 }
+
 .empty-message strong {
   color: #334155;
 }
@@ -293,9 +325,11 @@ tbody tr:hover {
   .summary-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .filter-card {
     grid-template-columns: 1fr 1fr;
   }
+
   .search-field {
     grid-column: 1/-1;
   }
@@ -331,9 +365,11 @@ tbody tr:hover {
     align-items: flex-start;
     flex-direction: column;
   }
+
   .table-scroll {
     overflow: visible;
   }
+
   table,
   thead,
   tbody,
@@ -341,16 +377,20 @@ tbody tr:hover {
   td {
     display: block;
   }
+
   thead {
     display: none;
   }
+
   tr {
     padding: 10px 14px;
     border-top: 1px solid #e7edf5;
   }
+
   tbody tr:first-child {
     border-top: 0;
   }
+
   td {
     display: grid;
     grid-template-columns: 120px 1fr;
@@ -358,6 +398,7 @@ tbody tr:hover {
     padding: 8px 0;
     border: 0;
   }
+
   td::before {
     content: attr(data-label);
     font-size: 10px;
@@ -365,6 +406,7 @@ tbody tr:hover {
     text-transform: uppercase;
     color: #64748b;
   }
+
   .actions {
     flex-wrap: wrap;
   }
