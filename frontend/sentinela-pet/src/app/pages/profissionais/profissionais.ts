@@ -21,7 +21,10 @@ export class Profissionais implements OnInit {
   termoPesquisa = '';
   tipoUsuarioSelecionado = '';
 
-  tipoUsuarioOptions = ['ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO'];
+  unidadeSelecionada = '';
+  readonly tipoUsuarioOptions = ['ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO'];
+  readonly itensPorPagina = 10;
+  paginaAtual = 1;
 
   profissionais: ProfissionalPayload[] = [];
 
@@ -36,9 +39,9 @@ export class Profissionais implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.usuarioLogadoService.obterUsuarioLogado().subscribe(
-      (usuario) => (this.podeGerenciar = usuario.tipoUsuario === 'ADMINISTRADOR'),
-    );
+    this.usuarioLogadoService
+      .obterUsuarioLogado()
+      .subscribe((usuario) => (this.podeGerenciar = usuario.tipoUsuario === 'ADMINISTRADOR'));
     this.carregarProfissionais();
   }
 
@@ -59,16 +62,62 @@ export class Profissionais implements OnInit {
     });
   }
 
+  get totalUsuarios(): number {
+    return this.profissionais.length;
+  }
+  quantidadePorTipo(tipo: string): number {
+    return this.profissionais.filter((item) => item.tipoUsuario === tipo).length;
+  }
+  get unidadesDisponiveis(): string[] {
+    return [
+      ...new Set(this.profissionais.map((item) => item.unidadeAtuacao).filter(Boolean)),
+    ].sort();
+  }
+
   get profissionaisFiltrados(): ProfissionalPayload[] {
-    return this.profissionais.filter((profissional) => {
-      const nomeOk = profissional.nome.toLowerCase().includes(this.termoPesquisa.toLowerCase());
+    const termo = this.termoPesquisa.trim().toLowerCase();
+    return this.profissionais.filter((item) => {
+      const buscaOk =
+        !termo ||
+        item.nome.toLowerCase().includes(termo) ||
+        item.email.toLowerCase().includes(termo);
 
       const tipoOk =
-        this.tipoUsuarioSelecionado === '' ||
-        profissional.tipoUsuario === this.tipoUsuarioSelecionado;
-
-      return nomeOk && tipoOk;
+        !this.tipoUsuarioSelecionado || item.tipoUsuario === this.tipoUsuarioSelecionado;
+      const unidadeOk = !this.unidadeSelecionada || item.unidadeAtuacao === this.unidadeSelecionada;
+      return buscaOk && tipoOk && unidadeOk;
     });
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.profissionaisFiltrados.length / this.itensPorPagina);
+  }
+  get paginas(): number[] {
+    return Array.from({ length: this.totalPaginas }, (_, indice) => indice + 1);
+  }
+  get profissionaisPaginados(): ProfissionalPayload[] {
+    const inicio = (this.paginaAtual - 1) * this.itensPorPagina;
+    return this.profissionaisFiltrados.slice(inicio, inicio + this.itensPorPagina);
+  }
+  get primeiroRegistro(): number {
+    return this.profissionaisFiltrados.length
+      ? (this.paginaAtual - 1) * this.itensPorPagina + 1
+      : 0;
+  }
+  get ultimoRegistro(): number {
+    return Math.min(this.paginaAtual * this.itensPorPagina, this.profissionaisFiltrados.length);
+  }
+  filtrosAlterados(): void {
+    this.paginaAtual = 1;
+  }
+  irParaPagina(pagina: number): void {
+    if (pagina >= 1 && pagina <= this.totalPaginas) this.paginaAtual = pagina;
+  }
+  iniciais(nome: string): string {
+    const partes = nome.trim().split(/\s+/).filter(Boolean);
+    return (
+      (partes[0]?.[0] ?? '') + (partes.length > 1 ? (partes.at(-1)?.[0] ?? '') : '')
+    ).toUpperCase();
   }
 
   cadastrarNovoProfissional(): void {

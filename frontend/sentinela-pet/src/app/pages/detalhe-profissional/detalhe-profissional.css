@@ -4,198 +4,260 @@
 
 .container {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
+  max-width: 1400px;
+  margin: auto;
+  padding: 28px;
+  color: #0b1d3a;
+}
+.back-link {
+  border: 0;
+  background: transparent;
+  color: #475569;
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 18px;
+  cursor: pointer;
+}
+.back-link i {
+  margin-right: 7px;
 }
 
-.page-header {
+.profile-card,
+.detail-card {
+  background: #fff;
+  border: 1px solid #e7edf5;
+  border-radius: 14px;
+  box-shadow: 0 3px 12px #0f172a0d;
+}
+.profile-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
 }
 
-.page-title h1 {
-  font-size: 28px;
-  color: #0f172a;
-  margin-bottom: 6px;
+.avatar {
+  flex: 0 0 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 24px;
+  font-weight: 800;
+}
+.profile h1 {
+  margin: 0 0 5px;
+  font-size: 24px;
+}
+.profile p {
+  margin: 0 0 6px;
+  color: #334155;
+  font-weight: 600;
+}
+.profile p span {
+  margin: 0 6px;
+  color: #94a3b8;
 }
 
-.page-title p {
+.profile small {
   color: #64748b;
-  font-size: 15px;
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 9px;
   flex-wrap: wrap;
 }
 
 .btn {
-  border: none;
-  padding: 11px 18px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 700;
   cursor: pointer;
-  transition: 0.3s;
   white-space: nowrap;
 }
 
 .btn:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
-  opacity: 0.7;
 }
 
-.btn-voltar {
+.btn-back {
   background: #f1f5f9;
   color: #334155;
 }
 
-.btn-voltar:hover:not(:disabled) {
-  background: #e2e8f0;
-}
 
 .btn-edit {
-  background: #fef3c7;
-  color: #92400e;
+  background: #1d4ed8;
+  color: #fff;
 }
 
-.btn-edit:hover:not(:disabled) {
-  background: #fde68a;
-}
-
-.btn-excluir {
+.btn-delete {
   background: #dc2626;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+  color: #fff;
 }
 
-.btn-excluir:hover:not(:disabled) {
-  background: #b91c1c;
-  transform: translateY(-1px);
-}
-
-.confirm-box {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 14px;
-  padding: 18px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-}
-
-.confirm-box p {
-  color: #991b1b;
-  font-size: 15px;
-  margin-bottom: 12px;
-}
-
-.confirm-actions {
-  display: flex;
-  gap: 10px;
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
 .detail-card {
-  background: #ffffff;
-  border-radius: 14px;
   padding: 22px 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-  border-left: 5px solid #003fa3;
 }
 
-.detail-card-title {
-  font-size: 18px;
-  color: #0f172a;
-  font-weight: bold;
-  margin-bottom: 16px;
+.detail-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e7edf5;
+  font-size: 17px;
 }
 
-.detail-grid {
-  grid-template-columns: repeat(3, minmax(160px, 1fr));
+.detail-card h2 i {
+  color: #1d4ed8;
 }
-
-.patient-data {
+.detail-card dl {
+  margin: 0;
+}
+.detail-card dl div {
   display: grid;
-  gap: 12px;
+  grid-template-columns: minmax(130px, 0.75fr) 1.25fr;
+  gap: 14px;
+  padding: 10px 0;
 }
-
-.data-item {
-  background: #f8fafc;
-  padding: 10px 12px;
-  border-radius: 10px;
-}
-
-.data-label {
-  display: block;
-  font-size: 12px;
+.detail-card dt {
   color: #64748b;
-  margin-bottom: 4px;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.data-value {
-  font-size: 14px;
-  color: #1e293b;
+  font-size: 13px;
   font-weight: 600;
 }
 
-.alert-erro {
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  border-left: 5px solid #dc2626;
-  padding: 14px 16px;
-  border-radius: 10px;
-  margin-bottom: 20px;
+.detail-card dd {
+  margin: 0;
+  color: #1e293b;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: #0f172a80;
+}
+.confirm-modal {
+  width: min(420px, 100%);
+  padding: 28px;
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 20px 50px #0f172a40;
+}
+.danger-icon {
+  width: 48px;
+  height: 48px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 20px;
+}
+.confirm-modal h2 {
+  margin: 14px 0 7px;
+  font-size: 20px;
+}
+.confirm-modal p {
+  margin: 0 0 22px;
+  color: #64748b;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.alert-erro {
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fef2f2;
+  color: #991b1b;
 }
 
 .loading-message {
   text-align: center;
-  background: #ffffff;
-  padding: 30px;
+  padding: 32px;
+  background: #fff;
   border-radius: 14px;
   color: #64748b;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
 @media (max-width: 900px) {
-  .detail-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .profile-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .header-actions {
     width: 100%;
   }
 
-  .btn {
-    flex: 1;
+  .details-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 600px) {
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
+  .container {
+    padding: 18px;
+  }
+  .profile {
+    align-items: flex-start;
+  }
+  .avatar {
+    flex-basis: 58px;
+    height: 58px;
+    font-size: 19px;
+  }
+  .profile h1 {
+    font-size: 21px;
   }
 
   .header-actions {
     flex-direction: column;
   }
 
-  .detail-grid {
+  .detail-card dl div {
     grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .confirm-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
   }
 }

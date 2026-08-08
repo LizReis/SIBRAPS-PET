@@ -34,9 +34,9 @@ export class DetalheProfissional implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.usuarioLogadoService.obterUsuarioLogado().subscribe(
-      (usuario) => (this.podeGerenciar = usuario.tipoUsuario === 'ADMINISTRADOR'),
-    );
+    this.usuarioLogadoService
+      .obterUsuarioLogado()
+      .subscribe((usuario) => (this.podeGerenciar = usuario.tipoUsuario === 'ADMINISTRADOR'));
 
     const idPublico = this.route.snapshot.paramMap.get('id');
 
@@ -107,5 +107,12 @@ export class DetalheProfissional implements OnInit {
       .replaceAll('_', ' ')
       .toLowerCase()
       .replace(/\b\w/g, (letra) => letra.toUpperCase());
+  }
+
+  iniciais(nome: string): string {
+    const partes = nome.trim().split(/\s+/).filter(Boolean);
+    return (
+      (partes[0]?.[0] ?? '') + (partes.length > 1 ? (partes.at(-1)?.[0] ?? '') : '')
+    ).toUpperCase();
   }
 }

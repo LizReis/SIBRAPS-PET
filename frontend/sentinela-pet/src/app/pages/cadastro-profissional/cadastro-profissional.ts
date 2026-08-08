@@ -50,6 +50,8 @@ export class CadastroProfissional implements OnInit {
 
   modoEdicao = false;
   idPublico: string | null = null;
+  mostrarSenha = false;
+  mostrarConfirmacaoSenha = false;
 
   profissionalForm = new FormGroup(
     {
@@ -198,6 +200,14 @@ export class CadastroProfissional implements OnInit {
     } else {
       this.router.navigate(['/profissionais']);
     }
+  }
+
+  alternarVisibilidadeSenha(): void {
+    this.mostrarSenha = !this.mostrarSenha;
+  }
+
+  alternarVisibilidadeConfirmacao(): void {
+    this.mostrarConfirmacaoSenha = !this.mostrarConfirmacaoSenha;
   }
 
   campoInvalido(campo: string): boolean {
