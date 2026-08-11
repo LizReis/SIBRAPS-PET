@@ -21,6 +21,7 @@ export class Sidebar implements OnInit {
     { label: 'Agenda', route: '/agenda', icon: 'calendar_today' },
     { label: 'Pacientes', route: '/pacientes', icon: 'groups' },
     { label: 'Profissionais', route: '/profissionais', icon: 'person_add' },
+    { label: 'Grupo Terapêutico', route: '/grupos-terapeuticos', icon: 'diversity_3' },
     { label: 'Relatórios', route: '/relatorios', icon: 'clinical_notes' },
   ];
 
