@@ -3,6 +3,10 @@ package com.pet.buscaativa.entities;
 import java.io.Serializable;
 
 import org.hibernate.envers.Audited;
+import com.pet.buscaativa.entities.enums.StatusPresencaGrupo;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Column;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -42,4 +46,8 @@ public class SessaoGrupoParticipante implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "paciente_id", nullable = false)
     private Paciente paciente;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StatusPresencaGrupo statusPresenca = StatusPresencaGrupo.NAO_REGISTRADA;
 }

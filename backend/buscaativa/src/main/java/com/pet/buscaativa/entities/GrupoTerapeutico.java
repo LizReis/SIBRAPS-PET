@@ -2,6 +2,7 @@ package com.pet.buscaativa.entities;
 
 import java.io.Serializable;
 import java.time.LocalTime;
+import java.time.LocalDate;
 
 import org.hibernate.envers.Audited;
 
@@ -47,6 +48,8 @@ public class GrupoTerapeutico extends AbstractEntities implements Serializable {
     private RecorrenciaGrupo recorrencia;
 
     private LocalTime horarioPadrao;
+
+    private LocalDate dataFimRecorrencia;
 
     private boolean ativo = true;
 }

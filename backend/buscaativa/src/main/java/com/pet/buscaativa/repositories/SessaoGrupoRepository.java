@@ -22,7 +22,8 @@ public interface SessaoGrupoRepository extends JpaRepository<SessaoGrupo, Long> 
 
     Optional<SessaoGrupo> findFirstByGrupoOrderByDataSessaoDesc(GrupoTerapeutico grupo);
 
-    @Query("SELECT s FROM SessaoGrupo s JOIN FETCH s.grupo g JOIN FETCH g.coordenador " +
+     @Query("SELECT DISTINCT s FROM SessaoGrupo s JOIN FETCH s.grupo g JOIN FETCH g.coordenador " +
+            "LEFT JOIN FETCH s.participantes p LEFT JOIN FETCH p.paciente " +
             "WHERE s.dataSessao BETWEEN :dataInicio AND :dataFim " +
             "ORDER BY s.dataSessao, s.horario")
     List<SessaoGrupo> findByDataSessaoBetween(@Param("dataInicio") LocalDate dataInicio,

@@ -8,6 +8,7 @@ import com.pet.buscaativa.entities.dto.AdicionarParticipanteDTO;
 import com.pet.buscaativa.entities.dto.CriarGrupoDTO;
 import com.pet.buscaativa.entities.dto.GrupoTerapeuticoDTO;
 import com.pet.buscaativa.entities.dto.NovaSessaoDTO;
+import com.pet.buscaativa.entities.dto.RegistrarPresencaGrupoDTO;
 import com.pet.buscaativa.entities.dto.SessaoGrupoDTO;
 import com.pet.buscaativa.entities.enums.StatusSessaoGrupo;
 
@@ -28,4 +29,6 @@ public interface GrupoTerapeuticoService {
     SessaoGrupoDTO removerParticipante(Long sessaoId, UUID pacienteId);
 
     SessaoGrupoDTO atualizarStatus(Long sessaoId, StatusSessaoGrupo novoStatus, Integer expectedVersion);
+
+    SessaoGrupoDTO registrarPresenca(Long sessaoId, UUID pacienteId, RegistrarPresencaGrupoDTO dto);
 }

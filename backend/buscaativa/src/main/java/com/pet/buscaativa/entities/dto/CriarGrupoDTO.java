@@ -24,6 +24,8 @@ public record CriarGrupoDTO(
         @NotNull(message = "Defina a data da primeira sessão.")
         LocalDate dataPrimeiraSessao,
 
+        LocalDate dataFimRecorrencia,
+
         @NotNull(message = "Defina o horário do grupo.")
         LocalTime horario,
 

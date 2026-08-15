@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import com.pet.buscaativa.entities.dto.AdicionarParticipanteDTO;
 import com.pet.buscaativa.entities.dto.CriarGrupoDTO;
 import com.pet.buscaativa.entities.dto.GrupoTerapeuticoDTO;
+import com.pet.buscaativa.entities.dto.RegistrarPresencaGrupoDTO;
 import com.pet.buscaativa.entities.dto.NovaSessaoDTO;
 import com.pet.buscaativa.entities.dto.SessaoGrupoDTO;
 import com.pet.buscaativa.entities.enums.StatusSessaoGrupo;
@@ -71,6 +72,13 @@ public class GrupoTerapeuticoController {
     public ResponseEntity<SessaoGrupoDTO> removerParticipante(@PathVariable Long sessaoId,
                                                               @PathVariable UUID pacienteId) {
         return ResponseEntity.ok(grupoService.removerParticipante(sessaoId, pacienteId));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PatchMapping("/sessoes/{sessaoId}/participantes/{pacienteId}/presenca")
+    public ResponseEntity<SessaoGrupoDTO> registrarPresenca(@PathVariable Long sessaoId,
+            @PathVariable UUID pacienteId, @RequestBody @Valid RegistrarPresencaGrupoDTO dto) {
+        return ResponseEntity.ok(grupoService.registrarPresenca(sessaoId, pacienteId, dto));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")

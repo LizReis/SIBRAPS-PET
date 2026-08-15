@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 import com.pet.buscaativa.entities.enums.StatusSessaoGrupo;
+import com.pet.buscaativa.entities.enums.StatusExibicaoSessaoGrupo;
 
 public record SessaoGrupoDTO(
         Long id,
@@ -14,8 +15,10 @@ public record SessaoGrupoDTO(
         LocalDate dataSessao,
         LocalTime horario,
         StatusSessaoGrupo status,
+        StatusExibicaoSessaoGrupo statusExibicao,
         List<ParticipanteSessaoDTO> participantes,
         Integer quantidadeParticipantes,
+        Integer quantidadePresencasConfirmadas,
         Integer version
 ) {
 }

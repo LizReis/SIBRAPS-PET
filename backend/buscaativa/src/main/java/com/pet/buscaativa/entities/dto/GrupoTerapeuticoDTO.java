@@ -1,5 +1,6 @@
 package com.pet.buscaativa.entities.dto;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ public record GrupoTerapeuticoDTO(
         String nomeCoordenador,
         RecorrenciaGrupo recorrencia,
         LocalTime horarioPadrao,
+        LocalDate dataFimRecorrencia,
         boolean ativo
 ) {
 }
