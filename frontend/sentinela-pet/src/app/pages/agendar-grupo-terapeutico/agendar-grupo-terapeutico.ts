@@ -37,20 +37,25 @@ import {
 })
 export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+
   readonly recorrencias: { valor: RecorrenciaGrupo; label: string }[] = [
     { valor: "UNICA", label: "Única" },
     { valor: "SEMANAL", label: "Semanal" },
     { valor: "QUINZENAL", label: "Quinzenal" },
     { valor: "MENSAL", label: "Mensal" },
   ];
+
   readonly dataMinima = this.hoje();
+
   readonly form = this.fb.nonNullable.group({
     tema: ["", [Validators.required, Validators.maxLength(150)]],
     coordenadorId: ["", Validators.required],
     dataPrimeiraSessao: ["", Validators.required],
     horario: ["", Validators.required],
     recorrencia: ["UNICA" as RecorrenciaGrupo, Validators.required],
+    dataFimRecorrencia: [""],
   });
+
   profissionais: ProfissionalPayload[] = [];
   participantes: PacientePayload[] = [];
   resultados: PacientePayload[] = [];
@@ -61,6 +66,7 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
   enviando = false;
   erroGeral = "";
   mensagemPesquisa = "";
+
   private readonly pesquisa$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
@@ -70,14 +76,18 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
     private readonly profissionaisService: ProfissionalService,
     private readonly router: Router
   ) {}
+
   ngOnInit(): void {
     this.carregarProfissionais();
     this.configurarPesquisa();
+    this.configurarRecorrencia();
   }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
   get coordenadorNome(): string {
     return (
       this.profissionais.find(
@@ -85,6 +95,7 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
       )?.nome || "Não selecionado"
     );
   }
+
   get recorrenciaLabel(): string {
     return (
       this.recorrencias.find(
@@ -92,15 +103,28 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
       )?.label || "Não definida"
     );
   }
+
   get primeiraSessaoResumo(): string {
     const d = this.form.controls.dataPrimeiraSessao.value;
     const h = this.form.controls.horario.value;
     return d ? `${this.formatarData(d)}${h ? " • " + h : ""}` : "Não definida";
   }
+
+  get recorrenciaEhUnica(): boolean {
+    return this.form.controls.recorrencia.value === "UNICA";
+  }
+
+  get fimRecorrenciaResumo(): string {
+    if (this.recorrenciaEhUnica) return "Não se aplica";
+    const data = this.form.controls.dataFimRecorrencia.value;
+    return data ? this.formatarData(data) : "Não definido";
+  }
+
   campoInvalido(nome: keyof typeof this.form.controls): boolean {
     const c = this.form.controls[nome];
     return c.invalid && (c.dirty || c.touched);
   }
+
   selecionarRecorrencia(valor: RecorrenciaGrupo): void {
     this.form.controls.recorrencia.setValue(valor);
     this.form.controls.recorrencia.markAsTouched();
@@ -112,6 +136,7 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
     this.mensagemPesquisa = "";
     this.pesquisa$.next(termo);
   }
+
   selecionarPaciente(p: PacientePayload): void {
     this.pacienteSelecionado = p;
     this.termoPesquisa = p.nome;
@@ -121,6 +146,7 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
         ? "Este paciente está inativo e não pode ser incluído."
         : "";
   }
+
   adicionarPaciente(): void {
     const p = this.pacienteSelecionado;
     if (!p?.idPublico) {
@@ -141,31 +167,40 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
     this.mensagemPesquisa = "";
     this.pesquisaRealizada = false;
   }
+
   removerPaciente(id?: string): void {
     this.participantes = this.participantes.filter((p) => p.idPublico !== id);
   }
+
   submit(): void {
     this.erroGeral = "";
+    this.validarPeriodoRecorrencia();
     this.form.markAllAsTouched();
+
     if (this.form.invalid) {
       this.erroGeral = "Revise os campos obrigatórios antes de confirmar.";
       return;
     }
+
     if (this.form.controls.dataPrimeiraSessao.value < this.dataMinima) {
       this.form.controls.dataPrimeiraSessao.setErrors({ passada: true });
       return;
     }
+
     const value = this.form.getRawValue();
     const payload: CriarGrupoPayload = {
       tema: value.tema.trim(),
       coordenadorId: value.coordenadorId,
       recorrencia: value.recorrencia,
       dataPrimeiraSessao: value.dataPrimeiraSessao,
+      dataFimRecorrencia:
+        value.recorrencia === "UNICA" ? null : value.dataFimRecorrencia,
       horario: value.horario,
       participantesIds: this.participantes
         .map((p) => p.idPublico!)
         .filter(Boolean),
     };
+
     this.enviando = true;
     this.grupos
       .criar(payload)
@@ -175,18 +210,70 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
           this.router.navigate(["/grupos-terapeuticos"], {
             queryParams: { data: value.dataPrimeiraSessao },
           }),
-        error: (e) => this.tratarErro(e),
+        error: (e: HttpErrorResponse) => this.tratarErro(e),
       });
   }
+
+  private configurarRecorrencia(): void {
+    this.form.controls.recorrencia.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((recorrencia) => {
+        const fim = this.form.controls.dataFimRecorrencia;
+
+        if (recorrencia === "UNICA") {
+          fim.clearValidators();
+          fim.setValue("", { emitEvent: false });
+          fim.setErrors(null);
+        } else {
+          fim.setValidators(Validators.required);
+        }
+
+        fim.updateValueAndValidity({ emitEvent: false });
+        this.validarPeriodoRecorrencia();
+      });
+
+    this.form.controls.dataPrimeiraSessao.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.validarPeriodoRecorrencia());
+
+    this.form.controls.dataFimRecorrencia.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.validarPeriodoRecorrencia());
+  }
+
+  private validarPeriodoRecorrencia(): void {
+    const recorrencia = this.form.controls.recorrencia.value;
+    const primeira = this.form.controls.dataPrimeiraSessao.value;
+    const fim = this.form.controls.dataFimRecorrencia;
+
+    if (recorrencia === "UNICA") {
+      fim.setErrors(null);
+      return;
+    }
+
+    const valorFim = fim.value;
+
+    if (!valorFim) {
+      fim.setErrors({ required: true });
+      return;
+    }
+
+    if (primeira && valorFim < primeira) {
+      fim.setErrors({ anteriorPrimeiraSessao: true });
+      return;
+    }
+
+    fim.setErrors(null);
+  }
+
   private carregarProfissionais(): void {
-    this.profissionaisService
-      .listarParaSelecao()
-      .subscribe({
-        next: (p) => (this.profissionais = p),
-        error: () =>
-          (this.erroGeral = "Não foi possível carregar os coordenadores."),
-      });
+    this.profissionaisService.listarParaSelecao().subscribe({
+      next: (p) => (this.profissionais = p),
+      error: () =>
+        (this.erroGeral = "Não foi possível carregar os coordenadores."),
+    });
   }
+
   private configurarPesquisa(): void {
     this.pesquisa$
       .pipe(
@@ -223,6 +310,7 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
       )
       .subscribe((r) => (this.resultados = r));
   }
+
   private tratarErro(e: HttpErrorResponse): void {
     const mensagens: Record<number, string> = {
       400: "Há dados inválidos no formulário.",
@@ -236,10 +324,12 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
       mensagens[e.status] ||
       "Não foi possível agendar o grupo. Tente novamente.";
   }
+
   private formatarData(data: string): string {
     const [a, m, d] = data.split("-").map(Number);
     return new Intl.DateTimeFormat("pt-BR").format(new Date(a, m - 1, d));
   }
+
   private hoje(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
@@ -247,6 +337,7 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
       "0"
     )}-${String(d.getDate()).padStart(2, "0")}`;
   }
+
   documento(p: PacientePayload): string {
     const cpf = (p.cpf || "").replace(/\D/g, "");
     if (cpf.length === 11)
