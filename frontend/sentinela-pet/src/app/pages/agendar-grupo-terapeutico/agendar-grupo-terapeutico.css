@@ -85,14 +85,16 @@ aside {
 }
 
 .fields label,
-.autocomplete label {
+.autocomplete label,
+.recurrence-end label {
     font-size: 12px;
     font-weight: 650
 }
 
 .fields input,
 .fields select,
-.search-input input {
+.search-input input,
+.recurrence-end input {
     width: 100%;
     height: 45px;
     border: 1px solid #cfdaea;
@@ -103,7 +105,8 @@ aside {
 }
 
 .fields small,
-.field-message {
+.field-message,
+.recurrence-end small {
     display: block;
     color: #b42332;
     font-size: 12px;
@@ -111,7 +114,8 @@ aside {
 }
 
 .fields input.ng-invalid.ng-touched,
-.fields select.ng-invalid.ng-touched {
+.fields select.ng-invalid.ng-touched,
+.recurrence-end input.ng-invalid.ng-touched {
     border-color: #c53a47
 }
 
@@ -144,6 +148,31 @@ legend {
     color: #1559dc;
     border-color: #1559dc;
     background: #edf3ff
+}
+
+.recurrence-end {
+    margin-top: 18px;
+    padding: 16px;
+    background: #f7faff;
+    border: 1px solid #dbe6f5;
+    border-radius: 10px;
+}
+
+.recurrence-end label {
+    display: block;
+    margin-bottom: 7px;
+    color: #34445d
+}
+
+.recurrence-end input {
+    max-width: 280px
+}
+
+.recurrence-end p {
+    margin-top: 8px;
+    color: #687991;
+    font-size: 12px;
+    line-height: 1.45
 }
 
 .search-row {
@@ -418,6 +447,10 @@ legend {
 
     .quick-options button {
         min-width: 0
+    }
+
+    .recurrence-end input {
+        max-width: none
     }
 
     .search-row {
