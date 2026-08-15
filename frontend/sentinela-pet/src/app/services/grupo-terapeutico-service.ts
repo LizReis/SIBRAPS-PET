@@ -24,6 +24,7 @@ export interface GrupoTerapeuticoPayload {
   nomeCoordenador: string;
   recorrencia: RecorrenciaGrupo;
   horarioPadrao: string;
+  dataFimRecorrencia: string | null;
   ativo: boolean;
 }
 
@@ -45,6 +46,7 @@ export interface CriarGrupoPayload {
   coordenadorId: string;
   recorrencia: RecorrenciaGrupo;
   dataPrimeiraSessao: string;
+  dataFimRecorrencia: string | null;
   horario: string;
   participantesIds: string[];
 }
