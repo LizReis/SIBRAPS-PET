@@ -1,6 +1,8 @@
 package com.pet.buscaativa.services.impl;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -14,10 +16,6 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.pet.buscaativa.entities.Endereco;
 import com.pet.buscaativa.entities.Paciente;
-import com.pet.buscaativa.entities.dto.AlertaBuscaAtivaDTO;
-import com.pet.buscaativa.entities.dto.EncerramentoPacienteDTO;
-import com.pet.buscaativa.entities.dto.PacienteDTO;
-import com.pet.buscaativa.entities.dto.ReativacaoPacienteDTO;
 import com.pet.buscaativa.entities.dto.*;
 import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
 import com.pet.buscaativa.entities.enums.MotivoEncerramento;
@@ -27,6 +25,7 @@ import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.mapping.PacienteMapper;
 import com.pet.buscaativa.repositories.AgendamentoRepository;
 import com.pet.buscaativa.repositories.PacienteRepository;
+import com.pet.buscaativa.repositories.SessaoGrupoParticipanteRepository;
 import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
 import com.pet.buscaativa.services.PoliticaClassificacaoPaciente;
@@ -52,6 +51,8 @@ public class PacienteServiceImpl implements PacienteService{
     private final HistoricoPacienteService historicoPacienteService;
     private final AgendamentoRepository agendamentoRepository;
     private final PoliticaClassificacaoPaciente politicaClassificacao;
+    private final SessaoGrupoParticipanteRepository participanteGrupoRepository;
+    private final Clock clock;
 
 
     @Override
@@ -272,40 +273,34 @@ public class PacienteServiceImpl implements PacienteService{
     public void atualizarAssiduidadePaciente(Paciente paciente, SituacaoAtendimento statusAnterior,
             SituacaoAtendimento novoStatus, LocalDate dataAtendimento) {
 
-        if (novoStatus == SituacaoAtendimento.PRESENTE) {
-            paciente.setGatilhoVisitaAcionado(false);
-        }
-        if (statusAnterior == SituacaoAtendimento.FALTOU && novoStatus != SituacaoAtendimento.FALTOU) {
-            paciente.setCountFaltas(Math.max(0, faltasConsecutivas(paciente) - 1));
-        }
+        if (novoStatus == SituacaoAtendimento.PRESENTE) paciente.setGatilhoVisitaAcionado(false);
+        recalcularAssiduidadePaciente(paciente);
+    }
 
         // Recalcular a partir da fonte evita dupla contagem e torna correções retroativas
         // determinísticas. O agendamento corrente já está alterado no persistence context.
-        var atendimentos = agendamentoRepository.findByPacienteOrderByDataAgendamentoDescIdDesc(paciente);
-        int consecutivas = 0;
-        LocalDate ultimaPresenca = null;
-        for (var atendimento : atendimentos) {
-            if (atendimento.getSituacaoAtendimento() == SituacaoAtendimento.PRESENTE) {
-                if (ultimaPresenca == null || atendimento.getDataAgendamento().isAfter(ultimaPresenca)) {
-                    ultimaPresenca = atendimento.getDataAgendamento();
-                }
+        @Override
+    public void recalcularAssiduidadePaciente(Paciente paciente) {
+        record Evento(LocalDateTime quando, boolean presente, int origem, long id) {}
+        List<Evento> eventos = new java.util.ArrayList<>();
+        for (var p : participanteGrupoRepository.findByPaciente(paciente)) {
+            if (p.getSessaoGrupo().getStatus() == com.pet.buscaativa.entities.enums.StatusSessaoGrupo.REALIZADA
+                    && p.getStatusPresenca() != com.pet.buscaativa.entities.enums.StatusPresencaGrupo.NAO_REGISTRADA) {
+                eventos.add(new Evento(LocalDateTime.of(p.getSessaoGrupo().getDataSessao(), p.getSessaoGrupo().getHorario()),
+                        p.getStatusPresenca() == com.pet.buscaativa.entities.enums.StatusPresencaGrupo.PRESENTE, 1, p.getId()));
             }
         }
-        for (var atendimento : atendimentos) {
-            if (atendimento.getSituacaoAtendimento() == SituacaoAtendimento.FALTOU) {
-                consecutivas++;
-            } else if (atendimento.getSituacaoAtendimento() == SituacaoAtendimento.PRESENTE) {
-                break;
-            }
+        eventos.sort(java.util.Comparator.comparing(Evento::quando).thenComparingInt(Evento::origem).thenComparingLong(Evento::id));
+        int faltas = 0; LocalDate ultima = null;
+        for (Evento e : eventos) {
+            if (e.presente()) { faltas = 0; ultima = e.quando().toLocalDate(); paciente.setGatilhoVisitaAcionado(false); }
+            else faltas++;
         }
-        paciente.setCountFaltas(Math.max(0, consecutivas));
-        paciente.setDataUltimaPresenca(ultimaPresenca);
-
-        calcularEAtualizarRisco(paciente);
-        if (paciente.getIdPublico() != null) {
-            pacienteRepository.save(paciente);
-        }
+        paciente.setCountFaltas(faltas); paciente.setDataUltimaPresenca(ultima);
+        calcularEAtualizarRisco(paciente); pacienteRepository.save(paciente);
     }
+
+
     @Override
     public void calcularEAtualizarRisco(Paciente paciente) {
         ClassificacaoRisco classificacaoAnterior = paciente.getClassificacaoRisco();
@@ -326,7 +321,7 @@ public class PacienteServiceImpl implements PacienteService{
         long diasAusente = 0;
 
         if (paciente.getDataUltimaPresenca() != null) {
-            diasAusente = java.time.temporal.ChronoUnit.DAYS.between(paciente.getDataUltimaPresenca(), LocalDate.now());
+            diasAusente = java.time.temporal.ChronoUnit.DAYS.between(paciente.getDataUltimaPresenca(), LocalDate.now(clock));
         }
 
         // Verifica primeiro o risco máximo (Vermelho)

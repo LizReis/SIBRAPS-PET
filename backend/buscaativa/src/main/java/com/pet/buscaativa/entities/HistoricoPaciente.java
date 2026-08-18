@@ -45,6 +45,10 @@ public class HistoricoPaciente extends AbstractEntities {
     private Agendamento agendamento;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sessao_grupo_id")
+    private SessaoGrupo sessaoGrupo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profissional_id")
     private Usuario profissional;
 

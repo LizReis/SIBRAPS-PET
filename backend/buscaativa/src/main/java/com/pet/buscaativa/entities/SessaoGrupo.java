@@ -23,6 +23,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -53,6 +54,9 @@ public class SessaoGrupo extends AbstractEntities implements Serializable {
 
     @Enumerated(EnumType.STRING)
     private StatusSessaoGrupo status;
+
+    @Column(length = 1000)
+    private String motivoCancelamento;
 
     @OneToMany(mappedBy = "sessaoGrupo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SessaoGrupoParticipante> participantes = new ArrayList<>();

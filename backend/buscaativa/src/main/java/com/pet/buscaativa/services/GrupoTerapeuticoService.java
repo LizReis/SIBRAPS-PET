@@ -5,11 +5,14 @@ import java.util.List;
 import java.util.UUID;
 
 import com.pet.buscaativa.entities.dto.AdicionarParticipanteDTO;
+import com.pet.buscaativa.entities.dto.ConfirmarOcorrenciaGrupoDTO;
 import com.pet.buscaativa.entities.dto.CriarGrupoDTO;
 import com.pet.buscaativa.entities.dto.GrupoTerapeuticoDTO;
+import com.pet.buscaativa.entities.dto.InscricaoRetroativaGrupoDTO;
 import com.pet.buscaativa.entities.dto.NovaSessaoDTO;
 import com.pet.buscaativa.entities.dto.RegistrarPresencaGrupoDTO;
 import com.pet.buscaativa.entities.dto.SessaoGrupoDTO;
+import com.pet.buscaativa.entities.dto.SessaoInscricaoRetroativaDTO;
 import com.pet.buscaativa.entities.enums.StatusSessaoGrupo;
 
 public interface GrupoTerapeuticoService {
@@ -31,4 +34,10 @@ public interface GrupoTerapeuticoService {
     SessaoGrupoDTO atualizarStatus(Long sessaoId, StatusSessaoGrupo novoStatus, Integer expectedVersion);
 
     SessaoGrupoDTO registrarPresenca(Long sessaoId, UUID pacienteId, RegistrarPresencaGrupoDTO dto);
+
+    SessaoGrupoDTO confirmarOcorrencia(Long sessaoId, ConfirmarOcorrenciaGrupoDTO dto);
+
+    SessaoGrupoDTO inscreverRetroativamente(Long grupoId, InscricaoRetroativaGrupoDTO dto);
+    
+    List<SessaoInscricaoRetroativaDTO> listarSessoesParaInscricaoRetroativa(Long grupoId);
 }

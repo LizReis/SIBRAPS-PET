@@ -14,6 +14,8 @@ import com.pet.buscaativa.entities.Agendamento;
 import com.pet.buscaativa.entities.HistoricoPaciente;
 import com.pet.buscaativa.entities.Paciente;
 import com.pet.buscaativa.entities.Usuario;
+import com.pet.buscaativa.entities.SessaoGrupo;
+import com.pet.buscaativa.entities.enums.StatusPresencaGrupo;
 import com.pet.buscaativa.entities.dto.HistoricoPacienteDTO;
 import com.pet.buscaativa.entities.dto.HistoricoPacienteEventoDTO;
 import com.pet.buscaativa.entities.dto.RegistroHistoricoPacienteDTO;
@@ -111,6 +113,23 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
     public void registrarSituacaoAtual(Paciente paciente, String descricao) {
         salvar(paciente, null, usuarioLogado(), TipoEventoHistoricoPaciente.SITUACAO_ATUALIZADA,
                 null, LocalDateTime.now(), descricao);
+    }
+
+    @Override
+    @Transactional
+    public void registrarFrequenciaGrupo(Paciente paciente, SessaoGrupo sessao, StatusPresencaGrupo status) {
+        if (historicoRepository.existsByPacienteAndSessaoGrupo(paciente, sessao)) {
+            throw new com.pet.buscaativa.services.exceptions.ConflictException("Já existe histórico clínico para esta sessão e paciente.");
+        }
+        TipoEventoHistoricoPaciente tipo = status == StatusPresencaGrupo.PRESENTE
+                ? TipoEventoHistoricoPaciente.PARTICIPACAO_GRUPO_TERAPEUTICO : TipoEventoHistoricoPaciente.FALTA;
+        HistoricoPaciente h = new HistoricoPaciente();
+        h.setPaciente(paciente); h.setSessaoGrupo(sessao); h.setProfissional(usuarioLogado()); h.setTipo(tipo);
+        h.setSituacaoAtendimento(status == StatusPresencaGrupo.PRESENTE ? SituacaoAtendimento.PRESENTE : SituacaoAtendimento.FALTOU);
+        h.setOcorridoEm(LocalDateTime.of(sessao.getDataSessao(), sessao.getHorario()));
+        h.setDescricao("Frequência no grupo " + sessao.getGrupo().getTema() + ", sessão " + sessao.getId() + ".");
+        if (tipo == TipoEventoHistoricoPaciente.FALTA) h.setNumeroFaltaConsecutiva(paciente.getCountFaltas());
+        historicoRepository.save(h);
     }
 
     private void salvar(Paciente paciente, Agendamento agendamento, Usuario profissional,

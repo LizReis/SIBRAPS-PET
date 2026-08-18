@@ -57,4 +57,6 @@ public interface PacienteService {
 
     void calcularEAtualizarRisco(Paciente paciente);
 
+    void recalcularAssiduidadePaciente(Paciente paciente);
+
 }

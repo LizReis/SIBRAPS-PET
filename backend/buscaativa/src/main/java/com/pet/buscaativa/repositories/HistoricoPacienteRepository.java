@@ -13,6 +13,9 @@ import com.pet.buscaativa.entities.HistoricoPaciente;
 @Repository
 public interface HistoricoPacienteRepository extends JpaRepository<HistoricoPaciente, Long> {
 
+    boolean existsByPacienteAndSessaoGrupo(com.pet.buscaativa.entities.Paciente paciente,
+                                            com.pet.buscaativa.entities.SessaoGrupo sessaoGrupo);
+
     @Query("""
             select h from HistoricoPaciente h
             left join fetch h.profissional

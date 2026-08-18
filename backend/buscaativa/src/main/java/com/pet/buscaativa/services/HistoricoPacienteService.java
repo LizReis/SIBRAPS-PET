@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import com.pet.buscaativa.entities.Agendamento;
 import com.pet.buscaativa.entities.Paciente;
+import com.pet.buscaativa.entities.SessaoGrupo;
+import com.pet.buscaativa.entities.enums.StatusPresencaGrupo;
 import com.pet.buscaativa.entities.dto.HistoricoPacienteDTO;
 import com.pet.buscaativa.entities.dto.RegistroHistoricoPacienteDTO;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
@@ -19,4 +21,6 @@ public interface HistoricoPacienteService {
     void registrarAlteracaoDeAtendimento(Agendamento agendamento, SituacaoAtendimento statusAnterior);
 
     void registrarSituacaoAtual(Paciente paciente, String descricao);
+
+    void registrarFrequenciaGrupo(Paciente paciente, SessaoGrupo sessao, StatusPresencaGrupo status);
 }

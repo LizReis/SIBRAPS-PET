@@ -16,6 +16,7 @@ public record SessaoGrupoDTO(
         LocalTime horario,
         StatusSessaoGrupo status,
         StatusExibicaoSessaoGrupo statusExibicao,
+        String motivoCancelamento,
         List<ParticipanteSessaoDTO> participantes,
         Integer quantidadeParticipantes,
         Integer quantidadePresencasConfirmadas,

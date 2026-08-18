@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 import com.pet.buscaativa.entities.GrupoTerapeutico;
 import com.pet.buscaativa.entities.Paciente;
@@ -17,6 +19,10 @@ import com.pet.buscaativa.entities.enums.StatusSessaoGrupo;
 
 @Repository
 public interface SessaoGrupoRepository extends JpaRepository<SessaoGrupo, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select distinct s from SessaoGrupo s left join fetch s.participantes p left join fetch p.paciente where s.id = :id")
+    Optional<SessaoGrupo> findByIdForUpdate(@Param("id") Long id);
 
     List<SessaoGrupo> findByGrupoOrderByDataSessaoDesc(GrupoTerapeutico grupo);
 
