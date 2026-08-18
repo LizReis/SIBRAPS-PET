@@ -1,12 +1,12 @@
 import { CommonModule } from "@angular/common";
 import { Component, OnInit } from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { ActivatedRoute, RouterLink } from "@angular/router";
+import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { forkJoin } from "rxjs";
 import {
   GrupoTerapeuticoService,
   SessaoGrupoPayload,
-  StatusVisualSessao,
+  StatusExibicaoSessaoGrupo,
 } from "../../services/grupo-terapeutico-service";
 
 @Component({
@@ -25,13 +25,11 @@ export class GruposTerapeuticos implements OnInit {
   buscaTema = "";
   carregando = false;
   erro = "";
-  sessaoAberta: SessaoGrupoPayload | null = null;
-  acaoEmAndamento = false;
-  erroModal = "";
 
   constructor(
     private readonly service: GrupoTerapeuticoService,
-    private readonly route: ActivatedRoute
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -85,7 +83,7 @@ export class GruposTerapeuticos implements OnInit {
     return [...new Set(this.sessoes.map((s) => s.nomeCoordenador))].sort();
   }
   get totalAgendadas(): number {
-    return this.sessoes.filter((s) => this.statusVisual(s) === "AGENDADA")
+    return this.sessoes.filter((s) => this.statusVisual(s) === "AGENDADO")
       .length;
   }
   get totalAndamento(): number {
@@ -99,21 +97,15 @@ export class GruposTerapeuticos implements OnInit {
     return this.dataSelecionada === this.hoje();
   }
 
-  statusVisual(sessao: SessaoGrupoPayload): StatusVisualSessao {
-    if (
-      sessao.status === "AGENDADA" &&
-      sessao.dataSessao === this.hoje() &&
-      sessao.horario.slice(0, 5) <= this.horaAtual()
-    )
-      return "EM_ANDAMENTO";
-    return sessao.status;
+  statusVisual(sessao: SessaoGrupoPayload): StatusExibicaoSessaoGrupo {
+    return sessao.statusExibicao;
   }
   labelStatus(sessao: SessaoGrupoPayload): string {
     return {
-      AGENDADA: "Agendada",
+      AGENDADO: "Agendada",
       EM_ANDAMENTO: "Em andamento",
-      REALIZADA: "Realizada",
-      CANCELADA: "Cancelada",
+      REALIZADO: "Realizada",
+      CANCELADO: "Cancelada",
     }[this.statusVisual(sessao)];
   }
   classeStatus(sessao: SessaoGrupoPayload): string {
@@ -136,48 +128,17 @@ export class GruposTerapeuticos implements OnInit {
     ).format(this.dataLocal(data));
   }
   abrirSessao(sessao: SessaoGrupoPayload): void {
-    this.sessaoAberta = sessao;
-    this.erroModal = "";
-  }
-  fecharSessao(): void {
-    this.sessaoAberta = null;
-  }
-  removerParticipante(pacienteId: string): void {
-    if (!this.sessaoAberta) return;
-    this.acaoEmAndamento = true;
-    this.erroModal = "";
-    this.service
-      .removerParticipante(this.sessaoAberta.id, pacienteId)
-      .subscribe({
-        next: (atualizada) => {
-          this.atualizarSessao(atualizada);
-          this.acaoEmAndamento = false;
-        },
-        error: (e) => {
-          this.erroModal =
-            e.error?.message || "Não foi possível remover o participante.";
-          this.acaoEmAndamento = false;
-        },
-      });
+    this.router.navigate(["/grupos-terapeuticos/detalhes", sessao.grupoId, "sessao", sessao.id], { queryParams: { data: sessao.dataSessao } });
   }
   sessaoEditavel(sessao: SessaoGrupoPayload): boolean {
     return sessao.status === "AGENDADA" && sessao.dataSessao >= this.hoje();
   }
-  private atualizarSessao(sessao: SessaoGrupoPayload): void {
-    this.sessoes = this.sessoes.map((s) => (s.id === sessao.id ? sessao : s));
-    this.sessaoAberta = sessao;
-  }
+  
   private hoje(): string {
     const d = new Date();
     return this.dataISO(d);
   }
-  private horaAtual(): string {
-    return new Intl.DateTimeFormat("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date());
-  }
+  
   private somarDias(data: string, dias: number): string {
     const d = this.dataLocal(data);
     d.setDate(d.getDate() + dias);

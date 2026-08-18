@@ -6,15 +6,17 @@ export type RecorrenciaGrupo = "UNICA" | "SEMANAL" | "QUINZENAL" | "MENSAL";
 
 export type StatusSessaoGrupo = "AGENDADA" | "REALIZADA" | "CANCELADA";
 
-export type StatusVisualSessao =
-  | "AGENDADA"
+export type StatusPresencaGrupo = "NAO_REGISTRADA" | "PRESENTE" | "FALTOU";
+export type StatusExibicaoSessaoGrupo =
+  | "AGENDADO"
   | "EM_ANDAMENTO"
-  | "REALIZADA"
-  | "CANCELADA";
+  | "REALIZADO"
+  | "CANCELADO";
 
 export interface ParticipanteSessaoPayload {
   pacienteId: string;
   nomePaciente: string;
+  statusPresenca: StatusPresencaGrupo;
 }
 
 export interface GrupoTerapeuticoPayload {
@@ -36,9 +38,33 @@ export interface SessaoGrupoPayload {
   dataSessao: string;
   horario: string;
   status: StatusSessaoGrupo;
+  statusExibicao: StatusExibicaoSessaoGrupo;
+  motivoCancelamento: string | null;
   participantes: ParticipanteSessaoPayload[];
   quantidadeParticipantes: number;
+  quantidadePresencasConfirmadas: number;
   version: number;
+}
+
+export interface ConfirmarOcorrenciaPayload {
+  ocorreu: boolean;
+  frequencias: { pacienteId: string; statusPresenca: StatusPresencaGrupo }[];
+  motivoCancelamento: string | null;
+  version: number;
+}
+
+export interface SessaoInscricaoRetroativaPayload {
+  sessaoId: number;
+  data: string;
+  horario: string;
+  status: StatusSessaoGrupo;
+  statusExibicao: StatusExibicaoSessaoGrupo;
+  necessitaFrequencia: boolean;
+}
+
+export interface InscricaoRetroativaPayload {
+  pacienteId: string;
+  frequenciasPassadas: { sessaoId: number; statusPresenca: StatusPresencaGrupo }[];
 }
 
 export interface CriarGrupoPayload {
@@ -95,6 +121,18 @@ export class GrupoTerapeuticoService {
     return this.http.get<SessaoGrupoPayload[]>(`${this.apiUrl}/sessoes`, {
       params,
     });
+  }
+
+  confirmarOcorrencia(sessaoId: number, payload: ConfirmarOcorrenciaPayload): Observable<SessaoGrupoPayload> {
+    return this.http.post<SessaoGrupoPayload>(`${this.apiUrl}/sessoes/${sessaoId}/confirmacao-ocorrencia`, payload);
+  }
+
+  listarSessoesParaInscricaoRetroativa(grupoId: number): Observable<SessaoInscricaoRetroativaPayload[]> {
+    return this.http.get<SessaoInscricaoRetroativaPayload[]>(`${this.apiUrl}/${grupoId}/sessoes-para-inscricao-retroativa`);
+  }
+
+  inscreverRetroativamente(grupoId: number, payload: InscricaoRetroativaPayload): Observable<SessaoGrupoPayload> {
+    return this.http.post<SessaoGrupoPayload>(`${this.apiUrl}/${grupoId}/inscricoes-retroativas`, payload);
   }
 
   adicionarParticipante(

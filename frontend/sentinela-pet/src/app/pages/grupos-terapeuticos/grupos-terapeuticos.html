@@ -23,10 +23,10 @@
         </div>
         <div class="filters"><label><span>Status</span><select [(ngModel)]="filtroStatus">
                     <option value="">Todos os status</option>
-                    <option value="AGENDADA">Agendada</option>
+                    <option value="AGENDADO">Agendada</option>
                     <option value="EM_ANDAMENTO">Em andamento</option>
-                    <option value="REALIZADA">Realizada</option>
-                    <option value="CANCELADA">Cancelada</option>
+                    <option value="REALIZADO">Realizada</option>
+                    <option value="CANCELADO">Cancelada</option>
                 </select></label><label><span>Coordenador</span><select [(ngModel)]="filtroCoordenador">
                     <option value="">Todos os coordenadores</option>@for (nome of coordenadores; track nome) { <option
                         [value]="nome">{{ nome }}</option> }
@@ -60,7 +60,7 @@
                         <td><strong>{{ sessao.temaGrupo }}</strong></td>
                         <td>{{ sessao.nomeCoordenador }}</td>
                         <td>{{ sessao.quantidadeParticipantes }}</td>
-                        <td aria-label="Presenças não registradas">—</td>
+                        <td>{{ sessao.quantidadePresencasConfirmadas }}</td>
                         <td><span class="status" [class]="'status '+classeStatus(sessao)">{{ labelStatus(sessao)
                                 }}</span></td>
                         <td><button type="button" class="outline-button" (click)="abrirSessao(sessao)">{{
@@ -86,31 +86,3 @@
                 próximos 60 dias.</p> } }</div>
     </section>
 </main>
-@if (sessaoAberta) { <div class="modal-backdrop" (click)="fecharSessao()">
-    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloSessao"
-        (click)="$event.stopPropagation()">
-        <header>
-            <div>
-                <h2 id="tituloSessao">{{ sessaoAberta.temaGrupo }}</h2>
-                <p>{{ formatarData(sessaoAberta.dataSessao, true) }} • {{ sessaoAberta.horario.slice(0,5) }}</p>
-            </div><button type="button" (click)="fecharSessao()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
-        </header>
-        <dl>
-            <div>
-                <dt>Coordenador</dt>
-                <dd>{{ sessaoAberta.nomeCoordenador }}</dd>
-            </div>
-            <div>
-                <dt>Status</dt>
-                <dd>{{ labelStatus(sessaoAberta) }}</dd>
-            </div>
-        </dl>
-        <h3>Participantes ({{ sessaoAberta.quantidadeParticipantes }})</h3>@if (erroModal) { <p class="modal-error"
-            role="alert">{{ erroModal }}</p> }<ul>@for (p of sessaoAberta.participantes; track p.pacienteId) { <li>
-                <span><i class="bi bi-person"></i>{{ p.nomePaciente }}</span>@if (sessaoEditavel(sessaoAberta)) {
-                <button type="button" [disabled]="acaoEmAndamento" (click)="removerParticipante(p.pacienteId)"
-                    [attr.aria-label]="'Remover '+p.nomePaciente"><i class="bi bi-person-dash"></i> Remover</button> }
-            </li> } @empty { <li class="empty">Nenhum participante inscrito.</li> }</ul>
-        <footer><button type="button" class="outline-button" (click)="fecharSessao()">Fechar</button></footer>
-    </section>
-</div> }
