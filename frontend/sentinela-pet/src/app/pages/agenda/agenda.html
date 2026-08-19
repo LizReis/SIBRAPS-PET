@@ -85,6 +85,7 @@
                 <div class="appointment-actions" *ngIf="possuiAcoes(a)">
                   <button type="button" class="action-btn action-presente" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar presença de ' + a.nomePaciente">Presente</button>
                   <button type="button" class="action-btn action-faltou" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Registrar falta de ' + a.nomePaciente">Faltou</button>
+                  <button type="button" class="action-btn action-presente" *ngIf="podeCorrigirFrequencia(a)" (click)="corrigirFrequencia(a)" [disabled]="atualizandoId === a.id"><i class="bi bi-pencil"></i> Corrigir para {{ a.situacaoAtendimento === 'PRESENTE' ? 'Faltou' : 'Presente' }}</button>
                   <button type="button" class="action-btn action-remarcar" *ngIf="podeRemarcar(a)" (click)="remarcar(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Remarcar atendimento de ' + a.nomePaciente" title="Remarcar atendimento"><span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Remarcar</button>
                 </div>
               </article>
@@ -110,6 +111,7 @@
                 <div class="appointment-actions" *ngIf="possuiAcoes(a)">
                   <button type="button" class="action-btn action-presente" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarPresenca(a)" [disabled]="atualizandoId === a.id">Presente</button>
                   <button type="button" class="action-btn action-faltou" *ngIf="podeRegistrarFrequencia(a)" (click)="registrarFalta(a)" [disabled]="atualizandoId === a.id">Faltou</button>
+                  <button type="button" class="action-btn action-presente" *ngIf="podeCorrigirFrequencia(a)" (click)="corrigirFrequencia(a)" [disabled]="atualizandoId === a.id"><i class="bi bi-pencil"></i> Corrigir para {{ a.situacaoAtendimento === 'PRESENTE' ? 'Faltou' : 'Presente' }}</button>
                   <button type="button" class="action-btn action-remarcar" *ngIf="podeRemarcar(a)" (click)="remarcar(a)" [disabled]="atualizandoId === a.id" [attr.aria-label]="'Remarcar atendimento de ' + a.nomePaciente"><span class="material-symbols-outlined" aria-hidden="true">event_repeat</span> Remarcar</button>
                 </div>
               </article>
