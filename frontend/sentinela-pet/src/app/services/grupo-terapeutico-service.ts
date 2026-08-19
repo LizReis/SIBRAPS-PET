@@ -5,7 +5,6 @@ import { Observable } from "rxjs";
 export type RecorrenciaGrupo = "UNICA" | "SEMANAL" | "QUINZENAL" | "MENSAL";
 
 export type StatusSessaoGrupo = "AGENDADA" | "REALIZADA" | "CANCELADA";
-
 export type StatusPresencaGrupo = "NAO_REGISTRADA" | "PRESENTE" | "FALTOU";
 export type StatusExibicaoSessaoGrupo =
   | "AGENDADO"
@@ -28,6 +27,9 @@ export interface GrupoTerapeuticoPayload {
   horarioPadrao: string;
   dataFimRecorrencia: string | null;
   ativo: boolean;
+  dataPrimeiraSessao: string;
+  version: number;
+  iniciado: boolean;
 }
 
 export interface SessaoGrupoPayload {
@@ -67,6 +69,27 @@ export interface InscricaoRetroativaPayload {
   frequenciasPassadas: { sessaoId: number; statusPresenca: StatusPresencaGrupo }[];
 }
 
+export interface AtualizarGrupoPayload {
+  tema: string;
+  coordenadorId: string;
+  dataPrimeiraSessao: string;
+  horario: string;
+  recorrencia: RecorrenciaGrupo;
+  dataFimRecorrencia: string | null;
+  version: number;
+}
+
+export interface ParticipanteGrupoPayload {
+  pacienteId: string;
+  nomePaciente: string;
+  inscritoDesde: string;
+  quantidadeSessoesRegistradas: number;
+  quantidadePresencas: number;
+  quantidadeFaltas: number;
+  percentualPresenca: number | null;
+  possuiInscricaoFutura: boolean;
+}
+
 export interface CriarGrupoPayload {
   tema: string;
   coordenadorId: string;
@@ -98,6 +121,34 @@ export class GrupoTerapeuticoService {
 
   listarGrupos(): Observable<GrupoTerapeuticoPayload[]> {
     return this.http.get<GrupoTerapeuticoPayload[]>(this.apiUrl);
+  }
+
+  buscarGrupo(grupoId: number): Observable<GrupoTerapeuticoPayload> {
+    return this.http.get<GrupoTerapeuticoPayload>(`${this.apiUrl}/${grupoId}`);
+  }
+
+  atualizarGrupo(grupoId: number, payload: AtualizarGrupoPayload): Observable<GrupoTerapeuticoPayload> {
+    return this.http.put<GrupoTerapeuticoPayload>(`${this.apiUrl}/${grupoId}`, payload);
+  }
+
+  listarParticipantesDoGrupo(grupoId: number): Observable<ParticipanteGrupoPayload[]> {
+    return this.http.get<ParticipanteGrupoPayload[]>(`${this.apiUrl}/${grupoId}/participantes`);
+  }
+
+  inscreverEmSessoesFuturas(grupoId: number, pacienteId: string): Observable<SessaoGrupoPayload> {
+    return this.http.post<SessaoGrupoPayload>(`${this.apiUrl}/${grupoId}/inscricoes-futuras`, { pacienteId });
+  }
+
+  removerParticipanteDoGrupo(grupoId: number, pacienteId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${grupoId}/participantes/${pacienteId}`);
+  }
+
+  corrigirFrequencias(
+    sessaoId: number,
+    frequencias: { pacienteId: string; statusPresenca: StatusPresencaGrupo }[],
+    version: number,
+  ): Observable<SessaoGrupoPayload> {
+    return this.http.patch<SessaoGrupoPayload>(`${this.apiUrl}/sessoes/${sessaoId}/frequencias`, { frequencias, version });
   }
 
   sugerirProximaData(grupoId: number): Observable<string> {
