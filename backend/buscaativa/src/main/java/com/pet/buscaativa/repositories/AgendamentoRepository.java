@@ -36,6 +36,8 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
 
     List<Agendamento> findByPacienteOrderByDataAgendamentoDescIdDesc(Paciente paciente);
 
+    List<Agendamento> findByPaciente(Paciente paciente);
+
     // Conta agendamentos que ocupam vaga com filtro por status
     @Query("SELECT COUNT(a) FROM Agendamento a WHERE a.usuario = :usuario AND a.dataAgendamento = :data AND a.turnoAgendamento = :turno AND a.situacaoAtendimento IN :situacoes")
     int contarVagasOcupadasBySituacoes(@Param("usuario") Usuario usuario,

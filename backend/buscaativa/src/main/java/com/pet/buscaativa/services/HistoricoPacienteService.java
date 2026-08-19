@@ -23,4 +23,6 @@ public interface HistoricoPacienteService {
     void registrarSituacaoAtual(Paciente paciente, String descricao);
 
     void registrarFrequenciaGrupo(Paciente paciente, SessaoGrupo sessao, StatusPresencaGrupo status);
+
+    void corrigirFrequenciaGrupo(Paciente paciente, SessaoGrupo sessao, StatusPresencaGrupo status);
 }

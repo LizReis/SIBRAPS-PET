@@ -20,6 +20,8 @@ public interface GrupoTerapeuticoService {
     GrupoTerapeuticoDTO criarGrupo(CriarGrupoDTO dto);
 
     List<GrupoTerapeuticoDTO> listarGrupos();
+    GrupoTerapeuticoDTO buscarGrupo(Long grupoId);
+    GrupoTerapeuticoDTO atualizarGrupo(Long grupoId, com.pet.buscaativa.entities.dto.AtualizarGrupoTerapeuticoDTO dto);
 
     LocalDate sugerirProximaData(Long grupoId);
 
@@ -40,4 +42,8 @@ public interface GrupoTerapeuticoService {
     SessaoGrupoDTO inscreverRetroativamente(Long grupoId, InscricaoRetroativaGrupoDTO dto);
     
     List<SessaoInscricaoRetroativaDTO> listarSessoesParaInscricaoRetroativa(Long grupoId);
+    SessaoGrupoDTO inscreverEmSessoesFuturas(Long grupoId, com.pet.buscaativa.entities.dto.InscricaoFuturaGrupoDTO dto);
+    void removerParticipanteDoGrupo(Long grupoId, UUID pacienteId);
+    List<com.pet.buscaativa.entities.dto.ParticipanteGrupoDTO> listarParticipantesDoGrupo(Long grupoId);
+    SessaoGrupoDTO corrigirFrequencias(Long sessaoId, com.pet.buscaativa.entities.dto.CorrigirFrequenciasGrupoDTO dto);
 }
