@@ -59,6 +59,7 @@ export const routes: Routes = [
       { path: 'grupos-terapeuticos', component: GruposTerapeuticos, canActivate: [roleGuard], data: { roles: TODOS } },
       { path: 'grupos-terapeuticos/detalhes/:grupoId/sessao/:sessaoId', component: DetalheGrupoTerapeutico, canActivate: [roleGuard], data: { roles: TODOS } },
       { path: 'grupos-terapeuticos/novo', component: AgendarGrupoTerapeutico, canActivate: [roleGuard], data: { roles: TODOS } },
+      { path: 'grupos-terapeuticos/editar/:grupoId', component: AgendarGrupoTerapeutico, canActivate: [roleGuard], data: { roles: TODOS } },
       { path: 'relatorios', component: Relatorios },
     ],
   },
