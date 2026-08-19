@@ -39,6 +39,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     private final PacienteService pacienteService;
     private final HistoricoPacienteService historicoPacienteService;
     private final InscricaoRetroativaGrupoAuditoriaRepository auditoriaRetroativaRepository;
+    private final AgendamentoRepository agendamentoRepository;
     private final Clock clock;
 
     @Override
@@ -120,6 +121,57 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Transactional(readOnly = true)
     public List<GrupoTerapeuticoDTO> listarGrupos() {
         return grupoRepository.findByAtivoTrue().stream().map(this::toGrupoDTO).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GrupoTerapeuticoDTO buscarGrupo(Long grupoId) {
+        return toGrupoDTO(grupoRepository.findById(grupoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado.")));
+    }
+
+    @Override
+    @Transactional
+    public GrupoTerapeuticoDTO atualizarGrupo(Long grupoId, AtualizarGrupoTerapeuticoDTO dto) {
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        if (!dto.version().equals(grupo.getVersion()))
+            throw new OptimisticLockException("O grupo foi alterado por outro usuário.");
+        Usuario coordenador = usuarioRepository.findByIdPublico(dto.coordenadorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Coordenador não encontrado."));
+        if (coordenador.getTipoUsuario() != TipoUsuario.PROFISSIONAL && coordenador.getTipoUsuario() != TipoUsuario.ADMINISTRADOR)
+            throw new ValidationException("O coordenador deve ser profissional ou administrador.");
+        List<SessaoGrupo> sessoes = sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo);
+        LocalDateTime agora = LocalDateTime.now(clock);
+        boolean iniciado = sessoes.stream().anyMatch(s -> s.getStatus() != StatusSessaoGrupo.AGENDADA
+                || !LocalDateTime.of(s.getDataSessao(), s.getHorario()).isAfter(agora));
+        SessaoGrupo primeira = sessoes.stream().min(Comparator.comparing(SessaoGrupo::getDataSessao).thenComparing(SessaoGrupo::getHorario))
+                .orElseThrow(() -> new ValidationException("Grupo sem sessões."));
+        boolean estrutural = !primeira.getDataSessao().equals(dto.dataPrimeiraSessao())
+                || !grupo.getHorarioPadrao().equals(dto.horario()) || grupo.getRecorrencia() != dto.recorrencia()
+                || !java.util.Objects.equals(grupo.getDataFimRecorrencia(), dto.dataFimRecorrencia());
+        if (iniciado && estrutural)
+            throw new ConflictException("Após o início do grupo, data, horário e recorrência não podem ser alterados.");
+        if (!iniciado && estrutural) {
+            Set<UUID> participantes = sessoes.isEmpty() ? Set.of() : sessoes.get(0).getParticipantes().stream()
+                    .map(p -> p.getPaciente().getIdPublico()).collect(java.util.stream.Collectors.toSet());
+            boolean listasDiferentes = sessoes.stream().anyMatch(s -> !s.getParticipantes().stream()
+                    .map(p -> p.getPaciente().getIdPublico()).collect(java.util.stream.Collectors.toSet()).equals(participantes));
+            if (listasDiferentes) throw new ConflictException("A série possui listas de participantes diferentes e não pode ser regenerada com segurança.");
+            CriarGrupoDTO validacao = new CriarGrupoDTO(dto.tema(), dto.coordenadorId(), dto.recorrencia(),
+                    dto.dataPrimeiraSessao(), dto.dataFimRecorrencia(), dto.horario(), List.copyOf(participantes));
+            validarPeriodoRecorrencia(validacao);
+            if (dto.dataPrimeiraSessao().isBefore(LocalDate.now(clock))) throw new ValidationException("A primeira sessão não pode estar no passado.");
+            sessaoRepository.deleteAll(sessoes);
+            sessaoRepository.flush();
+            for (LocalDate data : gerarDatasDaSerie(dto.dataPrimeiraSessao(), dto.dataFimRecorrencia(), dto.recorrencia())) {
+                SessaoGrupo nova = sessaoRepository.save(novaSessao(grupo, data, dto.horario()));
+                for (UUID pacienteId : participantes) adicionarParticipanteInterno(nova, pacienteId);
+            }
+        }
+        grupo.setTema(dto.tema().trim()); grupo.setCoordenador(coordenador); grupo.setHorarioPadrao(dto.horario());
+        grupo.setRecorrencia(dto.recorrencia()); grupo.setDataFimRecorrencia(dto.dataFimRecorrencia());
+        return toGrupoDTO(grupoRepository.saveAndFlush(grupo));
     }
 
     @Override
@@ -360,6 +412,82 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
                 s.getId(), s.getDataSessao(), s.getHorario(), s.getStatus(), statusExibicao(s), s.getStatus() == StatusSessaoGrupo.REALIZADA)).toList();
     }
 
+    @Override
+    @Transactional
+    public SessaoGrupoDTO inscreverEmSessoesFuturas(Long grupoId, InscricaoFuturaGrupoDTO dto) {
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(dto.pacienteId()).orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
+        if (paciente.getStatusPaciente() != StatusPaciente.ATIVO) throw new ValidationException("Somente pacientes ativos podem ser inscritos.");
+        LocalDateTime agora = LocalDateTime.now(clock);
+        List<SessaoGrupo> futuras = sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo).stream()
+                .filter(s -> s.getStatus() == StatusSessaoGrupo.AGENDADA && LocalDateTime.of(s.getDataSessao(), s.getHorario()).isAfter(agora))
+                .sorted(Comparator.comparing(SessaoGrupo::getDataSessao).thenComparing(SessaoGrupo::getHorario)).toList();
+        if (futuras.isEmpty()) throw new ValidationException("Não existem sessões futuras para inscrição.");
+        for (SessaoGrupo s : futuras) {
+            if (participanteRepository.findBySessaoGrupoAndPaciente(s, paciente).isEmpty()
+                    && sessaoRepository.existsParticipacaoNoMesmoHorario(paciente, s.getDataSessao(), s.getHorario(), StatusSessaoGrupo.CANCELADA))
+                throw new ConflictException("Conflito para " + paciente.getNome() + " em " + s.getDataSessao() + " às " + s.getHorario() + ".");
+            if (agendamentoRepository.existsAtivoDoPacienteNoMesmoHorario(paciente, s.getDataSessao(), s.getHorario(),
+                    List.of(SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO)))
+                throw new ConflictException("Conflito para " + paciente.getNome() + " em " + s.getDataSessao() + " às " + s.getHorario() + ".");
+        }
+        for (SessaoGrupo s : futuras) if (participanteRepository.findBySessaoGrupoAndPaciente(s, paciente).isEmpty())
+            adicionarParticipanteInterno(s, paciente.getIdPublico());
+        return toSessaoDTO(futuras.get(0));
+    }
+
+    @Override
+    @Transactional
+    public void removerParticipanteDoGrupo(Long grupoId, UUID pacienteId) {
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        Paciente paciente = pacienteRepository.findByIdPublico(pacienteId).orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
+        LocalDateTime agora = LocalDateTime.now(clock);
+        List<SessaoGrupoParticipante> remover = sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo).stream()
+                .filter(s -> s.getStatus() == StatusSessaoGrupo.AGENDADA && LocalDateTime.of(s.getDataSessao(), s.getHorario()).isAfter(agora))
+                .map(s -> participanteRepository.findBySessaoGrupoAndPaciente(s, paciente).orElse(null)).filter(java.util.Objects::nonNull).toList();
+        if (remover.isEmpty()) throw new ValidationException("Não existem inscrições futuras para remover.");
+        for (var p : remover) p.getSessaoGrupo().getParticipantes().remove(p);
+        participanteRepository.deleteAll(remover);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParticipanteGrupoDTO> listarParticipantesDoGrupo(Long grupoId) {
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        LocalDateTime agora = LocalDateTime.now(clock);
+        return sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo).stream().flatMap(s -> s.getParticipantes().stream())
+                .collect(java.util.stream.Collectors.groupingBy(p -> p.getPaciente().getIdPublico())).values().stream().map(lista -> {
+                    var paciente = lista.get(0).getPaciente();
+                    var finais = lista.stream().filter(p -> p.getSessaoGrupo().getStatus() == StatusSessaoGrupo.REALIZADA
+                            && p.getStatusPresenca() != StatusPresencaGrupo.NAO_REGISTRADA).toList();
+                    long presencas = finais.stream().filter(p -> p.getStatusPresenca() == StatusPresencaGrupo.PRESENTE).count();
+                    long faltas = finais.size() - presencas;
+                    LocalDate desde = lista.stream().map(p -> p.getSessaoGrupo().getDataSessao()).min(LocalDate::compareTo).orElse(null);
+                    boolean futura = lista.stream().anyMatch(p -> p.getSessaoGrupo().getStatus() == StatusSessaoGrupo.AGENDADA
+                            && LocalDateTime.of(p.getSessaoGrupo().getDataSessao(), p.getSessaoGrupo().getHorario()).isAfter(agora));
+                    return new ParticipanteGrupoDTO(paciente.getIdPublico(), paciente.getNome(), desde, finais.size(), presencas, faltas,
+                            finais.isEmpty() ? null : presencas * 100.0 / finais.size(), futura);
+                }).sorted(Comparator.comparing(ParticipanteGrupoDTO::nomePaciente)).toList();
+    }
+
+    @Override
+    @Transactional
+    public SessaoGrupoDTO corrigirFrequencias(Long sessaoId, CorrigirFrequenciasGrupoDTO dto) {
+        SessaoGrupo sessao = sessaoRepository.findByIdForUpdate(sessaoId).orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        if (sessao.getStatus() != StatusSessaoGrupo.REALIZADA) throw new ValidationException("Somente sessões realizadas permitem correção de frequência.");
+        if (dto.version() != null && !dto.version().equals(sessao.getVersion())) throw new OptimisticLockException("A sessão foi alterada por outro usuário.");
+        Set<UUID> ids = new HashSet<>(); List<SessaoGrupoParticipante> alterados = new ArrayList<>();
+        for (var f : dto.frequencias()) {
+            if (!ids.add(f.pacienteId())) throw new ConflictException("Paciente duplicado nas correções.");
+            if (f.statusPresenca() != StatusPresencaGrupo.PRESENTE && f.statusPresenca() != StatusPresencaGrupo.FALTOU)
+                throw new ValidationException("A correção aceita somente PRESENTE ou FALTOU.");
+            SessaoGrupoParticipante p = buscarParticipante(sessao, f.pacienteId()); p.setStatusPresenca(f.statusPresenca()); alterados.add(p);
+        }
+        participanteRepository.saveAll(alterados); sessaoRepository.saveAndFlush(sessao);
+        for (var p : alterados) { pacienteService.recalcularAssiduidadePaciente(p.getPaciente()); historicoPacienteService.corrigirFrequenciaGrupo(p.getPaciente(), sessao, p.getStatusPresenca()); }
+        return toSessaoDTO(sessao);
+    }
+
     private SessaoGrupo novaSessao(GrupoTerapeutico grupo, LocalDate data, LocalTime horario) {
         SessaoGrupo s = new SessaoGrupo();
         s.setGrupo(grupo);
@@ -420,9 +548,13 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     }
 
     private GrupoTerapeuticoDTO toGrupoDTO(GrupoTerapeutico g) {
+        List<SessaoGrupo> sessoes = sessaoRepository.findByGrupoOrderByDataSessaoDesc(g);
+        LocalDate primeira = sessoes.stream().map(SessaoGrupo::getDataSessao).min(LocalDate::compareTo).orElse(null);
+        LocalDateTime agora = LocalDateTime.now(clock);
+        boolean iniciado = sessoes.stream().anyMatch(s -> s.getStatus() != StatusSessaoGrupo.AGENDADA || !LocalDateTime.of(s.getDataSessao(), s.getHorario()).isAfter(agora));
         return new GrupoTerapeuticoDTO(g.getId(), g.getTema(), g.getCoordenador().getIdPublico(),
                 g.getCoordenador().getNome(), g.getRecorrencia(), g.getHorarioPadrao(),
-                g.getDataFimRecorrencia(), g.isAtivo());
+                g.getDataFimRecorrencia(), g.isAtivo(), primeira, g.getVersion(), iniciado);
     }
 
     private SessaoGrupoDTO toSessaoDTO(SessaoGrupo s) {
