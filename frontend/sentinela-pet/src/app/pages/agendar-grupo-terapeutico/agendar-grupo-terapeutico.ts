@@ -2,7 +2,7 @@ import { CommonModule } from "@angular/common";
 import { HttpErrorResponse } from "@angular/common/http";
 import { Component, OnDestroy, OnInit, inject } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
-import { Router, RouterLink } from "@angular/router";
+import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import {
   Subject,
   catchError,
@@ -66,6 +66,10 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
   enviando = false;
   erroGeral = "";
   mensagemPesquisa = "";
+  modoEdicao = false;
+  grupoId: number | null = null;
+  grupoVersion = 0;
+  grupoIniciado = false;
 
   private readonly pesquisa$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
@@ -74,13 +78,17 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
     private readonly grupos: GrupoTerapeuticoService,
     private readonly pacientes: PacienteService,
     private readonly profissionaisService: ProfissionalService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    this.grupoId = Number(this.route.snapshot.paramMap.get('grupoId')) || null;
+    this.modoEdicao = this.grupoId !== null;
     this.carregarProfissionais();
     this.configurarPesquisa();
     this.configurarRecorrencia();
+    if (this.modoEdicao) this.carregarGrupo();
   }
 
   ngOnDestroy(): void {
@@ -182,7 +190,7 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.form.controls.dataPrimeiraSessao.value < this.dataMinima) {
+    if (!this.modoEdicao && this.form.controls.dataPrimeiraSessao.value < this.dataMinima) {
       this.form.controls.dataPrimeiraSessao.setErrors({ passada: true });
       return;
     }
@@ -202,16 +210,31 @@ export class AgendarGrupoTerapeutico implements OnInit, OnDestroy {
     };
 
     this.enviando = true;
-    this.grupos
-      .criar(payload)
+    const request$ = this.modoEdicao ? this.grupos.atualizarGrupo(this.grupoId!, {
+      tema: payload.tema, coordenadorId: payload.coordenadorId, recorrencia: payload.recorrencia,
+      dataPrimeiraSessao: payload.dataPrimeiraSessao, dataFimRecorrencia: payload.dataFimRecorrencia,
+      horario: payload.horario, version: this.grupoVersion,
+    }) : this.grupos.criar(payload);
+    request$
       .pipe(finalize(() => (this.enviando = false)))
       .subscribe({
-        next: () =>
-          this.router.navigate(["/grupos-terapeuticos"], {
-            queryParams: { data: value.dataPrimeiraSessao },
-          }),
+        next: () => {
+          const sessao = this.route.snapshot.queryParamMap.get('sessao');
+          const data = this.route.snapshot.queryParamMap.get('data');
+          return this.modoEdicao && sessao ? this.router.navigate(['/grupos-terapeuticos/detalhes', this.grupoId, 'sessao', sessao], { queryParams: { data } })
+            : this.router.navigate(["/grupos-terapeuticos"], { queryParams: { data: value.dataPrimeiraSessao } });
+        },
         error: (e: HttpErrorResponse) => this.tratarErro(e),
       });
+  }
+
+  private carregarGrupo(): void {
+    this.grupos.buscarGrupo(this.grupoId!).subscribe({ next: g => {
+      this.grupoVersion = g.version; this.grupoIniciado = g.iniciado;
+      this.form.patchValue({ tema: g.tema, coordenadorId: g.coordenadorId, dataPrimeiraSessao: g.dataPrimeiraSessao,
+        horario: g.horarioPadrao.slice(0,5), recorrencia: g.recorrencia, dataFimRecorrencia: g.dataFimRecorrencia ?? '' });
+      if (g.iniciado) ['dataPrimeiraSessao','horario','recorrencia','dataFimRecorrencia'].forEach(c => this.form.get(c)?.disable());
+    }, error: e => this.tratarErro(e) });
   }
 
   private configurarRecorrencia(): void {
