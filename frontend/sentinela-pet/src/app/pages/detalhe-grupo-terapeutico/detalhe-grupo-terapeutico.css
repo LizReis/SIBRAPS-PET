@@ -507,3 +507,104 @@ textarea:focus-visible {
         width: 100%
     }
 }
+
+.header-actions,
+.readonly-title,
+.correction-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px
+}
+
+.edit-button {
+    background: #075be8;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 8px
+}
+
+.person>span:nth-child(2) {
+    display: flex;
+    flex-direction: column
+}
+
+.remove {
+    margin-left: auto;
+    color: #a51d2b
+}
+
+.enrollment-mode label {
+    display: flex;
+    gap: 10px;
+    border: 1px solid #ccd8e7;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0
+}
+
+.enrollment-mode label span {
+    display: flex;
+    flex-direction: column
+}
+
+.frequency-buttons {
+    margin-left: auto;
+    display: flex;
+    gap: 8px
+}
+
+.frequency-buttons button,
+.edit-frequency,
+.correction-actions>button {
+    border: 1px solid #8eb4f5;
+    border-radius: 7px;
+    padding: 9px 14px
+}
+
+.dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: #071b3699;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    padding: 16px
+}
+
+.dialog {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    width: min(520px, 100%)
+}
+
+.dialog h2 {
+    font-size: 19px
+}
+
+.dialog p {
+    color: #687991;
+    margin: 12px 0 22px
+}
+
+.dialog footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px
+}
+
+.dialog footer button {
+    padding: 10px 16px;
+    border-radius: 7px
+}
+
+.danger {
+    background: #b42332;
+    color: #fff
+}
+
+.correction-actions {
+    justify-content: flex-end;
+    margin-top: 18px
+}
