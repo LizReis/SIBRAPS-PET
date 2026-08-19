@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.pet.buscaativa.entities.Agendamento;
 import com.pet.buscaativa.entities.BloqueioAgenda;
@@ -430,6 +431,20 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         if (statusAnterior == novoStatus) {
             return agendamentoMapper.toAgendamentoDTO(agendamento);
         }
+
+        boolean correcaoFrequencia = (statusAnterior == SituacaoAtendimento.PRESENTE || statusAnterior == SituacaoAtendimento.FALTOU)
+                && (novoStatus == SituacaoAtendimento.PRESENTE || novoStatus == SituacaoAtendimento.FALTOU);
+        if (correcaoFrequencia) {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            TipoUsuario perfil = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuário logado não encontrado")).getTipoUsuario();
+            if (perfil != TipoUsuario.ADMINISTRADOR && perfil != TipoUsuario.PROFISSIONAL)
+                throw new ValidationException("Seu perfil não possui permissão para corrigir frequência.");
+        }
+
+        if ((novoStatus == SituacaoAtendimento.PRESENTE || novoStatus == SituacaoAtendimento.FALTOU)
+                && (statusAnterior == SituacaoAtendimento.CANCELADO || statusAnterior == SituacaoAtendimento.REMARCADO_ORIGEM))
+            throw new ValidationException("Um atendimento cancelado ou substituído não permite registro de frequência.");
 
         agendamento.setSituacaoAtendimento(novoStatus);
 
