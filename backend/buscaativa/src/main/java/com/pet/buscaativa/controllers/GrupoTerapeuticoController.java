@@ -36,6 +36,19 @@ public class GrupoTerapeuticoController {
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
+    @GetMapping("/{grupoId}")
+    public ResponseEntity<GrupoTerapeuticoDTO> buscarGrupo(@PathVariable Long grupoId) {
+        return ResponseEntity.ok(grupoService.buscarGrupo(grupoId));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
+    @PutMapping("/{grupoId}")
+    public ResponseEntity<GrupoTerapeuticoDTO> atualizarGrupo(@PathVariable Long grupoId,
+            @RequestBody @Valid AtualizarGrupoTerapeuticoDTO dto) {
+        return ResponseEntity.ok(grupoService.atualizarGrupo(grupoId, dto));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
     @GetMapping("/{id}/proxima-data-sugerida")
     public ResponseEntity<LocalDate> sugerirProximaData(@PathVariable Long id) {
         return ResponseEntity.ok(grupoService.sugerirProximaData(id));
@@ -94,6 +107,33 @@ public class GrupoTerapeuticoController {
     @GetMapping("/{grupoId}/sessoes-para-inscricao-retroativa")
     public ResponseEntity<List<SessaoInscricaoRetroativaDTO>> sessoesParaInscricaoRetroativa(@PathVariable Long grupoId) {
         return ResponseEntity.ok(grupoService.listarSessoesParaInscricaoRetroativa(grupoId));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PostMapping("/{grupoId}/inscricoes-futuras")
+    public ResponseEntity<SessaoGrupoDTO> inscreverEmSessoesFuturas(@PathVariable Long grupoId,
+            @RequestBody @Valid InscricaoFuturaGrupoDTO dto) {
+        return ResponseEntity.ok(grupoService.inscreverEmSessoesFuturas(grupoId, dto));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @DeleteMapping("/{grupoId}/participantes/{pacienteId}")
+    public ResponseEntity<Void> removerParticipanteDoGrupo(@PathVariable Long grupoId, @PathVariable UUID pacienteId) {
+        grupoService.removerParticipanteDoGrupo(grupoId, pacienteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
+    @GetMapping("/{grupoId}/participantes")
+    public ResponseEntity<List<ParticipanteGrupoDTO>> listarParticipantesDoGrupo(@PathVariable Long grupoId) {
+        return ResponseEntity.ok(grupoService.listarParticipantesDoGrupo(grupoId));
+    }
+
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")
+    @PatchMapping("/sessoes/{sessaoId}/frequencias")
+    public ResponseEntity<SessaoGrupoDTO> corrigirFrequencias(@PathVariable Long sessaoId,
+            @RequestBody @Valid CorrigirFrequenciasGrupoDTO dto) {
+        return ResponseEntity.ok(grupoService.corrigirFrequencias(sessaoId, dto));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL')")

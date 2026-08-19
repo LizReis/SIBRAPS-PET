@@ -14,6 +14,9 @@ public record GrupoTerapeuticoDTO(
         RecorrenciaGrupo recorrencia,
         LocalTime horarioPadrao,
         LocalDate dataFimRecorrencia,
-        boolean ativo
+        boolean ativo,
+        LocalDate dataPrimeiraSessao,
+        Integer version,
+        boolean iniciado
 ) {
 }
