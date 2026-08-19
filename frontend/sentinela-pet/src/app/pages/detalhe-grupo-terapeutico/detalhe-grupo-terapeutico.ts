@@ -4,7 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin, of, switchMap } from 'rxjs';
-import { GrupoTerapeuticoPayload, GrupoTerapeuticoService, ParticipanteSessaoPayload, SessaoGrupoPayload, SessaoInscricaoRetroativaPayload, StatusPresencaGrupo } from '../../services/grupo-terapeutico-service';
+import { GrupoTerapeuticoPayload, GrupoTerapeuticoService, ParticipanteGrupoPayload, SessaoGrupoPayload, SessaoInscricaoRetroativaPayload, StatusPresencaGrupo } from '../../services/grupo-terapeutico-service';
 import { PacienteLista, PacienteService } from '../../services/paciente/paciente-service';
 import { UsuarioLogadoService } from '../../services/usuario-logado-service';
 
@@ -39,6 +39,11 @@ export class DetalheGrupoTerapeutico implements OnInit {
   opcaoOcorrencia: OpcaoOcorrencia = 'ocorreu';
   frequencias: Record<string, StatusPresencaGrupo | undefined> = {};
   motivoCancelamento = '';
+  participantesGrupo: ParticipanteGrupoPayload[] = [];
+  modoInscricao: 'FUTURA' | 'RETROATIVA' = 'FUTURA';
+  participanteParaRemover: ParticipanteGrupoPayload | null = null;
+  editandoFrequencia = false;
+  confirmandoCorrecao = false;
 
   constructor(private route: ActivatedRoute, private grupos: GrupoTerapeuticoService, private pacientes: PacienteService, private usuario: UsuarioLogadoService) {}
 
@@ -63,6 +68,7 @@ export class DetalheGrupoTerapeutico implements OnInit {
         this.grupo = grupos.find(g => g.id === this.grupoId) ?? null;
         this.podeExecutarAcoesClinicas = ['ADMINISTRADOR', 'PROFISSIONAL'].includes(usuario.tipoUsuario);
         this.sessoesRetroativas = retroativas;
+        this.carregarParticipantesGrupo();
         const dataSessao = data || retroativas.find(s => s.sessaoId === this.sessaoId)?.data;
         if (!this.grupo) return this.falhar('Grupo terapêutico não encontrado.');
         if (!dataSessao) return this.falhar('Não foi possível localizar a sessão pelo contrato de leitura atual. Volte à lista de grupos e acesse novamente.');
@@ -73,7 +79,7 @@ export class DetalheGrupoTerapeutico implements OnInit {
         if (e.status === 403 && data) {
           this.usuario.obterUsuarioLogado().subscribe(u => {
             this.podeExecutarAcoesClinicas = ['ADMINISTRADOR', 'PROFISSIONAL'].includes(u.tipoUsuario);
-            this.grupos.listarGrupos().subscribe(gs => { this.grupo = gs.find(g => g.id === this.grupoId) ?? null; this.carregarSessao(data); });
+            this.grupos.listarGrupos().subscribe(gs => { this.grupo = gs.find(g => g.id === this.grupoId) ?? null; this.carregarParticipantesGrupo(); this.carregarSessao(data); });
           });
         } else this.tratarErro(e);
       },
@@ -93,7 +99,7 @@ export class DetalheGrupoTerapeutico implements OnInit {
   }
 
   selecionarAba(aba: Aba): void { this.aba = aba; this.erro = ''; this.sucesso = ''; }
-  get participantesFiltrados(): ParticipanteSessaoPayload[] { const q = this.buscaParticipante.trim().toLocaleLowerCase('pt-BR'); return (this.sessao?.participantes ?? []).filter(p => !q || p.nomePaciente.toLocaleLowerCase('pt-BR').includes(q)); }
+  get participantesFiltrados(): ParticipanteGrupoPayload[] { const q = this.buscaParticipante.trim().toLocaleLowerCase('pt-BR'); return this.participantesGrupo.filter(p => !q || p.nomePaciente.toLocaleLowerCase('pt-BR').includes(q)); }
   get faltas(): number { return this.sessao?.participantes.filter(p => p.statusPresenca === 'FALTOU').length ?? 0; }
   get presentes(): number { return Object.values(this.frequencias).filter(v => v === 'PRESENTE').length; }
   get ausentes(): number { return Object.values(this.frequencias).filter(v => v === 'FALTOU').length; }
@@ -102,6 +108,7 @@ export class DetalheGrupoTerapeutico implements OnInit {
   get realizadas(): SessaoInscricaoRetroativaPayload[] { return this.sessoesRetroativas.filter(s => s.status === 'REALIZADA'); }
   get pendenciaRetroativa(): boolean { return this.sessoesRetroativas.some(s => s.status === 'AGENDADA' && s.statusExibicao !== 'AGENDADO'); }
   get retroativaInvalida(): boolean { return !this.pacienteSelecionado || this.pendenciaRetroativa || this.sessoesRetroativas.some(s => s.necessitaFrequencia && !this.frequenciasRetroativas[s.sessaoId]); }
+  get possuiSessaoRealizada(): boolean { return this.sessoesRetroativas.some(s => s.status === 'REALIZADA'); }
 
   pesquisarPaciente(): void {
     const termo = this.termoPaciente.trim(); if (!termo) { this.pacientesEncontrados = []; return; }
@@ -113,14 +120,22 @@ export class DetalheGrupoTerapeutico implements OnInit {
   }
   selecionarPaciente(p: PacienteLista): void { this.pacienteSelecionado = p; this.pacientesEncontrados = []; }
   confirmarInscricao(): void {
-    if (this.retroativaInvalida || !this.pacienteSelecionado?.idPublico) return;
+    if (!this.pacienteSelecionado?.idPublico || (this.modoInscricao === 'RETROATIVA' && this.retroativaInvalida)) return;
     this.salvando = true; this.erro = '';
     const frequenciasPassadas = this.sessoesRetroativas.filter(s => s.necessitaFrequencia).map(s => ({ sessaoId: s.sessaoId, statusPresenca: this.frequenciasRetroativas[s.sessaoId]! }));
-    this.grupos.inscreverRetroativamente(this.grupoId, { pacienteId: this.pacienteSelecionado.idPublico, frequenciasPassadas }).subscribe({
-      next: () => { this.salvando = false; this.pacienteSelecionado = null; this.termoPaciente = ''; this.frequenciasRetroativas = {}; this.sucesso = 'Paciente inscrito com sucesso.'; this.carregarSessao(this.sessao!.dataSessao); },
+    const request$ = this.modoInscricao === 'RETROATIVA' ? this.grupos.inscreverRetroativamente(this.grupoId, { pacienteId: this.pacienteSelecionado.idPublico, frequenciasPassadas })
+      : this.grupos.inscreverEmSessoesFuturas(this.grupoId, this.pacienteSelecionado.idPublico);
+    request$.subscribe({
+      next: () => { this.salvando = false; this.pacienteSelecionado = null; this.termoPaciente = ''; this.frequenciasRetroativas = {}; this.sucesso = 'Paciente inscrito com sucesso.'; this.carregarParticipantesGrupo(); this.carregarSessao(this.sessao!.dataSessao); },
       error: e => { this.salvando = false; this.tratarErro(e); },
     });
   }
+  private carregarParticipantesGrupo(): void { this.grupos.listarParticipantesDoGrupo(this.grupoId).subscribe({ next: p => this.participantesGrupo = p, error: e => this.tratarErro(e) }); }
+  removerParticipante(): void { if (!this.participanteParaRemover) return; this.salvando = true; this.grupos.removerParticipanteDoGrupo(this.grupoId, this.participanteParaRemover.pacienteId).subscribe({ next: () => { this.salvando = false; this.participanteParaRemover = null; this.sucesso = 'Participante removido das próximas sessões.'; this.carregarParticipantesGrupo(); this.carregarSessao(this.sessao!.dataSessao); }, error: e => { this.salvando = false; this.tratarErro(e); } }); }
+  iniciarCorrecao(): void { this.editandoFrequencia = true; this.frequencias = {}; this.sessao?.participantes.forEach(p => this.frequencias[p.pacienteId] = p.statusPresenca); }
+  cancelarCorrecao(): void { this.editandoFrequencia = false; this.confirmandoCorrecao = false; this.frequencias = {}; this.sessao?.participantes.forEach(p => this.frequencias[p.pacienteId] = p.statusPresenca); }
+  solicitarCorrecao(): void { this.confirmandoCorrecao = true; }
+  salvarCorrecoes(): void { if (!this.sessao) return; const alteradas = this.sessao.participantes.filter(p => this.frequencias[p.pacienteId] !== p.statusPresenca).map(p => ({ pacienteId: p.pacienteId, statusPresenca: this.frequencias[p.pacienteId]! })); if (!alteradas.length) return this.cancelarCorrecao(); this.salvando = true; this.grupos.corrigirFrequencias(this.sessao.id, alteradas, this.sessao.version).subscribe({ next: s => { this.sessao = s; this.salvando = false; this.editandoFrequencia = false; this.confirmandoCorrecao = false; this.sucesso = 'Frequências corrigidas com sucesso.'; }, error: e => { this.salvando = false; this.tratarErro(e); } }); }
   confirmarOcorrencia(): void {
     if (!this.sessao || this.somenteLeitura) return;
     this.salvando = true; this.erro = '';
