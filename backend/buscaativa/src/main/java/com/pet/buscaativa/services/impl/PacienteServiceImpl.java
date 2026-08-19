@@ -283,6 +283,13 @@ public class PacienteServiceImpl implements PacienteService{
     public void recalcularAssiduidadePaciente(Paciente paciente) {
         record Evento(LocalDateTime quando, boolean presente, int origem, long id) {}
         List<Evento> eventos = new java.util.ArrayList<>();
+        for (var a : agendamentoRepository.findByPaciente(paciente)) {
+            if (a.getSituacaoAtendimento() == SituacaoAtendimento.PRESENTE
+                    || a.getSituacaoAtendimento() == SituacaoAtendimento.FALTOU) {
+                eventos.add(new Evento(LocalDateTime.of(a.getDataAgendamento(), a.getHoraAtendimento()),
+                        a.getSituacaoAtendimento() == SituacaoAtendimento.PRESENTE, 0, a.getId()));
+            }
+        }
         for (var p : participanteGrupoRepository.findByPaciente(paciente)) {
             if (p.getSessaoGrupo().getStatus() == com.pet.buscaativa.entities.enums.StatusSessaoGrupo.REALIZADA
                     && p.getStatusPresenca() != com.pet.buscaativa.entities.enums.StatusPresencaGrupo.NAO_REGISTRADA) {
