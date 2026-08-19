@@ -1,7 +1,7 @@
 <main class="schedule-page">
     <header>
-        <h1>Agendar grupo terapêutico</h1>
-        <p>Defina o grupo, configure a recorrência e selecione os pacientes inscritos.</p>
+        <h1>{{ modoEdicao ? 'Editar grupo terapêutico' : 'Agendar grupo terapêutico' }}</h1>
+        <p>{{ modoEdicao ? 'Atualize as informações do grupo terapêutico.' : 'Defina o grupo, configure a recorrência e selecione os pacientes inscritos.' }}</p>
     </header>
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -129,7 +129,7 @@
                     }
                 </section>
 
-                <section class="card participants">
+                @if (!modoEdicao) { <section class="card participants">
                     <div class="section-title">
                         <span>3</span>
                         <div>
@@ -226,7 +226,7 @@
                             </li>
                         }
                     </ul>
-                </section>
+                </section> }
             </div>
 
             <aside>
@@ -250,13 +250,13 @@
                                 <dt>RECORRÊNCIA</dt>
                                 <dd>{{ recorrenciaLabel }}</dd>
                             </span>
-                            <span>
+                            @if (!modoEdicao) { <span>
                                 <dt>PARTICIPANTES</dt>
                                 <dd>
                                     {{ participantes.length }}
                                     {{ participantes.length === 1 ? 'inscrito' : 'inscritos' }}
                                 </dd>
-                            </span>
+                            </span> }
                         </div>
 
                         @if(!recorrenciaEhUnica) {
@@ -267,12 +267,12 @@
                         }
                     </dl>
 
-                    <p class="info">
+                    @if (!modoEdicao) { <p class="info">
                         <i class="bi bi-info-circle"></i>
                         {{ recorrenciaEhUnica
                             ? 'Os participantes selecionados serão inscritos nesta sessão.'
                             : 'O sistema criará automaticamente a série até a data informada e replicará os participantes selecionados para todas as sessões.' }}
-                    </p>
+                    </p> }
                 </section>
 
                 <section class="card guidance">
@@ -295,7 +295,7 @@
             <a routerLink="/grupos-terapeuticos" class="cancel">Cancelar</a>
             <button type="submit" class="primary" [disabled]="enviando">
                 <i class="bi bi-calendar-plus"></i>
-                {{ enviando ? 'Agendando...' : 'Agendar grupo' }}
+                {{ enviando ? 'Salvando...' : modoEdicao ? 'Salvar alterações' : 'Agendar grupo' }}
             </button>
         </footer>
     </form>
