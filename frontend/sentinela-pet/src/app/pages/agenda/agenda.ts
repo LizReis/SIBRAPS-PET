@@ -368,11 +368,15 @@ export class Agenda implements OnInit, OnDestroy {
     podeRegistrarFrequencia(a: AgendamentoDTO): boolean {
         return a.dataAgendamento <= this.formatarDataISO(new Date()) && ['AGENDADO', 'REMARCADO'].includes(a.situacaoAtendimento);
     }
+    podeCorrigirFrequencia(a: AgendamentoDTO): boolean {
+        return !!this.usuarioLogado && ['ADMINISTRADOR', 'PROFISSIONAL'].includes(this.usuarioLogado.tipoUsuario)
+            && a.dataAgendamento <= this.formatarDataISO(new Date()) && ['PRESENTE', 'FALTOU'].includes(a.situacaoAtendimento);
+    }
     podeRemarcar(a: AgendamentoDTO): boolean {
         return this.podeCriarAgendamento && ['AGENDADO', 'REMARCADO', 'FALTOU'].includes(a.situacaoAtendimento) && a.situacaoAtendimento !== 'REMARCADO_ORIGEM' && a.tipoAcompanhamento !== 'GRUPO_TERAPEUTICO';
     }
     possuiAcoes(a: AgendamentoDTO): boolean {
-        return this.podeRegistrarFrequencia(a) || this.podeRemarcar(a);
+        return this.podeRegistrarFrequencia(a) || this.podeCorrigirFrequencia(a) || this.podeRemarcar(a);
     }
     toggleMenu(event: Event, id: number): void {
         event.stopPropagation();
@@ -383,6 +387,9 @@ export class Agenda implements OnInit, OnDestroy {
     }
     registrarFalta(a: AgendamentoDTO): void {
         this.marcarStatus(a, 'FALTOU');
+    }
+    corrigirFrequencia(a: AgendamentoDTO): void {
+        this.marcarStatus(a, a.situacaoAtendimento === 'PRESENTE' ? 'FALTOU' : 'PRESENTE');
     }
     remarcar(a: AgendamentoDTO): void {
         this.router.navigate(['/agenda/novo'], {
