@@ -102,6 +102,21 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
             default -> null;
         };
 
+        if ((novoStatus == SituacaoAtendimento.PRESENTE || novoStatus == SituacaoAtendimento.FALTOU)
+                && (statusAnterior == SituacaoAtendimento.PRESENTE || statusAnterior == SituacaoAtendimento.FALTOU)) {
+            HistoricoPaciente atual = historicoRepository.findByAgendamento(agendamento).stream()
+                    .filter(h -> h.getTipo() == TipoEventoHistoricoPaciente.PRESENCA || h.getTipo() == TipoEventoHistoricoPaciente.FALTA)
+                    .findFirst().orElse(null);
+            if (atual != null) {
+                atual.setTipo(tipo);
+                atual.setSituacaoAtendimento(novoStatus);
+                atual.setProfissional(agendamento.getUsuario());
+                atual.setDescricao("Frequência corrigida de " + statusAnterior + " para " + novoStatus + ".");
+                atual.setNumeroFaltaConsecutiva(tipo == TipoEventoHistoricoPaciente.FALTA ? agendamento.getPaciente().getCountFaltas() : null);
+                historicoRepository.save(atual);
+                return;
+            }
+        }
         if (tipo != null) {
             salvar(agendamento.getPaciente(), agendamento, agendamento.getUsuario(), tipo, novoStatus,
                     LocalDateTime.now(), "Situação alterada de " + statusAnterior + " para " + novoStatus + ".");
@@ -129,6 +144,20 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
         h.setOcorridoEm(LocalDateTime.of(sessao.getDataSessao(), sessao.getHorario()));
         h.setDescricao("Frequência no grupo " + sessao.getGrupo().getTema() + ", sessão " + sessao.getId() + ".");
         if (tipo == TipoEventoHistoricoPaciente.FALTA) h.setNumeroFaltaConsecutiva(paciente.getCountFaltas());
+        historicoRepository.save(h);
+    }
+
+    @Override
+    @Transactional
+    public void corrigirFrequenciaGrupo(Paciente paciente, SessaoGrupo sessao, StatusPresencaGrupo status) {
+        HistoricoPaciente h = historicoRepository.findByPacienteAndSessaoGrupo(paciente, sessao)
+                .orElseThrow(() -> new ResourceNotFoundException("Histórico da frequência não encontrado."));
+        boolean presente = status == StatusPresencaGrupo.PRESENTE;
+        h.setTipo(presente ? TipoEventoHistoricoPaciente.PARTICIPACAO_GRUPO_TERAPEUTICO : TipoEventoHistoricoPaciente.FALTA);
+        h.setSituacaoAtendimento(presente ? SituacaoAtendimento.PRESENTE : SituacaoAtendimento.FALTOU);
+        h.setProfissional(usuarioLogado());
+        h.setDescricao("Frequência corrigida no grupo " + sessao.getGrupo().getTema() + ", sessão " + sessao.getId() + ".");
+        h.setNumeroFaltaConsecutiva(presente ? null : paciente.getCountFaltas());
         historicoRepository.save(h);
     }
 
