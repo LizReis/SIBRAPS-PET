@@ -102,7 +102,7 @@ export class Agenda implements OnInit, OnDestroy {
     menuAbertoId: number | null = null;
     horarioAtual = new Date();
 
-    readonly diasSemanaCurtos = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+    readonly diasSemanaCurtos = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
     readonly statusUi: Record < string, StatusUi > = {
         PRESENTE: {
             label: 'PRESENTE',

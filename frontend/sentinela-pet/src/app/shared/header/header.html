@@ -10,7 +10,8 @@
       <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
       @if (totalNotificacoes > 0) { <span class="notification-badge">{{ totalNotificacoes }}</span> }
     </button>
-    <div class="profile-avatar" [style.background]="avatarColor" aria-label="Avatar do usuário logado">
+    @if (userName) { <div class="profile-info"><strong>{{ userName }}</strong><span>{{ userRole }}</span></div> }
+    <div class="profile-avatar" [style.background]="avatarColor" [attr.aria-label]="userName ? 'Avatar de ' + userName + ', ' + userRole : 'Avatar do usuário logado'">
       <span class="avatar-initials">{{ userInitials }}</span>
     </div>
   </div>

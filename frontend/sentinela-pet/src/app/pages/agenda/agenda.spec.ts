@@ -25,6 +25,26 @@ function criarComponente(): Agenda {
 }
 
 describe('Agenda', () => {
+  it.each([
+    ['2026-09-01', 1], // terça-feira na segunda coluna (grade começa na segunda)
+    ['2026-11-01', 6], // domingo na última coluna
+    ['2026-06-01', 0], // segunda-feira na primeira coluna
+  ])('alinha o primeiro dia de %s à coluna semanal correta', (iso, coluna) => {
+    const component = criarComponente();
+    component.dataSelecionada = iso;
+    const grade = component.gradeMes;
+    const indice = grade.findIndex(d => d.iso === iso);
+    expect(indice % 7).toBe(coluna);
+    expect(component.diasSemanaCurtos).toEqual(['S', 'T', 'Q', 'Q', 'S', 'S', 'D']);
+  });
+
+  it('mantém a mudança de mês alinhada e sem parsing UTC', () => {
+    const component = criarComponente();
+    component.dataSelecionada = '2026-09-01';
+    const grade = component.gradeMes;
+    expect(grade.find(d => d.iso === '2026-09-01')?.data.getDay()).toBe(2);
+    expect(grade.some(d => d.iso === '2026-08-31' && d.foraDoMes)).toBe(true);
+  });
   it('agrupa atendimento às 15:45 no bloco numérico das 15:00 sem arredondar', () => {
     const component = criarComponente();
     component.dataSelecionada = '2026-08-05';
