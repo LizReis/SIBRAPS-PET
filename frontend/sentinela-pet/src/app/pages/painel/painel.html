@@ -6,144 +6,70 @@
 
   <form class="filters-card" aria-label="Filtros do painel" (submit)="$event.preventDefault()">
     <label><span>PERÍODO</span>
-      <div class="select-wrap"><i class="bi bi-calendar3"></i><select name="periodo" [(ngModel)]="filtros.periodoMeses"
-          (change)="alterarFiltroPrincipal()">
-          <option [ngValue]="3">Últimos 3 meses</option>
-          <option [ngValue]="6">Últimos 6 meses</option>
-          <option [ngValue]="12">Últimos 12 meses</option>
+      <div class="select-wrap"><i class="bi bi-calendar3"></i><select name="periodo" [(ngModel)]="filtros.periodoMeses" (change)="alterarFiltroPrincipal()">
+          <option [ngValue]="3">Últimos 3 meses</option><option [ngValue]="6">Últimos 6 meses</option><option [ngValue]="12">Últimos 12 meses</option>
         </select></div>
     </label>
-    <label><span>UNIDADE</span>
-      <div class="select-wrap"><i class="bi bi-building"></i><select name="unidade" [(ngModel)]="filtros.unidade"
-          (change)="alterarFiltroPrincipal()">
-          <option [ngValue]="undefined">Todas as unidades</option>@for (unidade of dados?.unidadesDisponiveis; track
-          unidade.valor) {<option [value]="unidade.valor">{{ unidade.nome }}</option>}
-        </select></div>
-    </label>
-    <label><span>VISUALIZAR POR</span>
-      <div class="select-wrap"><i class="bi bi-graph-up"></i><select aria-label="Visualizar por">
-          <option>Classificação</option>
-        </select></div>
-    </label>
-    <div class="more-filter-wrap">
-      <button class="outline-button" type="button" (click)="maisFiltrosAberto = !maisFiltrosAberto"
-        [attr.aria-expanded]="maisFiltrosAberto"><i class="bi bi-sliders"></i> Mais filtros</button>
-      @if (maisFiltrosAberto) {
-      <div class="filter-popover">
-        <label><span>TIPO DE ACOMPANHAMENTO</span><select name="tipo" [(ngModel)]="rascunhoTipo">
-            <option value="">Todos</option>
-            <option value="INDIVIDUAL">Individual</option>
-            <option value="GRUPO_TERAPEUTICO">Grupo terapêutico</option>
-            <option value="AMBOS">Ambos</option>
-          </select></label>
-        <label><span>SITUAÇÃO DE RUA</span><select name="rua" [(ngModel)]="rascunhoRua">
-            <option value="">Todos</option>
-            <option value="true">Sim</option>
-            <option value="false">Não</option>
-          </select></label>
-        <div><button type="button" class="link-button" (click)="limparMaisFiltros()">Limpar filtros</button><button
-            type="button" class="apply-button" (click)="aplicarMaisFiltros()">Aplicar</button></div>
-      </div>
-      }
+    <label><span>UNIDADE</span><div class="select-wrap"><i class="bi bi-building"></i><select name="unidade" [(ngModel)]="filtros.unidade" (change)="alterarFiltroPrincipal()">
+      <option [ngValue]="undefined">Todas as unidades</option>@for (unidade of dados?.unidadesDisponiveis; track unidade.valor) {<option [value]="unidade.valor">{{ unidade.nome }}</option>}
+    </select></div></label>
+    <label><span>VISUALIZAR POR</span><div class="select-wrap"><i class="bi bi-graph-up"></i><select aria-label="Visualizar por"><option>Classificação</option></select></div></label>
+    <div class="more-filter-wrap"><button class="outline-button" type="button" (click)="maisFiltrosAberto = !maisFiltrosAberto" [attr.aria-expanded]="maisFiltrosAberto"><i class="bi bi-sliders"></i> Mais filtros</button>
+      @if (maisFiltrosAberto) {<div class="filter-popover">
+        <label><span>TIPO DE ACOMPANHAMENTO</span><select name="tipo" [(ngModel)]="rascunhoTipo"><option value="">Todos</option><option value="INDIVIDUAL">Individual</option><option value="GRUPO_TERAPEUTICO">Grupo terapêutico</option><option value="AMBOS">Ambos</option></select></label>
+        <label><span>SITUAÇÃO DE RUA</span><select name="rua" [(ngModel)]="rascunhoRua"><option value="">Todos</option><option value="true">Sim</option><option value="false">Não</option></select></label>
+        <div><button type="button" class="link-button" (click)="limparMaisFiltros()">Limpar filtros</button><button type="button" class="apply-button" (click)="aplicarMaisFiltros()">Aplicar</button></div>
+      </div>}
     </div>
   </form>
 
-  @if (erro) {
-  <div class="error-card" role="alert"><span class="material-symbols-outlined">error</span>
-    <div><strong>Não foi possível carregar os indicadores do painel.</strong>
-      <p>Verifique sua conexão e tente novamente.</p>
-    </div><button type="button" (click)="carregar()">Tentar novamente</button>
-  </div>
-  } @else if (carregando) {
-  <div class="loading" role="status" aria-label="Carregando painel">
-    <div></div>
-    <div></div>
-    <div></div>
-  </div>
-  } @else if (dados) {
-  <div class="active-total"><span class="material-symbols-outlined">group</span><strong>Pacientes ativos</strong><b>{{
-      dados.totalPacientesAtivos }}</b></div>
-  <div class="risk-grid">
-    @for (risco of riscos; track risco.titulo) {
-    <article class="risk-card" [class]="'risk-card ' + risco.classe"><span class="risk-line"></span><span
-        class="risk-icon material-symbols-outlined">{{ risco.icone }}</span>
-      <div>
-        <h2>{{ risco.titulo }}</h2><strong>{{ valor(risco.chave) }}</strong>
-        <p>{{ formatarPercentual(percentual(risco.percentual)) }}% do total de ativos</p>
-      </div>
-    </article>
-    }
-  </div>
+  @if (erro) {<div class="error-card" role="alert"><span class="material-symbols-outlined">error</span><div><strong>Não foi possível carregar os indicadores do painel.</strong><p>Verifique sua conexão e tente novamente.</p></div><button type="button" (click)="carregar()">Tentar novamente</button></div>}
+  @else if (carregando) {<div class="loading" role="status" aria-label="Carregando painel"><div></div><div></div><div></div></div>}
+  @else if (dados) {
+    <div class="active-total"><span class="material-symbols-outlined">group</span><strong>Pacientes ativos</strong><b>{{ dados.totalPacientesAtivos }}</b></div>
+    <div class="risk-grid">@for (risco of riscos; track risco.titulo) {<article class="risk-card" [class]="'risk-card ' + risco.classe"><span class="risk-line"></span><span class="risk-icon material-symbols-outlined">{{ risco.icone }}</span><div><h2>{{ risco.titulo }}</h2><strong>{{ valor(risco.chave) }}</strong><p>{{ formatarPercentual(percentual(risco.percentual)) }}% do total de ativos</p></div></article>}</div>
 
-  <div class="charts-grid">
-    <article class="panel-card situation">
-      <h2>Situação dos pacientes</h2>
-      <div class="bar-chart" role="img" aria-label="Distribuição textual dos pacientes por classificação">
-        @for (risco of [riscos[2], riscos[1], riscos[0]]; track risco.titulo) {
-        <div class="bar-row"><span class="bar-label"><span class="material-symbols-outlined">{{ risco.icone }}</span>{{
-            risco.titulo }}</span>
-          <div class="bar-track"><span [class]="'bar-fill ' + risco.classe"
-              [style.width.%]="larguraBarra(valor(risco.chave))"></span></div><strong>{{ valor(risco.chave) }} ({{
-            formatarPercentual(percentual(risco.percentual)) }}%)</strong>
+    <div class="charts-grid">
+      <article class="panel-card situation">
+        <h2>Situação dos pacientes</h2>
+        <div class="bar-chart" role="img" aria-label="Distribuição textual dos pacientes por classificação">
+          @for (risco of [riscos[2], riscos[1], riscos[0]]; track risco.titulo) {
+            <div class="bar-row">
+              <span [class]="'bar-label ' + risco.classe"><span class="material-symbols-outlined">{{ risco.icone }}</span>{{ risco.titulo }}</span>
+              <div class="bar-track"><span [class]="'bar-fill ' + risco.classe" [style.width.%]="larguraBarra(valor(risco.chave))"></span></div>
+              <strong>{{ valor(risco.chave) }} ({{ formatarPercentual(percentual(risco.percentual)) }}%)</strong>
+            </div>
+          }
+          <div class="bar-axis" aria-hidden="true"><span class="axis-spacer"></span><div class="bar-axis-scale">@for (tick of ticksSituacao; track tick) {<span>{{ tick }}</span>}</div><span></span></div>
         </div>
-        }
-      </div>
-    </article>
+      </article>
 
-    <article class="panel-card evolution">
-      <div class="card-heading">
-        <h2>Evolução</h2><span>Últimos {{ filtros.periodoMeses }} meses</span>
-      </div>
-      <div class="legend"><span class="red">Busca ativa</span><span class="yellow">Atenção</span><span
-          class="green">Regular</span></div>
-      @if (!dados.historicoDisponivel) {<p class="history-note">Períodos sem auditoria suficiente são apresentados como
-        indisponíveis, sem estimativas.</p>}
-      <svg viewBox="0 0 100 100" role="img" aria-labelledby="evolution-title evolution-description"
-        preserveAspectRatio="none">
-        <title id="evolution-title">Evolução histórica das classificações</title>
-        <desc id="evolution-description">Séries mensais reais reconstruídas a partir da auditoria de pacientes.</desc>
-        @for (linha of [14,31.5,49,66.5,84]; track linha) {
-        <line x1="8" [attr.y1]="linha" x2="92" [attr.y2]="linha" class="grid-line" />}
-        <polyline [attr.points]="pontos('vermelhos')" class="series red" />
-        <polyline [attr.points]="pontos('amarelos')" class="series yellow" />
-        <polyline [attr.points]="pontos('verdes')" class="series green" />
-        @for (p of dados.evolucao; track p.mes; let i = $index) {<g tabindex="0" [attr.aria-label]="tooltip(p)">
-          <circle [attr.cx]="xPonto(i, dados.evolucao.length)" [attr.cy]="yPonto(p.vermelhos)" r="1.2" class="dot red">
-            <title>{{ tooltip(p) }}</title>
-          </circle>
-          <circle [attr.cx]="xPonto(i, dados.evolucao.length)" [attr.cy]="yPonto(p.amarelos)" r="1.2"
-            class="dot yellow" />
-          <circle [attr.cx]="xPonto(i, dados.evolucao.length)" [attr.cy]="yPonto(p.verdes)" r="1.2" class="dot green" />
-        </g>}
-      </svg>
-      <div class="x-labels">@for (p of dados.evolucao; track p.mes) {<span [class.unavailable]="!p.disponivel">{{
-          p.rotulo }}{{ p.disponivel ? '' : '*' }}</span>}</div>
-      <ul class="sr-only">@for (p of dados.evolucao; track p.mes) {<li>{{ tooltip(p) }}</li>}</ul>
-    </article>
-  </div>
-
-  <article class="panel-card priority">
-    <div class="priority-heading">
-      <h2><span class="material-symbols-outlined">stars</span> Pacientes prioritários</h2><a routerLink="/pacientes">Ver
-        todos <span class="material-symbols-outlined">chevron_right</span></a>
+      <article class="panel-card evolution">
+        <div class="card-heading"><h2>Evolução</h2><span>Últimos {{ filtros.periodoMeses }} meses</span></div>
+        <div class="legend"><span class="red">Busca ativa</span><span class="yellow">Atenção</span><span class="green">Regular</span></div>
+        @if (!dados.historicoDisponivel) {<p class="history-note">Períodos sem auditoria suficiente são apresentados como indisponíveis, sem estimativas.</p>}
+        <div class="evolution-chart">
+          <div class="y-labels" aria-hidden="true">@for (tick of ticksEvolucao; track tick.valor) {<span [style.top.%]="tick.y">{{ tick.valor }}</span>}</div>
+          <svg viewBox="0 0 100 100" role="img" aria-labelledby="evolution-title evolution-description" preserveAspectRatio="none">
+            <title id="evolution-title">Evolução histórica das classificações</title><desc id="evolution-description">Séries mensais reais reconstruídas a partir da auditoria de pacientes.</desc>
+            @for (tick of ticksEvolucao; track tick.valor) {<line x1="10" [attr.y1]="tick.y" x2="92" [attr.y2]="tick.y" class="grid-line" />}
+            <polyline [attr.points]="pontos('vermelhos')" class="series red"/><polyline [attr.points]="pontos('amarelos')" class="series yellow"/><polyline [attr.points]="pontos('verdes')" class="series green"/>
+            @for (p of dados.evolucao; track p.mes; let i = $index) {<g tabindex="0" [attr.aria-label]="tooltip(p)">
+              <circle [attr.cx]="xPonto(i,dados.evolucao.length)" [attr.cy]="yPonto(p.vermelhos)" r="1.35" class="dot red"><title>{{ tooltip(p) }}</title></circle>
+              <rect [attr.x]="xPonto(i,dados.evolucao.length)-1.25" [attr.y]="yPonto(p.amarelos)-1.25" width="2.5" height="2.5" class="dot yellow"/>
+              <polygon [attr.points]="trianguloPonto(xPonto(i,dados.evolucao.length), yPonto(p.verdes))" class="dot green"/>
+            </g>}
+          </svg>
+        </div>
+        <div class="x-labels">@for (p of dados.evolucao; track p.mes) {<span [class.unavailable]="!p.disponivel">{{ p.rotulo }}{{ p.disponivel ? '' : '*' }}</span>}</div>
+        <ul class="sr-only">@for (p of dados.evolucao; track p.mes) {<li>{{ tooltip(p) }}</li>}</ul>
+      </article>
     </div>
-    @if (dados.pacientesPrioritarios.length === 0) {<div class="empty-state"><span
-        class="material-symbols-outlined">verified</span>
-      <p>Nenhum paciente necessita de busca ativa ou atenção no momento.</p>
-    </div>} @else {
-    <div class="priority-list">@for (paciente of dados.pacientesPrioritarios; track paciente.idPublico) {<div
-        class="patient-row"><span class="avatar">{{ iniciais(paciente.nome) }}</span>
-        <div class="patient-name"><strong>{{ paciente.nome }}</strong><small>{{ paciente.idade === null ? 'Idade não
-            informada' : paciente.idade + ' anos' }}</small></div><span
-          [class]="'risk-badge ' + paciente.classificacaoRisco.toLowerCase()"><span
-            class="material-symbols-outlined">warning</span>{{ rotuloRisco(paciente.classificacaoRisco) }}</span>
-        <div class="needed"><span class="material-symbols-outlined">notification_important</span>{{
-          paciente.acaoNecessaria }}</div><a class="patient-button"
-          [routerLink]="['/pacientes/detalhes', paciente.idPublico]">Ver paciente</a>
-      </div>}</div>
-    }
-  </article>
-  <footer class="info-footer"><span class="material-symbols-outlined">info</span>Os dados são dinâmicos e atualizados
-    conforme os filtros selecionados.</footer>
+
+    <article class="panel-card priority"><div class="priority-heading"><h2><span class="material-symbols-outlined">stars</span> Pacientes prioritários</h2><a routerLink="/pacientes">Ver todos <span class="material-symbols-outlined">chevron_right</span></a></div>
+      @if (dados.pacientesPrioritarios.length === 0) {<div class="empty-state"><span class="material-symbols-outlined">verified</span><p>Nenhum paciente necessita de busca ativa ou atenção no momento.</p></div>}
+      @else {<div class="priority-list">@for (paciente of dados.pacientesPrioritarios; track paciente.idPublico) {<div class="patient-row"><span class="avatar">{{ iniciais(paciente.nome) }}</span><div class="patient-name"><strong>{{ paciente.nome }}</strong><small>{{ paciente.idade === null ? 'Idade não informada' : paciente.idade + ' anos' }}</small></div><span [class]="'risk-badge ' + paciente.classificacaoRisco.toLowerCase()"><span class="material-symbols-outlined">warning</span>{{ rotuloRisco(paciente.classificacaoRisco) }}</span><div class="needed"><span class="material-symbols-outlined">notification_important</span>{{ paciente.acaoNecessaria }}</div><a class="patient-button" [routerLink]="['/pacientes/detalhes', paciente.idPublico]">Ver paciente</a></div>}</div>}
+    </article>
+    <footer class="info-footer"><span class="material-symbols-outlined">info</span>Os dados são dinâmicos e atualizados conforme os filtros selecionados.</footer>
   }
 </section>
