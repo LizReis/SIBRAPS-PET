@@ -4,9 +4,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +18,7 @@ import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.repositories.PacienteRepository;
+import com.pet.buscaativa.repositories.UsfReferenciaRepository;
 import com.pet.buscaativa.services.PainelHistoricoService;
 import com.pet.buscaativa.services.PainelService;
 
@@ -30,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class PainelServiceImpl implements PainelService {
     private static final List<Integer> PERIODOS_VALIDOS = List.of(3, 6, 12);
     private final PacienteRepository pacienteRepository;
+    private final UsfReferenciaRepository usfReferenciaRepository;
     private final PainelHistoricoService historicoService;
 
     @Override
@@ -39,7 +39,7 @@ public class PainelServiceImpl implements PainelService {
         if (!PERIODOS_VALIDOS.contains(periodoMeses)) periodoMeses = 6;
 
         List<Paciente> ativosSemFiltro = pacienteRepository.findByStatusPaciente(StatusPaciente.ATIVO);
-        List<UnidadePainelDTO> unidades = unidadesDisponiveis(ativosSemFiltro);
+        List<UnidadePainelDTO> unidades = unidadesDisponiveis();
         List<Paciente> ativos = ativosSemFiltro.stream()
                 .filter(p -> historicoService.correspondeAosFiltros(p, unidade, tipoAcompanhamento, situacaoRua)).toList();
 
@@ -88,19 +88,11 @@ public class PainelServiceImpl implements PainelService {
                 p.getCountFaltas(), acao);
     }
 
-    private List<UnidadePainelDTO> unidadesDisponiveis(List<Paciente> pacientes) {
-        Map<String, String> opcoes = new LinkedHashMap<>();
-        pacientes.forEach(p -> {
-            if (p.getUsfReferencia() != null && p.getUsfReferencia().getCnes() != null) {
-                opcoes.put("USF:" + p.getUsfReferencia().getCnes(), p.getUsfReferencia().getNomeUsf());
-            }
-            if (p.getCapsReferencia() != null) {
-                String nome = p.getCapsReferencia().name().replace('_', ' ');
-                opcoes.put("CAPS:" + p.getCapsReferencia().name(), nome);
-            }
-        });
-        return opcoes.entrySet().stream().filter(e -> e.getValue() != null && !e.getValue().isBlank())
-                .sorted(Map.Entry.comparingByValue(String.CASE_INSENSITIVE_ORDER))
-                .map(e -> new UnidadePainelDTO(e.getKey(), e.getValue())).toList();
+    private List<UnidadePainelDTO> unidadesDisponiveis() {
+        return usfReferenciaRepository.findAllByOrderByNomeUsfAsc().stream()
+                .filter(usf -> usf.getCnes() != null && !usf.getCnes().isBlank())
+                .filter(usf -> usf.getNomeUsf() != null && !usf.getNomeUsf().isBlank())
+                .map(usf -> new UnidadePainelDTO("USF:" + usf.getCnes(), usf.getNomeUsf()))
+                .toList();
     }
 }
