@@ -9,7 +9,7 @@ import { EvolucaoPainel, FiltrosPainel, PainelPayload, PainelService } from '../
   selector: 'app-painel',
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './painel.html',
-  styleUrl: './painel.css',
+  styleUrls: ['./painel.css', './painel-ajustes.css'],
 })
 export class Painel implements OnInit {
   private readonly painelService = inject(PainelService);
