@@ -76,6 +76,10 @@ export class Painel implements OnInit {
     });
   }
 
+  get possuiMaisDeUmSegmentoDonut(): boolean {
+    return this.segmentosDonut.filter(segmento => segmento.tamanho > 0).length > 1;
+  }
+
   get descricaoDonut(): string {
     return `Distribuição dos pacientes: ${this.segmentosDonut.map(segmento => `${segmento.titulo} ${segmento.quantidade}`).join(', ')}.`;
   }
