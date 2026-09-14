@@ -256,62 +256,132 @@
     margin: 0 0 18px
 }
 
-.bar-chart {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-    padding: 40px 0px 40px 30px
-}
-
-.bar-row {
-    display: grid;
-    grid-template-columns: 120px minmax(80px, 1fr) 120px;
-    gap: 12px;
-    align-items: center
-}
-
-.bar-label {
+.donut-layout {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: .82rem;
-    font-weight: 600
+    justify-content: center;
+    gap: clamp(20px, 4vw, 48px);
+    min-height: 250px
 }
 
-.bar-label .material-symbols-outlined {
-    font-size: 24px
+.donut-chart {
+    position: relative;
+    flex: 0 0 clamp(220px, 22vw, 280px);
+    aspect-ratio: 1
 }
 
-.bar-track {
-    height: 22px;
-    background: #f1f4f8;
-    border-left: 1px solid #b8c3d2
-}
-
-.bar-fill {
+.donut-chart svg {
     display: block;
+    width: 100%;
     height: 100%;
-    min-width: 0;
-    border-radius: 0 2px 2px 0
+    overflow: visible;
+    transform: rotate(0deg)
 }
 
-.bar-fill.green {
-    background: #42a956
+.donut-empty,
+.donut-segment {
+    fill: none;
+    stroke-width: 44
 }
 
-.bar-fill.yellow {
-    background: #f5a814
+.donut-empty {
+    stroke: #e8edf3
 }
 
-.bar-fill.red {
-    background-color: #ef3b49;
-    background-image: radial-gradient(#fff 1px, transparent 1px);
-    background-size: 8px 8px
+.donut-segment {
+    transform: rotate(-90deg);
+    transform-origin: 100px 100px;
+    stroke-linecap: butt
 }
 
-.bar-row>strong {
-    font-size: .78rem;
-    white-space: nowrap
+.donut-segment.green {
+    stroke: #3da552
+}
+
+.donut-segment.yellow {
+    stroke: #f5a514
+}
+
+.donut-segment.red {
+    stroke: #ef3b49
+}
+
+.donut-divider {
+    stroke: #fff;
+    stroke-width: 2
+}
+
+.donut-percentage {
+    fill: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    paint-order: stroke;
+    stroke: rgba(0, 0, 0, .08);
+    stroke-width: 1px
+}
+
+.donut-center {
+    position: absolute;
+    inset: 28%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #0b285c
+}
+
+.donut-center strong {
+    font-size: clamp(1.7rem, 3vw, 2.25rem);
+    line-height: 1
+}
+
+.donut-center span {
+    max-width: 76px;
+    margin-top: 5px;
+    font-size: .76rem;
+    line-height: 1.3
+}
+
+.donut-legend {
+    flex: 1 1 220px;
+    max-width: 290px;
+    display: grid;
+    gap: 22px
+}
+
+.donut-legend div {
+    display: grid;
+    grid-template-columns: 12px minmax(86px, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    color: #0b285c;
+    font-size: .82rem
+}
+
+.donut-legend strong {
+    white-space: nowrap;
+    font-size: .8rem
+}
+
+.donut-key {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%
+}
+
+.donut-key.green {
+    background: #3da552
+}
+
+.donut-key.yellow {
+    background: #f5a514
+}
+
+.donut-key.red {
+    background: #ef3b49
 }
 
 .card-heading {
@@ -342,7 +412,7 @@
     height: 8px;
     border-radius: 50%;
     margin-right: 6px;
-    
+
 }
 
 .legend .red:before {
@@ -395,16 +465,35 @@
     stroke: #3da552
 }
 
-.dot.red {
-    fill: #ef3b49
+.markers-layer {
+    position: absolute;
+    inset: 0 0 0 34px;
+    height: 205px;
+    pointer-events: none
 }
 
-.dot.yellow {
-    fill: #efa30b
+.chart-marker {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    filter: drop-shadow(0 0 1px #fff)
 }
 
-.dot.green {
-    fill: #3da552
+.chart-marker.red {
+    background: #ef3b49;
+    border-radius: 50%
+}
+
+.chart-marker.yellow {
+    background: #efa30b;
+    border-radius: 1px
+}
+
+.chart-marker.green {
+    background: #3da552;
+    clip-path: polygon(50% 0, 100% 100%, 0 100%)
 }
 
 .x-labels {
@@ -682,12 +771,18 @@ g:focus-visible {
         padding: 16px 24px
     }
 
-    .bar-row {
-        grid-template-columns: 100px 1fr
+    .donut-layout {
+        flex-direction: column;
+        gap: 18px
     }
 
-    .bar-row>strong {
-        grid-column: 2
+    .donut-chart {
+        flex-basis: 230px
+    }
+
+    .donut-legend {
+        width: min(100%, 290px);
+        flex-basis: auto
     }
 
     .patient-row {

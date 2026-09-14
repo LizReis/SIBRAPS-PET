@@ -5,6 +5,16 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { EvolucaoPainel, FiltrosPainel, PainelPayload, PainelService } from '../../services/painel-service';
 
+type SegmentoDonut = {
+  titulo: string;
+  classe: 'green' | 'yellow' | 'red';
+  quantidade: number;
+  percentual: number;
+  tamanho: number;
+  inicio: number;
+  meio: number;
+};
+
 @Component({
   selector: 'app-painel',
   imports: [CommonModule, FormsModule, RouterLink],
@@ -46,16 +56,33 @@ export class Painel implements OnInit {
   valor(chave: 'verdes'|'amarelos'|'vermelhos'): number { return this.dados?.distribuicaoClassificacao[chave] ?? 0; }
   percentual(chave: 'percentualVerdes'|'percentualAmarelos'|'percentualVermelhos'): number { return this.dados?.distribuicaoClassificacao[chave] ?? 0; }
   formatarPercentual(valor: number): string { return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(valor); }
-  larguraBarra(valor: number): number { return this.maxSituacao ? valor / this.maxSituacao * 100 : 0; }
   iniciais(nome: string): string { return nome.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase(); }
   rotuloRisco(risco: string): string { return risco === 'VERMELHO' ? 'Busca ativa' : risco === 'AMARELO' ? 'Atenção' : 'Regular'; }
 
-  get maxSituacao(): number {
-    return this.tetoEscala(this.dados?.totalPacientesAtivos ?? 0);
+  get segmentosDonut(): SegmentoDonut[] {
+    const distribuicao = this.dados?.distribuicaoClassificacao;
+    const segmentos = [
+      { titulo: 'Regular', classe: 'green' as const, quantidade: distribuicao?.verdes ?? 0, percentual: distribuicao?.percentualVerdes ?? 0 },
+      { titulo: 'Atenção', classe: 'yellow' as const, quantidade: distribuicao?.amarelos ?? 0, percentual: distribuicao?.percentualAmarelos ?? 0 },
+      { titulo: 'Busca ativa', classe: 'red' as const, quantidade: distribuicao?.vermelhos ?? 0, percentual: distribuicao?.percentualVermelhos ?? 0 },
+    ];
+    const somaPercentuais = segmentos.reduce((soma, segmento) => soma + Math.max(0, segmento.percentual), 0);
+    let inicio = 0;
+    return segmentos.map(segmento => {
+      const tamanho = somaPercentuais > 0 ? Math.max(0, segmento.percentual) / somaPercentuais * 100 : 0;
+      const resultado = { ...segmento, tamanho, inicio, meio: inicio + tamanho / 2 };
+      inicio += tamanho;
+      return resultado;
+    });
   }
 
-  get ticksSituacao(): number[] {
-    return Array.from({ length: 6 }, (_, i) => Math.round((this.maxSituacao * i) / 5));
+  get descricaoDonut(): string {
+    return `Distribuição dos pacientes: ${this.segmentosDonut.map(segmento => `${segmento.titulo} ${segmento.quantidade}`).join(', ')}.`;
+  }
+
+  coordenadaPolar(percentual: number, raio: number, eixo: 'x' | 'y'): number {
+    const angulo = (percentual * 3.6 - 90) * Math.PI / 180;
+    return 100 + raio * (eixo === 'x' ? Math.cos(angulo) : Math.sin(angulo));
   }
 
   get maxEvolucao(): number {
@@ -83,10 +110,6 @@ export class Painel implements OnInit {
 
   xPonto(indice: number, total: number): number { return total <= 1 ? 50 : 10 + indice * 82 / (total - 1); }
   yPonto(valor: number): number { return 84 - valor * 70 / this.maxEvolucaoEscala; }
-
-  trianguloPonto(x: number, y: number): string {
-    return `${x},${y - 1.7} ${x - 1.6},${y + 1.3} ${x + 1.6},${y + 1.3}`;
-  }
 
   tooltip(p: EvolucaoPainel): string { return `${p.rotulo}: Regular ${p.verdes}, Atenção ${p.amarelos}, Busca ativa ${p.vermelhos}`; }
 

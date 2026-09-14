@@ -40,4 +40,35 @@ describe('Painel', () => {
     service.buscarResumo.mockReturnValue(throwError(() => new Error('falha'))); fixture.detectChanges();
     expect(component.erro).toBe(true); expect(fixture.nativeElement.textContent).toContain('Não foi possível carregar');
   });
+  it.each([
+    [4, 3, 2],
+    [90, 8, 2],
+    [0, 5, 5],
+    [1, 0, 0],
+  ])('mantém o donut proporcional para a distribuição %i/%i/%i', (verdes, amarelos, vermelhos) => {
+    const total = verdes + amarelos + vermelhos;
+    component.dados = {
+      ...payload,
+      totalPacientesAtivos: total,
+      distribuicaoClassificacao: {
+        verdes, amarelos, vermelhos,
+        percentualVerdes: verdes / total * 100,
+        percentualAmarelos: amarelos / total * 100,
+        percentualVermelhos: vermelhos / total * 100,
+      },
+    };
+    expect(component.segmentosDonut.reduce((soma, segmento) => soma + segmento.tamanho, 0)).toBeCloseTo(100);
+  });
+  it('renderiza o estado neutro do donut sem dividir por zero', () => {
+    const payloadVazio = {
+      ...payload,
+      totalPacientesAtivos: 0,
+      distribuicaoClassificacao: { verdes: 0, amarelos: 0, vermelhos: 0, percentualVerdes: 0, percentualAmarelos: 0, percentualVermelhos: 0 },
+    };
+    service.buscarResumo.mockReturnValue(of(payloadVazio));
+    fixture.detectChanges();
+    expect(component.segmentosDonut.every(segmento => segmento.tamanho === 0)).toBe(true);
+    expect(fixture.nativeElement.querySelectorAll('.donut-segment')).toHaveLength(0);
+    expect(fixture.nativeElement.querySelector('.donut-center').textContent).toContain('0');
+  });
 });
