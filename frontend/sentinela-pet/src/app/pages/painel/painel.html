@@ -54,6 +54,10 @@
                       [attr.x2]="coordenadaPolar(segmento.inicio, 93, 'x')" [attr.y2]="coordenadaPolar(segmento.inicio, 93, 'y')" />
                   }
                 }
+                @if (possuiMaisDeUmSegmentoDonut) {
+                  <line class="donut-divider" [attr.x1]="coordenadaPolar(0, 47, 'x')" [attr.y1]="coordenadaPolar(0, 47, 'y')"
+                    [attr.x2]="coordenadaPolar(0, 93, 'x')" [attr.y2]="coordenadaPolar(0, 93, 'y')" />
+                }
               }
             </svg>
             <div class="donut-center"><strong>{{ dados.totalPacientesAtivos }}</strong><span>{{ dados.totalPacientesAtivos === 1 ? 'paciente ativo' : 'pacientes ativos' }}</span></div>
