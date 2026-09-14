@@ -76,14 +76,14 @@
             <title id="evolution-title">Evolução histórica das classificações</title><desc id="evolution-description">Séries mensais reais reconstruídas a partir da auditoria de pacientes.</desc>
             @for (tick of ticksEvolucao; track tick.valor) {<line x1="10" [attr.y1]="tick.y" x2="92" [attr.y2]="tick.y" class="grid-line" />}
             <polyline [attr.points]="pontos('vermelhos')" class="series red"/><polyline [attr.points]="pontos('amarelos')" class="series yellow"/><polyline [attr.points]="pontos('verdes')" class="series green"/>
-            <div class="markers-layer">
+          </svg>
+          <div class="markers-layer" aria-hidden="true">
             @for (p of dados.evolucao; track p.mes; let i = $index) {
-              <span class="chart-marker red" [style.left.%]="xPonto(i,dados.evolucao.length)" [style.top.%]="yPonto(p.vermelhos)" [title]="tooltip(p)" aria-hidden="true"></span>
-              <span class="chart-marker yellow" [style.left.%]="xPonto(i,dados.evolucao.length)" [style.top.%]="yPonto(p.amarelos)" [title]="tooltip(p)" aria-hidden="true"></span>
-              <span class="chart-marker green" [style.left.%]="xPonto(i,dados.evolucao.length)" [style.top.%]="yPonto(p.verdes)" [title]="tooltip(p)" aria-hidden="true"></span>
+              <span class="chart-marker red" [style.left.%]="xPonto(i,dados.evolucao.length)" [style.top.%]="yPonto(p.vermelhos)" [title]="tooltip(p)"></span>
+              <span class="chart-marker yellow" [style.left.%]="xPonto(i,dados.evolucao.length)" [style.top.%]="yPonto(p.amarelos)" [title]="tooltip(p)"></span>
+              <span class="chart-marker green" [style.left.%]="xPonto(i,dados.evolucao.length)" [style.top.%]="yPonto(p.verdes)" [title]="tooltip(p)"></span>
             }
           </div>
-          </svg>
         </div>
         <div class="x-labels">@for (p of dados.evolucao; track p.mes) {<span [class.unavailable]="!p.disponivel">{{ p.rotulo }}{{ p.disponivel ? '' : '*' }}</span>}</div>
         <ul class="sr-only">@for (p of dados.evolucao; track p.mes) {<li>{{ tooltip(p) }}</li>}</ul>
