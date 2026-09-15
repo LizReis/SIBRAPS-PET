@@ -89,6 +89,11 @@ public class Paciente extends AbstractEntities implements Serializable{
     @Convert(converter = CapsEnumConverter.class)
     private CapsEnum capsReferencia;
 
+    @ManyToOne
+    @JoinColumn(name = "profissional_referencia_id", nullable = true)
+    private Usuario profissionalReferencia;
+
+
     @Version
     private Integer version;
 

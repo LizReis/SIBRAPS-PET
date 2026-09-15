@@ -154,6 +154,18 @@
               {{ mensagemErro('tipoAcompanhamento', 'Tipo de acompanhamento é obrigatório.') }}
             </small>
           </label>
+
+          <label for="profissionalReferenciaId">Profissional de referência (opcional)
+            <select id="profissionalReferenciaId" name="patient-reference-user"
+              formControlName="profissionalReferenciaId">
+              <option [ngValue]="null">Nenhum profissional de referência</option>
+              <option *ngFor="let usuario of usuariosReferencia" [value]="usuario.idPublico">
+                {{ usuario.nome }}
+              </option>
+            </select>
+            <small class="info-message" *ngIf="carregandoReferencias">Carregando profissionais de referência…</small>
+            <small *ngIf="erroReferencias">Não foi possível carregar os profissionais de referência.</small>
+          </label>
         </div>
       </section>
 

@@ -2,6 +2,7 @@ package com.pet.buscaativa.controllers;
 
 import com.pet.buscaativa.entities.dto.UsuarioDTO;
 import com.pet.buscaativa.entities.dto.ProfissionalSelecaoDTO;
+import com.pet.buscaativa.entities.dto.UsuarioReferenciaDTO;
 import com.pet.buscaativa.services.UsuarioService;
 
 import jakarta.validation.Valid;
@@ -48,6 +49,12 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO', 'PROFISSIONAL')")
     public ResponseEntity<List<ProfissionalSelecaoDTO>> listarProfissionaisParaSelecao() {
         return ResponseEntity.ok(usuarioService.listarProfissionaisParaSelecao());
+    }
+
+    @GetMapping("/referencia-selecao")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'RECEPCAO', 'PROFISSIONAL')")
+    public ResponseEntity<List<UsuarioReferenciaDTO>> listarUsuariosElegiveisParaReferencia() {
+        return ResponseEntity.ok(usuarioService.listarUsuariosElegiveisParaReferencia());
     }
 
     @PreAuthorize("hasRole('ADMINISTRADOR')")

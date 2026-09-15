@@ -16,16 +16,19 @@ import org.springframework.data.jpa.domain.Specification;
 
 import com.pet.buscaativa.entities.Endereco;
 import com.pet.buscaativa.entities.Paciente;
+import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.dto.*;
 import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
 import com.pet.buscaativa.entities.enums.MotivoEncerramento;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
+import com.pet.buscaativa.entities.enums.TipoUsuario;
 import com.pet.buscaativa.mapping.PacienteMapper;
 import com.pet.buscaativa.repositories.AgendamentoRepository;
 import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.repositories.SessaoGrupoParticipanteRepository;
+import com.pet.buscaativa.repositories.UsuarioRepository;
 import com.pet.buscaativa.services.HistoricoPacienteService;
 import com.pet.buscaativa.services.PacienteService;
 import com.pet.buscaativa.services.PoliticaClassificacaoPaciente;
@@ -54,6 +57,8 @@ public class PacienteServiceImpl implements PacienteService{
     private final SessaoGrupoParticipanteRepository participanteGrupoRepository;
     private final Clock clock;
 
+    private final UsuarioRepository usuarioRepository;
+
 
     @Override
     public PacienteDTO save(PacienteDTO pacienteDTO, boolean ignorarSimilaridade) {
@@ -76,6 +81,9 @@ public class PacienteServiceImpl implements PacienteService{
             pacienteSalvar.setStatusPaciente(StatusPaciente.ATIVO);
         }
 
+        // O papel é permissão, não profissão: apenas RECEPCAO é inelegível.
+        pacienteSalvar.setProfissionalReferencia(resolverProfissionalReferencia(pacienteDTO.profissionalReferenciaId()));
+
         pacienteSalvar.setCpf(
         DocumentoUtil.normalizarCPF(pacienteDTO.cpf()));
 
@@ -88,6 +96,17 @@ public class PacienteServiceImpl implements PacienteService{
         return pacienteMapper.toPacienteDTO(pacienteSalvar);
 
     }
+
+    private Usuario resolverProfissionalReferencia(UUID idPublico) {
+        if (idPublico == null) return null;
+        Usuario usuario = usuarioRepository.findByIdPublico(idPublico)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário de referência não encontrado."));
+        if (usuario.getTipoUsuario() == TipoUsuario.RECEPCAO) {
+            throw new ValidationException("Usuários do perfil Recepção não podem ser definidos como profissional de referência.");
+        }
+        return usuario;
+    }
+
     @Override
     public void inativarPaciente(UUID idPublico) {
         Paciente paciente = pacienteRepository.findByIdPublico(idPublico)

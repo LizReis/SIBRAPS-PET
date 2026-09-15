@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
+import { Validators } from '@angular/forms';
 
 import { PacienteService } from '../../services/paciente/paciente-service';
 import { UnidadeSaudeService } from '../../services/unidade-saude-service';
+import { ProfissionalService } from '../../services/profissional/profissional-service';
 import { CadastroPaciente } from './cadastro-paciente';
 
 describe('CadastroPaciente', () => {
@@ -25,6 +27,10 @@ describe('CadastroPaciente', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
         { provide: Router, useValue: { navigate } },
         { provide: UnidadeSaudeService, useValue: { listarUnidades: () => of([unidade]) } },
+        { provide: ProfissionalService, useValue: { listarElegiveisParaReferencia: () => of([
+          { idPublico: 'admin-id', nome: 'Administrador', unidadeAtuacao: 'CAPS_I' },
+          { idPublico: 'prof-id', nome: 'Profissional', unidadeAtuacao: 'CAPS_II' },
+        ]) } },
         {
           provide: PacienteService,
           useValue: { cadastrarPaciente, atualizarPaciente, buscarPorId: vi.fn() },
@@ -106,6 +112,24 @@ describe('CadastroPaciente', () => {
     expect(component.progresso).toBe(100);
     expect(component.estadoSecao(component.camposIdentificacao)).toBe('Concluído');
     expect(component.estadoEndereco).toBe('Concluído');
+  });
+
+  it('mantém referência opcional fora do progresso e envia null quando não selecionada', () => {
+    preencherFormulario(false);
+    expect(component.pacienteForm.controls.profissionalReferenciaId.hasValidator(Validators.required)).toBe(false);
+    expect(component.progresso).toBe(100);
+    component.salvarPaciente();
+    expect(cadastrarPaciente.mock.calls[0][0].profissionalReferenciaId).toBeNull();
+  });
+
+  it('exibe usuários elegíveis no select sem marcar o campo como obrigatório', () => {
+    fixture.detectChanges();
+    const label = fixture.nativeElement.querySelector('label[for="profissionalReferenciaId"]');
+    const opcoes = Array.from(label.querySelectorAll('option')).map((o: any) => o.textContent.trim());
+    expect(label.textContent).toContain('Profissional de referência (opcional)');
+    expect(opcoes).toEqual([
+      'Nenhum profissional de referência', 'Administrador', 'Profissional',
+    ]);
   });
 
   it('remove e restaura os validadores obrigatórios de endereço', () => {

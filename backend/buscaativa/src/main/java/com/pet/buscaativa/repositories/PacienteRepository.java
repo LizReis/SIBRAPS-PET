@@ -24,6 +24,8 @@ import jakarta.persistence.LockModeType;
 
 @Repository
 public interface PacienteRepository extends JpaRepository<Paciente, Long>, JpaSpecificationExecutor<Paciente>{
+
+    boolean existsByProfissionalReferenciaId(Long usuarioId);
  
     Optional<Paciente> findByIdPublico(UUID idPublico);
 

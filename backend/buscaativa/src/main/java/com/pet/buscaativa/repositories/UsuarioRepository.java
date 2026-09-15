@@ -23,6 +23,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByIdPublico(UUID idPublico);
 
     List<Usuario> findAllByTipoUsuarioOrderByNome(TipoUsuario tipoUsuario);
+    List<Usuario> findAllByTipoUsuarioNotOrderByNome(TipoUsuario tipoUsuario);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from Usuario u where u.idPublico = :idPublico")

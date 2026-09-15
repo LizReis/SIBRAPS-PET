@@ -5,6 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { UnidadeSaude, UnidadeSaudeService } from '../../services/unidade-saude-service';
+import { ProfissionalService, UsuarioReferencia } from '../../services/profissional/profissional-service';
 
 import {
   PacientePayload,
@@ -75,9 +76,12 @@ export class CadastroPaciente implements OnInit {
   capsOptions = Object.values(CapsEnum);
 
   unidadesSaude: UnidadeSaude[] = [];
+  usuariosReferencia: UsuarioReferencia[] = [];
 
   carregandoUnidades = false;
   erroUnidades = false;
+  carregandoReferencias = false;
+  erroReferencias = false;
   carregandoPaciente = false;
   salvando = false;
 
@@ -111,6 +115,7 @@ export class CadastroPaciente implements OnInit {
     situacaoRua: new FormControl<boolean | null>(null, Validators.required),
 
     tipoAcompanhamento: new FormControl('', Validators.required),
+    profissionalReferenciaId: new FormControl<string | null>(null),
 
     endereco: new FormGroup({
       cidade: new FormControl('', Validators.required),
@@ -134,6 +139,7 @@ export class CadastroPaciente implements OnInit {
     private route: ActivatedRoute,
     private unidadeSaudeService: UnidadeSaudeService,
     private pacienteService: PacienteService,
+    private profissionalService: ProfissionalService,
   ) {}
 
   ngOnInit(): void {
@@ -141,8 +147,24 @@ export class CadastroPaciente implements OnInit {
     this.modoEdicao = !!this.idPublico;
 
     this.carregarUnidadesSaude();
+    this.carregarReferencias();
     this.pacienteForm.controls.situacaoRua.valueChanges.subscribe((rua) => {
       this.atualizarValidadoresEndereco(rua === true);
+    });
+  }
+
+  carregarReferencias(): void {
+    this.carregandoReferencias = true;
+    this.erroReferencias = false;
+    this.profissionalService.listarElegiveisParaReferencia().subscribe({
+      next: usuarios => {
+        this.usuariosReferencia = usuarios;
+        this.carregandoReferencias = false;
+      },
+      error: () => {
+        this.erroReferencias = true;
+        this.carregandoReferencias = false;
+      },
     });
   }
 
@@ -192,6 +214,7 @@ export class CadastroPaciente implements OnInit {
           capsReferencia: paciente.capsReferencia,
           situacaoRua: paciente.situacaoRua,
           tipoAcompanhamento: paciente.tipoAcompanhamento,
+          profissionalReferenciaId: paciente.profissionalReferencia?.idPublico ?? null,
           endereco: {
             cidade: paciente.endereco?.cidade ?? '',
             estado: paciente.endereco?.estado ?? '',
@@ -257,7 +280,7 @@ export class CadastroPaciente implements OnInit {
       situacaoRua: formValue.situacaoRua ?? false,
 
       tipoAcompanhamento: formValue.tipoAcompanhamento ?? '',
-
+      profissionalReferenciaId: formValue.profissionalReferenciaId || null,
       endereco: (formValue.situacaoRua ? null : {
         cidade: formValue.endereco?.cidade?.trim() ?? '',
 

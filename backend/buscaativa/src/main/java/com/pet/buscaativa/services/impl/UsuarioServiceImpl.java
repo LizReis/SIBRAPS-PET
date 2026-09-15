@@ -6,9 +6,11 @@ import java.util.UUID;
 import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.dto.UsuarioDTO;
 import com.pet.buscaativa.entities.dto.ProfissionalSelecaoDTO;
+import com.pet.buscaativa.entities.dto.UsuarioReferenciaDTO;
 import com.pet.buscaativa.entities.enums.TipoUsuario;
 import com.pet.buscaativa.mapping.UsuarioMapper;
 import com.pet.buscaativa.repositories.UsuarioRepository;
+import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.services.UsuarioService;
 import com.pet.buscaativa.services.exceptions.DatabaseException;
 import com.pet.buscaativa.services.exceptions.RecursoDuplicadoException;
@@ -27,6 +29,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final UsuarioMapper usuarioMapper;
     private final PasswordEncoder passwordEncoder;
+    private final PacienteRepository pacienteRepository;
 
     @Override
     public UsuarioDTO save(UsuarioDTO usuarioDTO) {
@@ -83,6 +86,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
+    public List<UsuarioReferenciaDTO> listarUsuariosElegiveisParaReferencia() {
+        return usuarioRepository.findAllByTipoUsuarioNotOrderByNome(TipoUsuario.RECEPCAO).stream()
+                .map(UsuarioReferenciaDTO::new)
+                .toList();
+    }
+
+    @Override
     public UsuarioDTO findById(UUID idPublic) {
         Usuario usuario = usuarioRepository.findByIdPublico(idPublic)
                 .orElseThrow(() -> new ResourceNotFoundException(idPublic));
@@ -115,7 +125,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         var usuarioEntity = usuarioRepository.findByIdPublico(idPublico).orElse(null);
         if (usuarioEntity == null) {
             throw new DatabaseException("Usuário não encontrado para remoção.");
-        } else {
+        }else if (pacienteRepository.existsByProfissionalReferenciaId(usuarioEntity.getId())) {
+            throw new ValidationException("Usuário vinculado como profissional de referência não pode ser removido."); 
+        }else {
             usuarioRepository.deleteById(usuarioEntity.getId());
         }
 

@@ -20,6 +20,12 @@ export interface ProfissionalSelecao {
   tipoUsuario: 'PROFISSIONAL';
 }
 
+export interface UsuarioReferencia {
+  idPublico: string;
+  nome: string;
+  unidadeAtuacao?: string;
+}
+
 export interface FieldMessage {
   fieldName: string;
   message: string;
@@ -51,6 +57,10 @@ export class ProfissionalService {
 
   listarParaSelecao(): Observable<ProfissionalPayload[]> {
     return this.http.get<ProfissionalPayload[]>(`${this.apiUrl}/profissionais-selecao`);
+  }
+
+  listarElegiveisParaReferencia(): Observable<UsuarioReferencia[]> {
+    return this.http.get<UsuarioReferencia[]>(`${this.apiUrl}/referencia-selecao`);
   }
 
 

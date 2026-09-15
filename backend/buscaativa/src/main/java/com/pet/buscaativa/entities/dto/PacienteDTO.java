@@ -72,7 +72,11 @@ public record PacienteDTO(
         UsfReferencia usfReferencia,
 
         @NotNull(message = "Informe o CAPS de Referência do Paciente.")
-        CapsEnum capsReferencia
+        CapsEnum capsReferencia,
+
+        UUID profissionalReferenciaId,
+
+        UsuarioReferenciaDTO profissionalReferencia
 
 ) {
     public PacienteDTO(Paciente entity) {
@@ -93,7 +97,9 @@ public record PacienteDTO(
                 entity.getCountFaltas(),
                 entity.getStatusPaciente(),
                 entity.getUsfReferencia(),
-                entity.getCapsReferencia()
+                entity.getCapsReferencia(),
+                entity.getProfissionalReferencia() == null ? null : entity.getProfissionalReferencia().getIdPublico(),
+                entity.getProfissionalReferencia() == null ? null : new UsuarioReferenciaDTO(entity.getProfissionalReferencia())
         );
     }
 

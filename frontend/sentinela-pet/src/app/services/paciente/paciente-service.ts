@@ -49,6 +49,14 @@ export interface PacientePayload {
   usfReferencia: UsfReferencia;
 
   capsReferencia: string;
+  profissionalReferenciaId?: string | null;
+  profissionalReferencia?: UsuarioReferencia | null;
+}
+
+export interface UsuarioReferencia {
+  idPublico: string;
+  nome: string;
+  unidadeAtuacao?: string;
 }
 
 export interface PacienteLista extends Pick<PacientePayload, 'idPublico'|'nome'|'cpf'|'cns'|'countFaltas'|'dataUltimaPresenca'|'statusPaciente'|'tipoAcompanhamento'> { unidade?: string; classificacaoRisco: string; }
