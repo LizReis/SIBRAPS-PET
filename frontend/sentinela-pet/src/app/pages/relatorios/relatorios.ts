@@ -1,6 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { HttpResponse } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+
+import { finalize } from 'rxjs';
+import { GrupoTerapeuticoPayload, GrupoTerapeuticoService } from '../../services/grupo-terapeutico-service';
+import { ProfissionalService, UsuarioReferencia } from '../../services/profissional/profissional-service';
+import { FiltroPeriodo, FiltrosBuscaAtiva, FiltrosFrequenciaGrupos, RelatorioService } from '../../services/relatorio-service';
 
 type TipoRelatorio = 'buscaAtiva' | 'frequenciaGrupo';
 type FormatoExportacao = 'PDF' | 'Excel' | 'CSV';
@@ -24,6 +30,22 @@ interface SessaoFrequenciaMock {
   ausentes: string[];
 }
 
+export function converterPeriodo(periodo: string, hoje = new Date()): FiltroPeriodo {
+  if (periodo === 'Todo o período') return {};
+  const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  if (periodo === 'Últimos 30 dias') inicio.setDate(inicio.getDate() - 30);
+  else if (periodo === 'Últimos 3 meses') inicio.setMonth(inicio.getMonth() - 3);
+  else if (periodo === 'Últimos 6 meses') inicio.setMonth(inicio.getMonth() - 6);
+  else if (periodo === 'Últimos 12 meses') inicio.setMonth(inicio.getMonth() - 12);
+  else return {};
+  return { dataInicio: formatarDataLocal(inicio), dataFim: formatarDataLocal(hoje) };
+}
+
+function formatarDataLocal(data: Date): string {
+  const doisDigitos = (valor: number) => valor.toString().padStart(2, '0');
+  return `${data.getFullYear()}-${doisDigitos(data.getMonth() + 1)}-${doisDigitos(data.getDate())}`;
+}
+
 @Component({
   selector: 'app-relatorios',
   standalone: true,
@@ -31,14 +53,35 @@ interface SessaoFrequenciaMock {
   templateUrl: './relatorios.html',
   styleUrl: './relatorios.css',
 })
-export class Relatorios {
+export class Relatorios implements OnInit {
   abaAtiva: TipoRelatorio = 'buscaAtiva';
   formatoSelecionado: FormatoExportacao = 'CSV';
   periodoBusca = 'Últimos 6 meses';
-  profissionalSelecionado = 'Todos os profissionais';
+  profissionalSelecionado = '';
   tipoAcompanhamentoSelecionado = 'Individual e grupo';
-  grupoSelecionado = 'Todos os grupos';
+  grupoSelecionado: number | null = null;
   periodoFrequencia = 'Últimos 6 meses';
+  exportandoPdf = false;
+  erroExportacao = '';
+  profissionais: UsuarioReferencia[] = [];
+  grupos: GrupoTerapeuticoPayload[] = [];
+
+  constructor(
+    private readonly relatorioService: RelatorioService,
+    private readonly profissionalService: ProfissionalService,
+    private readonly grupoService: GrupoTerapeuticoService,
+  ) {}
+
+  ngOnInit(): void {
+    this.profissionalService.listarElegiveisParaReferencia().subscribe({
+      next: (profissionais) => this.profissionais = profissionais,
+      error: () => this.profissionais = [],
+    });
+    this.grupoService.listarGrupos().subscribe({
+      next: (grupos) => this.grupos = grupos,
+      error: () => this.grupos = [],
+    });
+  }
 
   readonly periodos = [
     'Últimos 30 dias',
@@ -48,18 +91,7 @@ export class Relatorios {
     'Todo o período',
   ];
   readonly tiposAcompanhamento = ['Individual e grupo', 'Individual', 'Grupo terapêutico'];
-  readonly profissionais = [
-    'Todos os profissionais',
-    'Dra. Marina Costa',
-    'João Ferreira',
-    'Ana Oliveira',
-  ];
-  readonly grupos = [
-    'Todos os grupos',
-    'Grupo de Convivência',
-    'Grupo de Cuidado em Álcool e Drogas',
-    'Grupo de Familiares',
-  ];
+  
 
   // TODO RF21: substituir dados mockados por dados reais da API de relatórios.
   readonly pacientesBuscaAtiva: PacienteBuscaAtivaMock[] = [
@@ -87,8 +119,8 @@ export class Relatorios {
 
   get pacientesFiltrados(): PacienteBuscaAtivaMock[] {
     return this.pacientesBuscaAtiva.filter((paciente) => {
-      const profissionalCorresponde = this.profissionalSelecionado === 'Todos os profissionais'
-        || paciente.profissional === this.profissionalSelecionado;
+      const profissional = this.profissionais.find((item) => item.idPublico === this.profissionalSelecionado);
+      const profissionalCorresponde = !profissional || paciente.profissional === profissional.nome;
       const tipoCorresponde = this.tipoAcompanhamentoSelecionado === 'Individual e grupo'
         || paciente.tipoAcompanhamento === this.tipoAcompanhamentoSelecionado;
       return profissionalCorresponde && tipoCorresponde;
@@ -97,7 +129,7 @@ export class Relatorios {
 
   get sessoesFiltradas(): SessaoFrequenciaMock[] {
     return this.sessoesFrequencia.filter((sessao) =>
-      this.grupoSelecionado === 'Todos os grupos' || sessao.grupo === this.grupoSelecionado,
+      this.grupoSelecionado === null || sessao.grupo === this.grupos.find((grupo) => grupo.id === this.grupoSelecionado)?.tema,
     );
   }
 
@@ -114,6 +146,62 @@ export class Relatorios {
   selecionarFormato(formato: FormatoExportacao): void {
     // TODO RF21: integrar geração real de PDF, Excel e CSV na próxima etapa.
     this.formatoSelecionado = formato;
+    if (formato === 'PDF') this.exportarPdf();
+  }
+
+  exportarPdf(): void {
+    if (this.exportandoPdf) return;
+    this.exportandoPdf = true;
+    this.erroExportacao = '';
+    const requisicao = this.abaAtiva === 'buscaAtiva'
+      ? this.relatorioService.baixarBuscaAtivaPdf(this.filtrosBuscaAtiva())
+      : this.relatorioService.baixarFrequenciaGruposPdf(this.filtrosFrequencia());
+    const prefixo = this.abaAtiva === 'buscaAtiva' ? 'relatorio-busca-ativa' : 'relatorio-frequencia-grupos';
+    requisicao.pipe(finalize(() => this.exportandoPdf = false)).subscribe({
+      next: (resposta) => this.baixarResposta(resposta, `${prefixo}-${formatarDataLocal(new Date())}.pdf`),
+      error: () => this.erroExportacao = 'Não foi possível gerar o relatório em PDF. Tente novamente.',
+    });
+  }
+
+  filtrosBuscaAtiva(): FiltrosBuscaAtiva {
+    const filtros: FiltrosBuscaAtiva = { ...converterPeriodo(this.periodoBusca) };
+    if (this.profissionalSelecionado) filtros.profissionalId = this.profissionalSelecionado;
+    if (this.tipoAcompanhamentoSelecionado === 'Individual') filtros.tipoAcompanhamento = 'INDIVIDUAL';
+    if (this.tipoAcompanhamentoSelecionado === 'Grupo terapêutico') filtros.tipoAcompanhamento = 'GRUPO_TERAPEUTICO';
+    return filtros;
+  }
+
+  filtrosFrequencia(): FiltrosFrequenciaGrupos {
+    const filtros: FiltrosFrequenciaGrupos = { ...converterPeriodo(this.periodoFrequencia) };
+    if (this.grupoSelecionado !== null) filtros.grupoId = this.grupoSelecionado;
+    return filtros;
+  }
+
+  private baixarResposta(resposta: HttpResponse<Blob>, fallback: string): void {
+    const blob = resposta.body;
+    const contentType = resposta.headers.get('Content-Type') || blob?.type;
+    if (!blob || !contentType?.toLowerCase().includes('application/pdf')) {
+      this.erroExportacao = 'Não foi possível gerar o relatório em PDF. Tente novamente.';
+      return;
+    }
+    const nome = this.extrairNomeArquivo(resposta.headers.get('Content-Disposition')) || fallback;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  private extrairNomeArquivo(contentDisposition: string | null): string | null {
+    if (!contentDisposition) return null;
+    const utf8 = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const simples = contentDisposition.match(/filename\s*=\s*"?([^";]+)"?/i);
+    const valor = utf8?.[1] ?? simples?.[1];
+    if (!valor) return null;
+    try { return decodeURIComponent(valor.trim()); } catch { return valor.trim(); }
   }
 
   calcularTaxa(sessao: SessaoFrequenciaMock): number {

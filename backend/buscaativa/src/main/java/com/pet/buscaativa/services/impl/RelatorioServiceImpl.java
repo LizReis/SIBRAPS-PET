@@ -48,6 +48,7 @@ public class RelatorioServiceImpl implements RelatorioService {
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
     private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
     private static final String NAO_INFORMADO = "Não informado";
+    static final String CAMINHO_LOGO = "reports/images/logo-sibraps.png";
 
     private final PacienteRepository pacienteRepository;
     private final SessaoGrupoRepository sessaoGrupoRepository;
@@ -148,8 +149,16 @@ public class RelatorioServiceImpl implements RelatorioService {
         Map<String, Object> parametros = new HashMap<>();
         parametros.put("PERIODO", periodo(inicio, fim));
         parametros.put("GERADO_EM", LocalDateTime.now(clock).format(DATA_HORA));
-        parametros.put("LOGO", getClass().getResourceAsStream("/reports/images/logo-sibraps.png"));
+        parametros.put("LOGO", carregarLogo());
         return parametros;
+    }
+
+    private InputStream carregarLogo() {
+        try {
+            return new ClassPathResource(CAMINHO_LOGO).getInputStream();
+        } catch (Exception e) {
+            throw new RelatorioException("Não foi possível carregar o símbolo SIBRAPS.", e);
+        }
     }
 
     private byte[] gerarPdf(String template, Map<String, Object> parametros, List<?> dados) {
