@@ -50,6 +50,25 @@ public interface PacienteRepository extends JpaRepository<Paciente, Long>, JpaSp
 
     List<Paciente> findByStatusPacienteAndClassificacaoRisco(StatusPaciente statusPaciente, ClassificacaoRisco classificacaoRisco);
 
+    @Query("""
+            select p from Paciente p
+            left join fetch p.profissionalReferencia pr
+            where p.statusPaciente = :status
+              and p.classificacaoRisco = :classificacao
+              and (:dataInicio is null or p.dataUltimaPresenca >= :dataInicio)
+              and (:dataFim is null or p.dataUltimaPresenca <= :dataFim)
+              and (:profissionalId is null or pr.idPublico = :profissionalId)
+              and (:tipoAcompanhamento is null or p.tipoAcompanhamento = :tipoAcompanhamento)
+            order by p.nome
+            """)
+    List<Paciente> findParaRelatorioBuscaAtiva(
+            @Param("status") StatusPaciente status,
+            @Param("classificacao") ClassificacaoRisco classificacao,
+            @Param("dataInicio") LocalDate dataInicio,
+            @Param("dataFim") LocalDate dataFim,
+            @Param("profissionalId") UUID profissionalId,
+            @Param("tipoAcompanhamento") com.pet.buscaativa.entities.enums.TipoAcompanhamento tipoAcompanhamento);
+
     long countByStatusPaciente(StatusPaciente statusPaciente);
 
     long countByStatusPacienteAndClassificacaoRiscoIn(StatusPaciente statusPaciente, List<ClassificacaoRisco> classificacoes);

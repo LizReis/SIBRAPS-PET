@@ -86,4 +86,12 @@ public class ResourceExceptionHandler {
         StandardError sterr = new StandardError(Instant.now(), status.value(), error, e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(status).body(sterr);
     }
+
+    @ExceptionHandler(RelatorioException.class)
+    public ResponseEntity<StandardError> relatorio(RelatorioException e, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        StandardError error = new StandardError(Instant.now(), status.value(), "Erro ao gerar relatório.",
+                "Não foi possível gerar o PDF solicitado.", request.getRequestURI());
+        return ResponseEntity.status(status).body(error);
+    }
 }

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport name="relatorio_busca_ativa" language="java" pageWidth="595" pageHeight="842" columnWidth="547" leftMargin="24" rightMargin="24" topMargin="18" bottomMargin="18" whenNoDataType="AllSectionsNoDetail" uuid="9df39c52-78a8-42cc-b656-e2f7ba9fd101">
+  <parameter name="PERIODO" class="java.lang.String"/>
+  <parameter name="PROFISSIONAL" class="java.lang.String"/>
+  <parameter name="TIPO_ACOMPANHAMENTO" class="java.lang.String"/>
+  <parameter name="TOTAL" class="java.lang.Integer"/>
+  <parameter name="GERADO_EM" class="java.lang.String"/>
+  <parameter name="LOGO" class="java.io.InputStream"/>
+  <field name="nomeCompleto" class="java.lang.String"/>
+  <field name="cnsCpf" class="java.lang.String"/>
+  <field name="dataUltimoAtendimento" class="java.time.LocalDate"/>
+  <field name="faltasConsecutivas" class="java.lang.Integer"/>
+  <field name="tipoAcompanhamento" class="java.lang.String"/>
+  <field name="profissionalReferencia" class="java.lang.String"/>
+  <field name="telefone" class="java.lang.String"/>
+  <title height="268" splitType="Stretch">
+    <element kind="rectangle" x="0" y="0" width="547" height="72" backcolor="#073B66" mode="Opaque" radius="0"/>
+    <element kind="image" x="14" y="10" width="58" height="48" scaleImage="RetainShape"><expression><![CDATA[$P{LOGO}]]></expression></element>
+    <element kind="staticText" x="75" y="13" width="150" height="25" forecolor="#FFFFFF" fontName="Serif" fontSize="20" bold="true"><text><![CDATA[SIBRAPS]]></text></element>
+    <element kind="staticText" x="75" y="39" width="250" height="16" forecolor="#D9EEFA" fontSize="8"><text><![CDATA[Sistema Integrado de Busca Ativa da RAPS]]></text></element>
+    <element kind="line" x="392" y="13" width="1" height="45" forecolor="#B9E6F7"/>
+    <element kind="staticText" x="410" y="20" width="120" height="36" forecolor="#FFFFFF" fontSize="10"><text><![CDATA[Informação que
+fortalece o cuidado]]></text></element>
+    <element kind="rectangle" x="0" y="82" width="547" height="64" backcolor="#EFF8FD" mode="Opaque" radius="8"/>
+    <element kind="staticText" x="14" y="94" width="400" height="25" forecolor="#07317A" fontName="Serif" fontSize="18" bold="true"><text><![CDATA[Relatório de Busca Ativa]]></text></element>
+    <element kind="staticText" x="14" y="120" width="410" height="16" forecolor="#4169B1" fontSize="9"><text><![CDATA[Acompanhamento de pacientes em situação de vulnerabilidade]]></text></element>
+    <element kind="line" x="419" y="126" width="18" height="1" forecolor="#15A968"/>
+    <element kind="rectangle" x="0" y="156" width="177" height="48" backcolor="#F0F8FC" mode="Opaque" radius="7"/>
+    <element kind="staticText" x="12" y="163" width="155" height="12" forecolor="#2860A8" fontSize="7" bold="true"><text><![CDATA[Período]]></text></element>
+    <element kind="textField" x="12" y="177" width="155" height="20" forecolor="#082C73" fontSize="9" bold="true"><expression><![CDATA[$P{PERIODO}]]></expression></element>
+    <element kind="rectangle" x="185" y="156" width="177" height="48" backcolor="#F0F8FC" mode="Opaque" radius="7"/>
+    <element kind="staticText" x="197" y="163" width="153" height="12" forecolor="#2860A8" fontSize="7" bold="true"><text><![CDATA[Profissional]]></text></element>
+    <element kind="textField" x="197" y="177" width="153" height="20" textAdjust="ScaleFont" forecolor="#082C73" fontSize="9" bold="true"><expression><![CDATA[$P{PROFISSIONAL}]]></expression></element>
+    <element kind="rectangle" x="370" y="156" width="177" height="48" backcolor="#F0F8FC" mode="Opaque" radius="7"/>
+    <element kind="staticText" x="382" y="163" width="153" height="12" forecolor="#2860A8" fontSize="7" bold="true"><text><![CDATA[Tipo de acompanhamento]]></text></element>
+    <element kind="textField" x="382" y="177" width="153" height="20" textAdjust="ScaleFont" forecolor="#082C73" fontSize="9" bold="true"><expression><![CDATA[$P{TIPO_ACOMPANHAMENTO}]]></expression></element>
+    <element kind="rectangle" x="0" y="214" width="547" height="46" backcolor="#FDEBED" mode="Opaque" radius="7"/>
+    <element kind="staticText" x="16" y="222" width="320" height="16" forecolor="#E41E3A" fontSize="10" bold="true"><text><![CDATA[Pacientes em situação de busca ativa]]></text></element>
+    <element kind="staticText" x="16" y="239" width="330" height="13" forecolor="#B8475C" fontSize="8"><text><![CDATA[Somente pacientes com classificação vermelha.]]></text></element>
+    <element kind="line" x="430" y="220" width="1" height="33" forecolor="#F2556A"/>
+    <element kind="textField" x="445" y="220" width="88" height="22" hTextAlign="Center" forecolor="#D71235" fontSize="18" bold="true"><expression><![CDATA[$P{TOTAL}]]></expression></element>
+    <element kind="staticText" x="445" y="242" width="88" height="12" hTextAlign="Center" forecolor="#D71235" fontSize="8" bold="true"><text><![CDATA[paciente(s)]]></text></element>
+  </title>
+  <columnHeader height="42">
+    <element kind="rectangle" x="0" y="0" width="547" height="42" backcolor="#E4F3FC" mode="Opaque" radius="4"/>
+    <element kind="staticText" x="5" y="5" width="92" height="32" vTextAlign="Middle" forecolor="#174A95" fontSize="7" bold="true"><text><![CDATA[Nome completo]]></text></element>
+    <element kind="staticText" x="97" y="5" width="70" height="32" vTextAlign="Middle" forecolor="#174A95" fontSize="7" bold="true"><text><![CDATA[CNS/CPF]]></text></element>
+    <element kind="staticText" x="167" y="5" width="70" height="32" vTextAlign="Middle" forecolor="#174A95" fontSize="7" bold="true"><text><![CDATA[Último atendimento]]></text></element>
+    <element kind="staticText" x="237" y="5" width="58" height="32" hTextAlign="Center" vTextAlign="Middle" forecolor="#174A95" fontSize="7" bold="true"><text><![CDATA[Faltas consecutivas]]></text></element>
+    <element kind="staticText" x="295" y="5" width="76" height="32" vTextAlign="Middle" forecolor="#174A95" fontSize="7" bold="true"><text><![CDATA[Tipo de acompanhamento]]></text></element>
+    <element kind="staticText" x="371" y="5" width="100" height="32" vTextAlign="Middle" forecolor="#174A95" fontSize="7" bold="true"><text><![CDATA[Profissional de referência]]></text></element>
+    <element kind="staticText" x="471" y="5" width="76" height="32" vTextAlign="Middle" forecolor="#174A95" fontSize="7" bold="true"><text><![CDATA[Contato telefônico]]></text></element>
+  </columnHeader>
+  <detail>
+    <band height="36" splitType="Stretch">
+      <element kind="line" x="0" y="35" width="547" height="1" forecolor="#D6E6F1"/>
+      <element kind="textField" x="5" y="4" width="90" height="27" textAdjust="ScaleFont" vTextAlign="Middle" forecolor="#153D80" fontSize="7.5"><expression><![CDATA[$F{nomeCompleto}]]></expression></element>
+      <element kind="textField" x="97" y="4" width="68" height="27" textAdjust="ScaleFont" vTextAlign="Middle" forecolor="#153D80" fontSize="7"><expression><![CDATA[$F{cnsCpf}]]></expression></element>
+      <element kind="textField" x="167" y="4" width="68" height="27" hTextAlign="Center" vTextAlign="Middle" forecolor="#153D80" fontSize="7"><expression><![CDATA[$F{dataUltimoAtendimento} == null ? "Não informado" : $F{dataUltimoAtendimento}.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))]]></expression></element>
+      <element kind="rectangle" x="251" y="7" width="28" height="22" backcolor="#FDE5E9" mode="Opaque" radius="11"/>
+      <element kind="textField" x="251" y="7" width="28" height="22" hTextAlign="Center" vTextAlign="Middle" forecolor="#E11D36" fontSize="8" bold="true"><expression><![CDATA[$F{faltasConsecutivas}]]></expression></element>
+      <element kind="textField" x="297" y="4" width="72" height="27" textAdjust="ScaleFont" vTextAlign="Middle" forecolor="#153D80" fontSize="7"><expression><![CDATA[$F{tipoAcompanhamento}]]></expression></element>
+      <element kind="textField" x="373" y="4" width="96" height="27" textAdjust="ScaleFont" vTextAlign="Middle" forecolor="#153D80" fontSize="7"><expression><![CDATA[$F{profissionalReferencia}]]></expression></element>
+      <element kind="textField" x="473" y="4" width="72" height="27" textAdjust="ScaleFont" vTextAlign="Middle" forecolor="#153D80" fontSize="7"><expression><![CDATA[$F{telefone}]]></expression></element>
+    </band>
+  </detail>
+  <summary height="88">
+    <element kind="rectangle" x="0" y="16" width="547" height="64" backcolor="#EFF8FD" mode="Opaque" radius="7"/>
+    <element kind="staticText" x="16" y="25" width="100" height="16" forecolor="#08358A" fontSize="10" bold="true"><text><![CDATA[Observações]]></text></element>
+    <element kind="staticText" x="16" y="44" width="510" height="30" forecolor="#4169A6" fontSize="8"><text><![CDATA[• Lista limitada a pacientes classificados com sinal de alerta (vermelho).
+• Recomenda-se contato ativo e registro das tentativas de abordagem no sistema.]]></text></element>
+  </summary>
+  <pageFooter height="42">
+    <element kind="line" x="0" y="2" width="547" height="1" forecolor="#3C8CD8"/>
+    <element kind="staticText" x="0" y="12" width="255" height="13" forecolor="#123F8A" fontSize="7" bold="true"><text><![CDATA[SIBRAPS  |  Sistema Integrado de Busca Ativa da RAPS]]></text></element>
+    <element kind="textField" x="430" y="9" width="75" height="13" hTextAlign="Right" forecolor="#315DA0" fontSize="7"><expression><![CDATA["Página " + $V{PAGE_NUMBER} + " de"]]></expression></element>
+    <element kind="textField" x="507" y="9" width="40" height="13" evaluationTime="Report" forecolor="#315DA0" fontSize="7"><expression><![CDATA[$V{PAGE_NUMBER}]]></expression></element>
+    <element kind="textField" x="340" y="25" width="207" height="12" hTextAlign="Right" forecolor="#6684B8" fontSize="7"><expression><![CDATA["Gerado em " + $P{GERADO_EM}]]></expression></element>
+  </pageFooter>
+</jasperReport>

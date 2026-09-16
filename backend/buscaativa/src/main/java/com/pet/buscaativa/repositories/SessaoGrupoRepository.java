@@ -28,12 +28,23 @@ public interface SessaoGrupoRepository extends JpaRepository<SessaoGrupo, Long> 
 
     Optional<SessaoGrupo> findFirstByGrupoOrderByDataSessaoDesc(GrupoTerapeutico grupo);
 
-     @Query("SELECT DISTINCT s FROM SessaoGrupo s JOIN FETCH s.grupo g JOIN FETCH g.coordenador " +
+    @Query("SELECT DISTINCT s FROM SessaoGrupo s JOIN FETCH s.grupo g JOIN FETCH g.coordenador " +
             "LEFT JOIN FETCH s.participantes p LEFT JOIN FETCH p.paciente " +
             "WHERE s.dataSessao BETWEEN :dataInicio AND :dataFim " +
             "ORDER BY s.dataSessao, s.horario")
     List<SessaoGrupo> findByDataSessaoBetween(@Param("dataInicio") LocalDate dataInicio,
                                               @Param("dataFim") LocalDate dataFim);
+
+
+    @Query("SELECT DISTINCT s FROM SessaoGrupo s JOIN FETCH s.grupo g JOIN FETCH g.coordenador " +
+            "LEFT JOIN FETCH s.participantes p LEFT JOIN FETCH p.paciente " +
+            "WHERE s.dataSessao BETWEEN :dataInicio AND :dataFim " +
+            "AND s.status = :status AND (:grupoId IS NULL OR g.id = :grupoId) " +
+            "ORDER BY s.dataSessao, s.horario")
+    List<SessaoGrupo> findRealizadasParaRelatorio(@Param("dataInicio") LocalDate dataInicio,
+                                                   @Param("dataFim") LocalDate dataFim,
+                                                   @Param("status") StatusSessaoGrupo status,
+                                                   @Param("grupoId") Long grupoId);
 
     @Query("SELECT COUNT(p) > 0 FROM SessaoGrupoParticipante p " +
             "WHERE p.paciente = :paciente AND p.sessaoGrupo.dataSessao = :data " +
