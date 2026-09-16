@@ -1,0 +1,415 @@
+@page {
+    size: A4 portrait;
+    margin: 13mm 11mm 19mm 11mm;
+
+    @bottom-left {
+        content: element(report-footer);
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    color: #123a73;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8.2pt;
+}
+
+.header {
+    width: 100%;
+    height: 27mm;
+    border-collapse: collapse;
+    background: #0b4774;
+    color: #fff;
+}
+
+.header td {
+    padding: 0;
+    vertical-align: middle;
+}
+
+.brand {
+    width: 68%;
+    padding-left: 8mm !important;
+}
+
+.logo {
+    width: 18mm;
+    height: 18mm;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 4mm;
+}
+
+.brand-copy {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.brand-name {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 20pt;
+    font-weight: bold;
+    letter-spacing: 1.5pt;
+}
+
+.brand-subtitle {
+    color: #d8edf7;
+    font-size: 7.2pt;
+    margin-top: 1mm;
+}
+
+.motto {
+    border-left: 0.3mm solid #a4d5e9;
+    padding-left: 7mm !important;
+    font-size: 9pt;
+    line-height: 1.35;
+}
+
+.title-box {
+    background: #f0f8fc;
+    border-radius: 3mm;
+    margin-top: 4mm;
+    padding: 7mm 6mm;
+}
+
+h1 {
+    color: #082d70;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 18pt;
+    line-height: 1;
+    margin: 0 0 2mm;
+}
+
+.subtitle {
+    color: #4f73b4;
+    font-size: 9pt;
+}
+
+.accent {
+    display: inline-block;
+    border-top: 0.5mm solid #13a66c;
+    width: 7mm;
+    margin-left: 4mm;
+    vertical-align: middle;
+}
+
+.cards {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 2mm 0;
+    margin: 4mm -2mm 0;
+    table-layout: fixed;
+}
+
+.card {
+    background: #f0f8fc;
+    border-radius: 2.5mm;
+    height: 20mm;
+    padding: 3mm !important;
+    vertical-align: middle;
+}
+
+.icon-circle {
+    display: inline-block;
+    width: 11mm;
+    height: 11mm;
+    border-radius: 50%;
+    background: #d8f5ee;
+    text-align: center;
+    vertical-align: middle;
+    margin-right: 2.5mm;
+}
+
+.icon-circle.blue {
+    background: #d9edfc;
+}
+
+.icon-circle img {
+    width: 6mm;
+    height: 6mm;
+    margin-top: 2.5mm;
+}
+
+.card-copy {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 75%;
+}
+
+.card-label {
+    color: #3768a9;
+    font-size: 6.7pt;
+    margin-bottom: 1mm;
+}
+
+.card-value {
+    color: #092e70;
+    font-weight: bold;
+    font-size: 8.7pt;
+    line-height: 1.25;
+}
+
+.card-detail {
+    color: #5980bc;
+    font-size: 6.5pt;
+    margin-top: 0.5mm;
+}
+
+.alert {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fdecee;
+    border-radius: 2.5mm;
+    margin-top: 4mm;
+}
+
+.alert td {
+    padding: 3mm;
+    vertical-align: middle;
+}
+
+.alert-icon {
+    width: 16mm;
+    text-align: center;
+}
+
+.alert-icon img {
+    width: 12mm;
+    height: 12mm;
+}
+
+.alert-title {
+    color: #dc2137;
+    font-size: 10.5pt;
+    font-weight: bold;
+    margin-bottom: 1mm;
+}
+
+.alert-text {
+    color: #5673a6;
+    font-size: 8pt;
+}
+
+.alert-total {
+    width: 28mm;
+    border-left: 0.3mm solid #ef727d;
+    color: #ce1831;
+    text-align: center;
+}
+
+.alert-number {
+    font-size: 19pt;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.alert-unit {
+    font-size: 7.5pt;
+    font-weight: bold;
+    margin-top: 1mm;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-top: 4mm;
+    border: 0.25mm solid #c9e2f1;
+}
+
+.data-table thead {
+    display: table-header-group;
+}
+
+.data-table tr {
+    page-break-inside: avoid;
+}
+
+.data-table th {
+    background: #e9f5fc;
+    color: #285da3;
+    text-align: left;
+    font-size: 6.4pt;
+    line-height: 1.25;
+    padding: 3mm 2mm;
+    border-right: 0.2mm solid #d2e5ef;
+}
+
+.data-table td {
+    color: #143d79;
+    padding: 3mm 2mm;
+    border-top: 0.2mm solid #d7e7f0;
+    border-right: 0.2mm solid #d7e7f0;
+    vertical-align: middle;
+    overflow-wrap: break-word;
+}
+
+.data-table td:last-child,
+.data-table th:last-child {
+    border-right: 0;
+}
+
+.center {
+    text-align: center !important;
+}
+
+.date {
+    white-space: nowrap;
+}
+
+.badge-absence {
+    display: inline-block;
+    min-width: 8mm;
+    padding: 1.7mm 2mm;
+    border-radius: 5mm;
+    background: #fde7ea;
+    color: #e51e38;
+    text-align: center;
+    font-weight: bold;
+}
+
+.metric {
+    font-size: 10pt;
+    font-weight: bold;
+    line-height: 1.1;
+}
+
+.present {
+    color: #079763;
+}
+
+.absent {
+    color: #ef1734;
+}
+
+.names {
+    color: #617ca8;
+    font-size: 5.8pt;
+    line-height: 1.25;
+    margin-top: 1mm;
+}
+
+.progress-wrap {
+    white-space: nowrap;
+}
+
+.progress {
+    display: inline-block;
+    width: 21mm;
+    height: 3.5mm;
+    border-radius: 2mm;
+    background: #eaf2f6;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 2mm;
+    background: #0aa06b;
+}
+
+.progress-fill.low {
+    background: #f69a00;
+}
+
+.rate {
+    display: inline-block;
+    width: 13mm;
+    margin-left: 2mm;
+    color: #123b7a;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.observations {
+    width: 100%;
+    border-collapse: collapse;
+    background: #edf8fd;
+    border-radius: 2.5mm;
+    margin-top: 5mm;
+    page-break-inside: avoid;
+}
+
+.observations td {
+    padding: 4mm;
+    vertical-align: top;
+}
+
+.observations .obs-icon {
+    width: 16mm;
+    text-align: center;
+}
+
+.observations img {
+    width: 11mm;
+    height: 11mm;
+}
+
+.obs-title {
+    color: #0a3175;
+    font-size: 10pt;
+    font-weight: bold;
+    margin-bottom: 2mm;
+}
+
+.obs-line {
+    color: #4d70aa;
+    line-height: 1.6;
+}
+
+.obs-line:before {
+    content: '•';
+    color: #0a3175;
+    font-weight: bold;
+    padding-right: 2mm;
+}
+
+.empty {
+    text-align: center;
+    color: #6b83a7;
+    font-style: italic;
+    padding: 8mm !important;
+}
+
+.report-footer {
+    position: running(report-footer);
+    width: 188mm;
+    border-top: 0.3mm solid #1974bd;
+    padding-top: 2mm;
+    color: #5278b0;
+    font-size: 6.2pt;
+}
+
+.footer-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.footer-brand {
+    color: #073278;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: bold;
+}
+
+.footer-divider {
+    border-left: 0.3mm solid #70a8d0;
+    margin: 0 2mm;
+}
+
+.footer-right {
+    text-align: right;
+    line-height: 1.6;
+}
+
+.page-number:before {
+    content: counter(page);
+}
+
+.page-count:before {
+    content: counter(pages);
+}

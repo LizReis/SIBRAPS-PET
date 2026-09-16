@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <style th:utext="${css}"></style>
+    <title>Relatório de Busca Ativa</title>
+</head>
+
+<body>
+    <table class="header">
+        <tr>
+            <td class="brand"><img class="logo" th:src="${logo}" alt="SIBRAPS" />
+                <div class="brand-copy">
+                    <div class="brand-name">SIBRAPS</div>
+                    <div class="brand-subtitle">Sistema Integrado de Busca Ativa da RAPS</div>
+                </div>
+            </td>
+            <td class="motto">Informação que<br />fortalece o cuidado</td>
+        </tr>
+    </table>
+    <div class="title-box">
+        <h1>Relatório de Busca Ativa</h1><span class="subtitle">Acompanhamento de pacientes em situação de
+            vulnerabilidade</span><span class="accent"></span>
+    </div>
+    <table class="cards">
+        <tr>
+            <td class="card"><span class="icon-circle"><img th:src="${iconeCalendario}" alt="" /></span>
+                <div class="card-copy">
+                    <div class="card-label">Período</div>
+                    <div class="card-value" th:text="${PERIODO}">Todo o período</div>
+                </div>
+            </td>
+            <td class="card"><span class="icon-circle"><img th:src="${iconeUsuario}" alt="" /></span>
+                <div class="card-copy">
+                    <div class="card-label">Profissional</div>
+                    <div class="card-value" th:text="${PROFISSIONAL}">Todos os profissionais</div>
+                </div>
+            </td>
+            <td class="card"><span class="icon-circle"><img th:src="${iconeGrupo}" alt="" /></span>
+                <div class="card-copy">
+                    <div class="card-label">Tipo de acompanhamento</div>
+                    <div class="card-value" th:text="${TIPO_ACOMPANHAMENTO}">Individual e grupo</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <table class="alert">
+        <tr>
+            <td class="alert-icon"><img th:src="${iconeAlerta}" alt="Alerta" /></td>
+            <td>
+                <div class="alert-title">Pacientes em situação de busca ativa</div>
+                <div class="alert-text">Somente pacientes com classificação vermelha.</div>
+            </td>
+            <td class="alert-total">
+                <div class="alert-number" th:text="${TOTAL}">0</div>
+                <div class="alert-unit">paciente(s)</div>
+            </td>
+        </tr>
+    </table>
+    <table class="data-table">
+        <colgroup>
+            <col style="width:17%" />
+            <col style="width:13%" />
+            <col style="width:12%" />
+            <col style="width:10%" />
+            <col style="width:15%" />
+            <col style="width:19%" />
+            <col style="width:14%" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th>Nome completo</th>
+                <th>CNS/CPF</th>
+                <th>Último atendimento</th>
+                <th class="center">Faltas consecutivas</th>
+                <th>Tipo de acompanhamento</th>
+                <th>Profissional de referência</th>
+                <th>Contato telefônico</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="paciente : ${pacientes}">
+                <td th:text="${paciente.nomeCompleto}"></td>
+                <td th:text="${paciente.cnsCpf}"></td>
+                <td class="date"
+                    th:text="${paciente.dataUltimoAtendimento == null ? 'Não informado' : #temporals.format(paciente.dataUltimoAtendimento, 'dd/MM/yyyy')}">
+                </td>
+                <td class="center"><span class="badge-absence"
+                        th:text="${paciente.faltasConsecutivas == null ? 0 : paciente.faltasConsecutivas}"></span></td>
+                <td th:text="${paciente.tipoAcompanhamento}"></td>
+                <td th:text="${paciente.profissionalReferencia}"></td>
+                <td th:text="${paciente.telefone}"></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(pacientes)}">
+                <td colspan="7" class="empty">Nenhum paciente encontrado para os filtros selecionados.</td>
+            </tr>
+        </tbody>
+    </table>
+    <table class="observations">
+        <tr>
+            <td class="obs-icon"><img th:src="${iconeInfo}" alt="Informações" /></td>
+            <td>
+                <div class="obs-title">Observações</div>
+                <div class="obs-line">Lista limitada a pacientes classificados com sinal de alerta (vermelho).</div>
+                <div class="obs-line">Recomenda-se contato ativo e registro das tentativas de abordagem no sistema.
+                </div>
+                <div class="obs-line">Em caso de não localização, seguir o protocolo da equipe de referência.</div>
+            </td>
+        </tr>
+    </table>
+    <div class="report-footer">
+        <table class="footer-table">
+            <tr>
+                <td><span class="footer-brand">SIBRAPS</span><span class="footer-divider"></span>Sistema Integrado de
+                    Busca Ativa da RAPS</td>
+                <td class="footer-right">Página <span class="page-number"></span> de <span
+                        class="page-count"></span><br />Gerado em <span th:text="${GERADO_EM}"></span></td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>

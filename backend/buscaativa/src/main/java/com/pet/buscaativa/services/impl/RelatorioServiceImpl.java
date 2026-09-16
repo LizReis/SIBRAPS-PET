@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -31,15 +30,12 @@ import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.repositories.SessaoGrupoRepository;
 import com.pet.buscaativa.repositories.UsuarioRepository;
 import com.pet.buscaativa.services.RelatorioService;
+import com.pet.buscaativa.services.PdfRendererService;
 import com.pet.buscaativa.services.exceptions.RelatorioException;
 import com.pet.buscaativa.services.exceptions.ValidationException;
 
 import lombok.RequiredArgsConstructor;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
-import net.sf.jasperreports.engine.JasperCompileManager;
-import net.sf.jasperreports.engine.JasperExportManager;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperReport;
+
 
 @Service
 @RequiredArgsConstructor
@@ -48,13 +44,12 @@ public class RelatorioServiceImpl implements RelatorioService {
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm");
     private static final Locale PT_BR = Locale.forLanguageTag("pt-BR");
     private static final String NAO_INFORMADO = "Não informado";
-    static final String CAMINHO_LOGO = "reports/images/logo-sibraps.png";
 
     private final PacienteRepository pacienteRepository;
     private final SessaoGrupoRepository sessaoGrupoRepository;
     private final UsuarioRepository usuarioRepository;
     private final Clock clock;
-    private final Map<String, JasperReport> templates = new ConcurrentHashMap<>();
+    private final PdfRendererService pdfRendererService;
 
     @Override
     @Transactional(readOnly = true)
@@ -71,7 +66,8 @@ public class RelatorioServiceImpl implements RelatorioService {
                 .findByIdPublico(profissionalId).map(u -> u.getNome()).orElse(NAO_INFORMADO));
         parametros.put("TIPO_ACOMPANHAMENTO", descricaoFiltro(tipoAcompanhamento));
         parametros.put("TOTAL", dados.size());
-        return gerarPdf("relatorio-busca-ativa.jrxml", parametros, dados);
+        parametros.put("pacientes", dados);
+        return pdfRendererService.renderizar("relatorio-busca-ativa", parametros);
     }
 
     @Override
@@ -100,7 +96,8 @@ public class RelatorioServiceImpl implements RelatorioService {
         parametros.put("SESSOES", dados.size());
         parametros.put("PRESENCA_MEDIA", percentual(media));
         parametros.put("GRUPOS", dados.stream().map(FrequenciaGrupoRelatorioDTO::getGrupo).distinct().count());
-        return gerarPdf("relatorio-frequencia-grupos.jrxml", parametros, dados);
+        parametros.put("sessoes", dados);
+        return pdfRendererService.renderizar("relatorio-frequencia-grupos", parametros);
     }
 
     BuscaAtivaRelatorioDTO paraBuscaAtiva(Paciente paciente) {
@@ -117,11 +114,10 @@ public class RelatorioServiceImpl implements RelatorioService {
         List<String> presentes = nomes(sessao, StatusPresencaGrupo.PRESENTE);
         List<String> ausentes = nomes(sessao, StatusPresencaGrupo.FALTOU);
         BigDecimal taxa = calcularTaxa(presentes.size(), ausentes.size());
-        int blocos = taxa.divide(BigDecimal.TEN, 0, RoundingMode.HALF_UP).intValue();
-        String indicador = "█".repeat(Math.min(10, blocos)) + "░".repeat(Math.max(0, 10 - blocos));
+        
         return new FrequenciaGrupoRelatorioDTO(sessao.getDataSessao(), texto(sessao.getGrupo().getTema()),
                 texto(sessao.getGrupo().getCoordenador().getNome()), presentes.size(), ausentes.size(),
-                presentes, ausentes, taxa, percentual(taxa), indicador);
+                presentes, ausentes, taxa, percentual(taxa));
     }
 
     private int contarPresencas(SessaoGrupo sessao, StatusPresencaGrupo status) {
@@ -149,37 +145,10 @@ public class RelatorioServiceImpl implements RelatorioService {
         Map<String, Object> parametros = new HashMap<>();
         parametros.put("PERIODO", periodo(inicio, fim));
         parametros.put("GERADO_EM", LocalDateTime.now(clock).format(DATA_HORA));
-        parametros.put("LOGO", carregarLogo());
         return parametros;
     }
 
-    private InputStream carregarLogo() {
-        try {
-            return new ClassPathResource(CAMINHO_LOGO).getInputStream();
-        } catch (Exception e) {
-            throw new RelatorioException("Não foi possível carregar o símbolo SIBRAPS.", e);
-        }
-    }
-
-    private byte[] gerarPdf(String template, Map<String, Object> parametros, List<?> dados) {
-        try {
-            JasperReport report = templates.computeIfAbsent(template, this::compilar);
-            return JasperExportManager.exportReportToPdf(JasperFillManager.fillReport(
-                    report, parametros, new JRBeanCollectionDataSource(dados)));
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RelatorioException("Não foi possível gerar o relatório em PDF.", e);
-        }
-    }
-
-    private JasperReport compilar(String template) {
-        try (InputStream input = new ClassPathResource("reports/" + template).getInputStream()) {
-            return JasperCompileManager.compileReport(input);
-        } catch (Exception e) {
-            throw new RelatorioException("Não foi possível carregar o modelo do relatório.", e);
-        }
-    }
+    
 
     private void validarPeriodo(LocalDate inicio, LocalDate fim) {
         if (inicio != null && fim != null && inicio.isAfter(fim)) {

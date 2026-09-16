@@ -18,5 +18,4 @@ public class FrequenciaGrupoRelatorioDTO {
     private final List<String> nomesAusentes;
     private final BigDecimal taxaPresenca;
     private final String taxaPresencaFormatada;
-    private final String indicadorPresenca;
 }
