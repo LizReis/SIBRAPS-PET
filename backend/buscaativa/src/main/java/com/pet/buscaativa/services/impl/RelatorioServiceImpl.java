@@ -79,12 +79,21 @@ public class RelatorioServiceImpl implements RelatorioService {
         LocalDate fim = dataFim == null ? LocalDate.now(clock) : dataFim;
         LocalDate inicio = dataInicio == null ? fim.minusMonths(6) : dataInicio;
         validarPeriodo(inicio, fim);
-        List<FrequenciaGrupoRelatorioDTO> dados = sessaoGrupoRepository
-                .findRealizadasParaRelatorio(inicio, fim, StatusSessaoGrupo.REALIZADA, grupoId)
-                .stream().map(this::paraFrequencia).toList();
 
-        int presentes = dados.stream().mapToInt(FrequenciaGrupoRelatorioDTO::getQuantidadePresentes).sum();
-        int ausentes = dados.stream().mapToInt(FrequenciaGrupoRelatorioDTO::getQuantidadeAusentes).sum();
+        List<SessaoGrupo> sessoes = sessaoGrupoRepository
+                .findRealizadasParaRelatorio(inicio, fim, StatusSessaoGrupo.REALIZADA, grupoId);
+
+        List<FrequenciaGrupoRelatorioDTO> dados = sessoes.stream()
+                .map(this::paraFrequencia)
+                .toList();
+
+        int presentes = sessoes.stream()
+                .mapToInt(sessao -> contarPresencas(sessao, StatusPresencaGrupo.PRESENTE))
+                .sum();
+        int ausentes = sessoes.stream()
+                .mapToInt(sessao -> contarPresencas(sessao, StatusPresencaGrupo.FALTOU))
+                .sum();
+
         BigDecimal media = calcularTaxa(presentes, ausentes);
         Map<String, Object> parametros = parametrosComuns(inicio, fim);
         parametros.put("SESSOES", dados.size());
@@ -112,6 +121,12 @@ public class RelatorioServiceImpl implements RelatorioService {
         return new FrequenciaGrupoRelatorioDTO(sessao.getDataSessao(), texto(sessao.getGrupo().getTema()),
                 texto(sessao.getGrupo().getCoordenador().getNome()), presentes.size(), ausentes.size(),
                 presentes, ausentes, taxa, percentual(taxa), indicador);
+    }
+
+    private int contarPresencas(SessaoGrupo sessao, StatusPresencaGrupo status) {
+        return (int) sessao.getParticipantes().stream()
+                .filter(participante -> participante.getStatusPresenca() == status)
+                .count();
     }
 
     private List<String> nomes(SessaoGrupo sessao, StatusPresencaGrupo status) {
