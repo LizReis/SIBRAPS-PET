@@ -35,7 +35,7 @@ import com.pet.buscaativa.services.exceptions.RelatorioException;
 import com.pet.buscaativa.services.exceptions.ValidationException;
 
 import lombok.RequiredArgsConstructor;
-import net.sf.jasperreports.engine.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
