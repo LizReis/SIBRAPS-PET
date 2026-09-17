@@ -57,7 +57,7 @@
         </tr></thead>
         <tbody>
             <tr th:each="sessao : ${sessoes}">
-                <td class="date" th:text="${sessao.data}"></td>
+                <td class="date" th:text="${sessao.dataFormatada}"></td>
                 <td th:text="${sessao.grupo}"></td>
                 <td th:text="${sessao.coordenador}"></td>
                 <td class="center">
@@ -70,7 +70,7 @@
                 </td>
                 <td>
                     <div class="progress-wrap">
-                        <span class="progress"><span class="progress-fill" th:classappend="${sessao.taxaPresenca.doubleValue() < 75 ? ' low' : ''}" th:style="'width:' + ${sessao.taxaPresenca} + '%'" ></span></span>
+                        <span class="progress"><span class="progress-fill" th:classappend="${sessao.taxaPresenca.doubleValue() < 75 ? ' low' : ''}" th:style="${'width:' + sessao.taxaPresenca + '%'}"></span></span>
                         <span class="rate" th:text="${sessao.taxaPresencaFormatada}"></span>
                     </div>
                 </td>
