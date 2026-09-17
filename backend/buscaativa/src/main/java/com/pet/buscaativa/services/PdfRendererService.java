@@ -13,6 +13,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.openhtmltopdf.svgsupport.BatikSVGDrawer;
 import com.pet.buscaativa.services.exceptions.RelatorioException;
 
 @Service
@@ -34,24 +35,22 @@ public class PdfRendererService {
             contexto.setVariables(variaveis);
             contexto.setVariable("css", css);
 
-            // A logo é institucional e obrigatória; os demais ícones são decorativos
-            // e não devem impedir a geração do PDF caso algum asset esteja ausente.
-            contexto.setVariable("logo", imagemObrigatoria("logo-sibraps.png"));
-            contexto.setVariable("iconeCalendario", imagemOpcional("icon-calendar.png"));
-            contexto.setVariable("iconeUsuario", imagemOpcional("icon-user.png"));
-            contexto.setVariable("iconeGrupo", imagemOpcional("icon-group.png"));
-            contexto.setVariable("iconeSessoes", imagemOpcional("icon-sessions.png"));
-            contexto.setVariable("iconeGrafico", imagemOpcional("icon-chart.png"));
-            contexto.setVariable("iconeAlerta", imagemOpcional("icon-alert.png"));
-            contexto.setVariable("iconeInfo", imagemOpcional("icon-info.png"));
+            contexto.setVariable("logo", imagemObrigatoria("logo-sibraps.svg"));
+            contexto.setVariable("iconeCalendario", imagemOpcional("calendario.svg"));
+            contexto.setVariable("iconeProfissional", imagemOpcional("profissional.svg"));
+            contexto.setVariable("iconeGrupo", imagemOpcional("grupo.svg"));
+            contexto.setVariable("iconeSessoes", imagemOpcional("sessoes.svg"));
+            contexto.setVariable("iconeGrafico", imagemOpcional("grafico.svg"));
+            contexto.setVariable("iconeAlerta", imagemOpcional("alerta.svg"));
+            contexto.setVariable("iconeDocumento", imagemOpcional("documento.svg"));
+            contexto.setVariable("iconeInformacao", imagemOpcional("informacao.svg"));
 
-            // Com o starter padrão do Thymeleaf, "reports/..." é resolvido em
-            // classpath:/templates/reports/<template>.html.
             String html = templateEngine.process("reports/" + template, contexto);
 
             try (ByteArrayOutputStream saida = new ByteArrayOutputStream()) {
                 PdfRendererBuilder builder = new PdfRendererBuilder();
                 builder.useFastMode();
+                builder.useSVGDrawer(new BatikSVGDrawer());
                 builder.withHtmlContent(html, null);
                 builder.toStream(saida);
                 builder.run();
