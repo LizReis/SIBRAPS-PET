@@ -1,1 +1,143 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SIBRAPS — Relatório de Frequência de Grupos</title><link rel="stylesheet" href="relatorios.css"></head><body><main class="report"><header class="topbar"><div class="brand"><img src="icones/logo-sibraps.svg" alt=""><div><div class="brand-name">SIBRAPS</div><div class="brand-sub">Sistema Integrado de Busca Ativa da RAPS</div></div></div><div class="strap">Informação que<br>fortalece o cuidado</div></header><div class="page"><section class="title-block"><div class="title-row"><h1 class="wide-title">Relatório de Frequência de Grupos</h1><span class="title-rule"></span></div><p class="subtitle">Participação que fortalece o cuidado em saúde mental</p></section><section class="filters four"><div class="filter"><span class="icon-bubble"><img src="icones/calendario.svg" alt=""></span><div><small>Período</small><strong>Últimos 6 meses</strong><span class="unit">14/03/2026 a 14/09/2026</span></div></div><div class="filter"><span class="icon-bubble blue"><img src="icones/sessoes.svg" alt=""></span><div><small>Sessões</small><strong class="metric">6</strong><span class="unit">sessão(ões)</span></div></div><div class="filter"><span class="icon-bubble"><img src="icones/grafico.svg" alt=""></span><div><small>Presença média</small><strong class="metric">71,7%</strong></div></div><div class="filter"><span class="icon-bubble blue"><img src="icones/grupo.svg" alt=""></span><div><small>Grupos acompanhados</small><strong class="metric">5</strong><span class="unit">grupo(s)</span></div></div></section><div class="table-wrap group-table"><table><colgroup><col style="width:13%"><col style="width:21%"><col style="width:22%"><col style="width:12%"><col style="width:12%"><col style="width:20%"></colgroup><thead><tr><th>Data</th><th>Grupo terapêutico</th><th>Coordenador do grupo</th><th>Presentes</th><th>Ausentes</th><th>Taxa de presença</th></tr></thead><tbody><tr><td>05/06/2026</td><td>Grupo de Convivência</td><td>João Ferreira</td><td class="center positive">8</td><td class="center negative">2</td><td><div class="rate"><span class="bar"><i style="width:80%"></i></span><b>80,0%</b></div></td></tr><tr><td>19/06/2026</td><td>Grupo de Convivência</td><td>Ana Oliveira</td><td class="center positive">6</td><td class="center negative">4</td><td><div class="rate"><span class="bar warn"><i style="width:60%"></i></span><b>60,0%</b></div></td></tr><tr><td>10/07/2026</td><td>Grupo de Cuidado em<br>Álcool e Drogas</td><td>Dra. Marina Costa</td><td class="center positive">9</td><td class="center negative">1</td><td><div class="rate"><span class="bar"><i style="width:90%"></i></span><b>90,0%</b></div></td></tr><tr><td>24/07/2026</td><td>Grupo de Cuidado em<br>Álcool e Drogas</td><td>Dra. Marina Costa</td><td class="center positive">5</td><td class="center negative">5</td><td><div class="rate"><span class="bar warn"><i style="width:50%"></i></span><b>50,0%</b></div></td></tr><tr><td>07/08/2026</td><td>Grupo de Familiares</td><td>Ana Oliveira</td><td class="center positive">7</td><td class="center negative">1</td><td><div class="rate"><span class="bar"><i style="width:87.5%"></i></span><b>87,5%</b></div></td></tr></tbody></table></div><section class="notes group-notes"><span class="icon-bubble blue"><img src="icones/informacao.svg" alt=""></span><div class="notes-copy"><h2>Observações</h2><ul><li>A taxa de presença é calculada com base no número de participantes registrados por sessão.</li><li>Grupos com baixa adesão devem ser discutidos em reunião de equipe.</li><li>Este relatório considera apenas grupos registrados no sistema.</li></ul></div></section></div><footer class="footer"><div class="footer-brand"><strong>SIBRAPS</strong></div><span>Sistema Integrado de Busca Ativa da RAPS</span><div class="footer-right"><b>Página 2 de 2</b>Gerado em 14/09/2026 às 23:38</div></footer></main></body></html>
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SIBRAPS — Relatório de Frequência de Grupos</title>
+    <style th:utext="${css}"></style>
+</head>
+<body>
+<main class="report">
+    <header class="topbar">
+        <div class="brand">
+            <img th:src="${logo}" alt="SIBRAPS" />
+            <div>
+                <div class="brand-name">SIBRAPS</div>
+                <div class="brand-sub">Sistema Integrado de Busca Ativa da RAPS</div>
+            </div>
+        </div>
+        <div class="strap">Informação que<br />fortalece o cuidado</div>
+    </header>
+
+    <div class="page">
+        <section class="title-block">
+            <div class="title-row">
+                <h1 class="wide-title">Relatório de Frequência de Grupos</h1>
+                <span class="title-rule"></span>
+            </div>
+            <p class="subtitle">Participação que fortalece o cuidado em saúde mental</p>
+        </section>
+
+        <section class="filters four">
+            <div class="filter">
+                <span class="icon-bubble" th:if="${iconeCalendario != null}">
+                    <img th:src="${iconeCalendario}" alt="" />
+                </span>
+                <div>
+                    <small>Período</small>
+                    <strong th:text="${PERIODO}">Últimos 6 meses</strong>
+                </div>
+            </div>
+
+            <div class="filter">
+                <span class="icon-bubble blue" th:if="${iconeSessoes != null}">
+                    <img th:src="${iconeSessoes}" alt="" />
+                </span>
+                <div>
+                    <small>Sessões</small>
+                    <strong class="metric" th:text="${SESSOES}">6</strong>
+                    <span class="unit">sessão(ões)</span>
+                </div>
+            </div>
+
+            <div class="filter">
+                <span class="icon-bubble" th:if="${iconeGrafico != null}">
+                    <img th:src="${iconeGrafico}" alt="" />
+                </span>
+                <div>
+                    <small>Presença média</small>
+                    <strong class="metric" th:text="${PRESENCA_MEDIA}">71,7%</strong>
+                </div>
+            </div>
+
+            <div class="filter">
+                <span class="icon-bubble blue" th:if="${iconeGrupo != null}">
+                    <img th:src="${iconeGrupo}" alt="" />
+                </span>
+                <div>
+                    <small>Grupos acompanhados</small>
+                    <strong class="metric" th:text="${GRUPOS}">5</strong>
+                    <span class="unit">grupo(s)</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="table-wrap group-table">
+            <table>
+                <colgroup>
+                    <col style="width:13%" />
+                    <col style="width:21%" />
+                    <col style="width:22%" />
+                    <col style="width:12%" />
+                    <col style="width:12%" />
+                    <col style="width:20%" />
+                </colgroup>
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Grupo terapêutico</th>
+                    <th>Coordenador do grupo</th>
+                    <th>Presentes</th>
+                    <th>Ausentes</th>
+                    <th>Taxa de presença</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="sessao : ${sessoes}">
+                    <td th:text="${sessao.dataFormatada}">05/06/2026</td>
+                    <td th:text="${sessao.grupo}">Grupo de Convivência</td>
+                    <td th:text="${sessao.coordenador}">João Ferreira</td>
+                    <td class="center positive" th:text="${sessao.quantidadePresentes}">8</td>
+                    <td class="center negative" th:text="${sessao.quantidadeAusentes}">2</td>
+                    <td>
+                        <div class="rate">
+                            <span class="bar" th:classappend="${sessao.taxaPresenca.doubleValue() < 75 ? ' warn' : ''}">
+                                <i th:style="${'width:' + sessao.taxaPresenca + '%'}"></i>
+                            </span>
+                            <b th:text="${sessao.taxaPresencaFormatada}">80,0%</b>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(sessoes)}">
+                    <td colspan="6" class="center">Nenhuma sessão encontrada para os filtros selecionados.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <section class="notes group-notes">
+            <span class="icon-bubble blue" th:if="${iconeInformacao != null}">
+                <img th:src="${iconeInformacao}" alt="" />
+            </span>
+            <div class="notes-copy">
+                <h2>Observações</h2>
+                <ul>
+                    <li>A taxa de presença é calculada com base no número de participantes registrados por sessão.</li>
+                    <li>Grupos com baixa adesão devem ser discutidos em reunião de equipe.</li>
+                    <li>Este relatório considera apenas grupos registrados no sistema.</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-brand"><strong>SIBRAPS</strong></div>
+        <span>Sistema Integrado de Busca Ativa da RAPS</span>
+        <div class="footer-right">
+            <b>Página <span class="page-number"></span></b>
+            <span>Gerado em <span th:text="${GERADO_EM}">14/09/2026 às 23:38</span></span>
+        </div>
+    </footer>
+</main>
+</body>
+</html>
