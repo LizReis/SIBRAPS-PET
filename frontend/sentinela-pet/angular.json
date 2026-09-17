@@ -26,7 +26,6 @@
               }
             ],
             "styles": [
-              "node_modules/bootstrap-icons/font/bootstrap-icons.css",
               "src/app/app.css",
               "src/styles.css"
             ]
