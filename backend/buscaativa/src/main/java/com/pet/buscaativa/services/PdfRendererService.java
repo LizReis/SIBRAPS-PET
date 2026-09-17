@@ -58,7 +58,7 @@ public class PdfRendererService {
 
                 byte[] pdf = saida.toByteArray();
                 if (pdf.length < 4 || pdf[0] != '%' || pdf[1] != 'P' || pdf[2] != 'D' || pdf[3] != 'F') {
-                    throw new RelatorioException("O renderizador não produziu um PDF válido.");
+                    throw new RelatorioException("O renderizador não produziu um PDF válido.", null);
                 }
                 return pdf;
             }
@@ -72,7 +72,7 @@ public class PdfRendererService {
     private String imagemObrigatoria(String nome) {
         String imagem = carregarImagem(nome);
         if (imagem == null) {
-            throw new RelatorioException("Não foi possível carregar o símbolo SIBRAPS: " + nome);
+            throw new RelatorioException("Não foi possível carregar o símbolo SIBRAPS: " + nome, null);
         }
         return imagem;
     }
