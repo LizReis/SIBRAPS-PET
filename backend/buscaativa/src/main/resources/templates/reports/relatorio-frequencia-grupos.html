@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <style th:utext="${css}"></style>
+    <title>Relatório de Frequência de Grupos</title>
+</head>
+<body>
+    <table class="header">
+        <tr>
+            <td class="brand">
+                <img class="logo" th:src="${logo}" alt="SIBRAPS" />
+                <div class="brand-copy">
+                    <div class="brand-name">SIBRAPS</div>
+                    <div class="brand-subtitle">Sistema Integrado de Busca Ativa da RAPS</div>
+                </div>
+            </td>
+            <td class="motto">Informação que<br />fortalece o cuidado</td>
+        </tr>
+    </table>
+
+    <div class="title-box">
+        <h1>Relatório de Frequência de Grupos</h1>
+        <span class="subtitle">Participação que fortalece o cuidado em saúde mental</span>
+        <span class="accent"></span>
+    </div>
+
+    <table class="cards four-cards">
+        <tr>
+            <td class="card">
+                <span class="icon-circle" th:if="${iconeCalendario != null}"><img th:src="${iconeCalendario}" alt="" /></span>
+                <div class="card-copy"><div class="card-label">Período</div><div class="card-value" th:text="${PERIODO}"></div></div>
+            </td>
+            <td class="card">
+                <span class="icon-circle blue" th:if="${iconeSessoes != null}"><img th:src="${iconeSessoes}" alt="" /></span>
+                <div class="card-copy"><div class="card-label">Sessões</div><div class="card-value"><span th:text="${SESSOES}"></span> sessão(ões)</div></div>
+            </td>
+            <td class="card">
+                <span class="icon-circle blue" th:if="${iconeGrafico != null}"><img th:src="${iconeGrafico}" alt="" /></span>
+                <div class="card-copy"><div class="card-label">Presença média</div><div class="card-value" th:text="${PRESENCA_MEDIA}"></div></div>
+            </td>
+            <td class="card">
+                <span class="icon-circle" th:if="${iconeGrupo != null}"><img th:src="${iconeGrupo}" alt="" /></span>
+                <div class="card-copy"><div class="card-label">Grupos acompanhados</div><div class="card-value"><span th:text="${GRUPOS}"></span> grupo(s)</div></div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="data-table frequency-report-table">
+        <colgroup>
+            <col style="width:11%" /><col style="width:22%" /><col style="width:22%" />
+            <col style="width:13%" /><col style="width:13%" /><col style="width:19%" />
+        </colgroup>
+        <thead><tr>
+            <th>Data</th><th>Grupo terapêutico</th><th>Coordenador do grupo</th>
+            <th class="center">Presentes</th><th class="center">Ausentes</th><th>Taxa de presença</th>
+        </tr></thead>
+        <tbody>
+            <tr th:each="sessao : ${sessoes}">
+                <td class="date" th:text="${sessao.data}"></td>
+                <td th:text="${sessao.grupo}"></td>
+                <td th:text="${sessao.coordenador}"></td>
+                <td class="center">
+                    <div class="metric present" th:text="${sessao.quantidadePresentes}"></div>
+                    <div class="names" th:text="${#strings.listJoin(sessao.nomesPresentes, ', ')}"></div>
+                </td>
+                <td class="center">
+                    <div class="metric absent" th:text="${sessao.quantidadeAusentes}"></div>
+                    <div class="names" th:text="${#strings.listJoin(sessao.nomesAusentes, ', ')}"></div>
+                </td>
+                <td>
+                    <div class="progress-wrap">
+                        <span class="progress"><span class="progress-fill" th:classappend="${sessao.taxaPresenca.doubleValue() < 75 ? ' low' : ''}" th:style="'width:' + ${sessao.taxaPresenca} + '%'" ></span></span>
+                        <span class="rate" th:text="${sessao.taxaPresencaFormatada}"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(sessoes)}"><td colspan="6" class="empty">Nenhuma sessão encontrada para os filtros selecionados.</td></tr>
+        </tbody>
+    </table>
+
+    <table class="observations">
+        <tr>
+            <td class="obs-icon" th:if="${iconeInfo != null}"><img th:src="${iconeInfo}" alt="Informações" /></td>
+            <td>
+                <div class="obs-title">Observações</div>
+                <div class="obs-line">A taxa de presença considera somente participantes com presença registrada.</div>
+                <div class="obs-line">Sessões canceladas e frequências não registradas não integram os cálculos.</div>
+                <div class="obs-line">Este relatório considera apenas grupos registrados no sistema.</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="report-footer">
+        <table class="footer-table"><tr>
+            <td><span class="footer-brand">SIBRAPS</span><span class="footer-divider"></span>Sistema Integrado de Busca Ativa da RAPS</td>
+            <td class="footer-right">Página <span class="page-number"></span> de <span class="page-count"></span><br />Gerado em <span th:text="${GERADO_EM}"></span></td>
+        </tr></table>
+    </div>
+</body>
+</html>
