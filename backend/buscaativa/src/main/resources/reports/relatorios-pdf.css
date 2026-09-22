@@ -88,7 +88,7 @@ body {
     border-left: 1px solid #8fcee8;
     padding: 8px 8px 8px 32px;
     line-height: 1.45;
-    font-size: 12px;
+    font-size: 18px;
 }
 
 .page {
@@ -110,7 +110,7 @@ body {
     display: inline-block;
     vertical-align: middle;
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: bold;
     color: #082e73;
     margin: 0;
@@ -294,6 +294,7 @@ body {
     background: #e8f6fd;
     color: #2169ab;
     font-weight: bold;
+    font-size: 14px;
     text-align: left;
     padding: 13px 10px;
     line-height: 1.35;
@@ -304,6 +305,7 @@ body {
     padding: 15px 10px;
     color: #164c8c;
     font-weight: 600;
+    font-size: 12px;
     border-top: 1px solid #bdddf5;
     border-right: 1px solid #bdddf5;
     line-height: 1.35;
@@ -326,18 +328,18 @@ body {
     border-radius: 16px;
     background: #ffe1e7;
     color: #ed2448;
-    font-size: 12px;
+    font-size: 14px;
     text-align: center;
 }
 
 .positive {
     color: #00a56f !important;
-    font-size: 14px;
+    font-size: 14px !important;
 }
 
 .negative {
     color: #ef1740 !important;
-    font-size: 14px;
+    font-size: 14px !important;
 }
 
 .rate {
@@ -408,6 +410,7 @@ body {
 .notes li {
     margin: 7px 0;
     color: #3e78b5;
+    font-size: 12px;
 }
 
 .footer {
@@ -461,7 +464,7 @@ body {
 }
 
 .wide-title {
-    font-size: 24px !important;
+    font-size: 30px !important;
 }
 
 .group-table {
