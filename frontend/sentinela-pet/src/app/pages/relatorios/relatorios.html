@@ -21,7 +21,9 @@
         <label class="field"><span>Profissional</span><select [(ngModel)]="profissionalSelecionado"><option value="">Todos os profissionais</option><option *ngFor="let profissional of profissionais" [value]="profissional.idPublico">{{ profissional.nome }}</option></select></label>        <label class="field"><span>Tipo de acompanhamento</span><select [(ngModel)]="tipoAcompanhamentoSelecionado"><option *ngFor="let tipo of tiposAcompanhamento" [value]="tipo">{{ tipo }}</option></select></label>
       </div>
       <div class="export-row"><span>Exportar como:</span><div class="export-actions"><ng-container *ngTemplateOutlet="exportButtons"></ng-container></div></div>
-      
+
+      <p *ngIf="erroExportacao" class="export-error" role="alert">{{ erroExportacao }}</p>
+
     </section>
 
     <section class="card table-card" aria-labelledby="busca-title">
@@ -68,7 +70,7 @@
   </section>
 
   <ng-template #exportButtons>
-    <button type="button" class="export-button" [class.active]="formatoSelecionado === 'PDF'" [attr.aria-pressed]="formatoSelecionado === 'PDF'" [disabled]="exportandoPdf" (click)="selecionarFormato('PDF')"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>{{ exportandoPdf ? 'Gerando PDF...' : 'PDF' }}</button>    <button type="button" class="export-button" [class.active]="formatoSelecionado === 'Excel'" [attr.aria-pressed]="formatoSelecionado === 'Excel'" (click)="selecionarFormato('Excel')"><span class="material-symbols-outlined" aria-hidden="true">table_view</span>Excel</button>
+    <button type="button" class="export-button" [class.active]="formatoSelecionado === 'PDF'" [attr.aria-pressed]="formatoSelecionado === 'PDF'" [disabled]="exportandoPdf" (click)="selecionarFormato('PDF')"><span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>{{ exportandoPdf && formatoSelecionado === 'PDF' ? 'Gerando PDF...' : 'PDF' }}</button>    <button type="button" class="export-button" [class.active]="formatoSelecionado === 'Excel'" [attr.aria-pressed]="formatoSelecionado === 'Excel'" [disabled]="exportandoPdf" (click)="selecionarFormato('Excel')"><span class="material-symbols-outlined" aria-hidden="true">table_view</span>{{ exportandoPdf && formatoSelecionado === 'Excel' ? 'Gerando Excel...' : 'Excel' }}</button>
     <button type="button" class="export-button" [class.active]="formatoSelecionado === 'CSV'" [attr.aria-pressed]="formatoSelecionado === 'CSV'" (click)="selecionarFormato('CSV')"><span class="material-symbols-outlined" aria-hidden="true">download</span>CSV</button>
   </ng-template>
 </main>

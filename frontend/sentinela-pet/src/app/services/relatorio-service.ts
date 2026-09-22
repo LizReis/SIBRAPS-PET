@@ -32,7 +32,19 @@ export class RelatorioService {
     return this.baixarPdf(`${this.apiUrl}/frequencia-grupos/pdf`, filtros);
   }
 
+  baixarBuscaAtivaExcel(filtros: FiltrosBuscaAtiva): Observable<HttpResponse<Blob>> {
+    return this.baixarArquivo(`${this.apiUrl}/busca-ativa/excel`, filtros);
+  }
+
+  baixarFrequenciaGruposExcel(filtros: FiltrosFrequenciaGrupos): Observable<HttpResponse<Blob>> {
+    return this.baixarArquivo(`${this.apiUrl}/frequencia-grupos/excel`, filtros);
+  }
+
   private baixarPdf(url: string, filtros: object): Observable<HttpResponse<Blob>> {
+    return this.baixarArquivo(url, filtros);
+  }
+
+  private baixarArquivo(url: string, filtros: object): Observable<HttpResponse<Blob>> {
     let params = new HttpParams();
     Object.entries(filtros as Record<string, string | number | undefined>).forEach(([chave, valor]) => {
       if (valor !== undefined) params = params.set(chave, valor.toString());

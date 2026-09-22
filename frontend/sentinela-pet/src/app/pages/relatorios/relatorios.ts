@@ -91,7 +91,7 @@ export class Relatorios implements OnInit {
     'Todo o período',
   ];
   readonly tiposAcompanhamento = ['Individual e grupo', 'Individual', 'Grupo terapêutico'];
-  
+
 
   // TODO RF21: substituir dados mockados por dados reais da API de relatórios.
   readonly pacientesBuscaAtiva: PacienteBuscaAtivaMock[] = [
@@ -147,6 +147,7 @@ export class Relatorios implements OnInit {
     // TODO RF21: integrar geração real de PDF, Excel e CSV na próxima etapa.
     this.formatoSelecionado = formato;
     if (formato === 'PDF') this.exportarPdf();
+    if (formato === 'Excel') this.exportarExcel();
   }
 
   exportarPdf(): void {
@@ -158,8 +159,23 @@ export class Relatorios implements OnInit {
       : this.relatorioService.baixarFrequenciaGruposPdf(this.filtrosFrequencia());
     const prefixo = this.abaAtiva === 'buscaAtiva' ? 'relatorio-busca-ativa' : 'relatorio-frequencia-grupos';
     requisicao.pipe(finalize(() => this.exportandoPdf = false)).subscribe({
-      next: (resposta) => this.baixarResposta(resposta, `${prefixo}-${formatarDataLocal(new Date())}.pdf`),
+      next: (resposta) => this.baixarResposta(resposta, `${prefixo}-${formatarDataLocal(new Date())}.pdf`, 'application/pdf', 'PDF'),
       error: () => this.erroExportacao = 'Não foi possível gerar o relatório em PDF. Tente novamente.',
+    });
+  }
+
+  exportarExcel(): void {
+    if (this.exportandoPdf) return;
+    this.exportandoPdf = true;
+    this.erroExportacao = '';
+    const requisicao = this.abaAtiva === 'buscaAtiva'
+      ? this.relatorioService.baixarBuscaAtivaExcel(this.filtrosBuscaAtiva())
+      : this.relatorioService.baixarFrequenciaGruposExcel(this.filtrosFrequencia());
+    const prefixo = this.abaAtiva === 'buscaAtiva' ? 'relatorio-busca-ativa' : 'relatorio-frequencia-grupos';
+    requisicao.pipe(finalize(() => this.exportandoPdf = false)).subscribe({
+      next: (resposta) => this.baixarResposta(resposta, `${prefixo}-${formatarDataLocal(new Date())}.xlsx`,
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Excel'),
+      error: () => this.erroExportacao = 'Não foi possível gerar o relatório em Excel. Tente novamente.',
     });
   }
 
@@ -177,11 +193,11 @@ export class Relatorios implements OnInit {
     return filtros;
   }
 
-  private baixarResposta(resposta: HttpResponse<Blob>, fallback: string): void {
+  private baixarResposta(resposta: HttpResponse<Blob>, fallback: string, tipoEsperado: string, formato: string): void {
     const blob = resposta.body;
     const contentType = resposta.headers.get('Content-Type') || blob?.type;
-    if (!blob || !contentType?.toLowerCase().includes('application/pdf')) {
-      this.erroExportacao = 'Não foi possível gerar o relatório em PDF. Tente novamente.';
+    if (!blob || !contentType?.toLowerCase().includes(tipoEsperado)) {
+      this.erroExportacao = `Não foi possível gerar o relatório em ${formato}. Tente novamente.`;
       return;
     }
     const nome = this.extrairNomeArquivo(resposta.headers.get('Content-Disposition')) || fallback;

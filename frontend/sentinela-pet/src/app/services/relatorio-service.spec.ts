@@ -30,4 +30,18 @@ describe('RelatorioService', () => {
     expect(req.request.params.has('dataInicio')).toBe(false);
     req.flush(new Blob([], { type: 'application/pdf' }));
   });
+
+  it('chama os endpoints Excel preservando os mesmos filtros', () => {
+    service.baixarBuscaAtivaExcel({ profissionalId: 'uuid', tipoAcompanhamento: 'GRUPO_TERAPEUTICO' }).subscribe();
+    const busca = http.expectOne((request) => request.url === '/api/relatorios/busca-ativa/excel');
+    expect(busca.request.responseType).toBe('blob');
+    expect(busca.request.params.get('profissionalId')).toBe('uuid');
+    expect(busca.request.params.get('tipoAcompanhamento')).toBe('GRUPO_TERAPEUTICO');
+    busca.flush(new Blob([], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+
+    service.baixarFrequenciaGruposExcel({ grupoId: 42 }).subscribe();
+    const frequencia = http.expectOne('/api/relatorios/frequencia-grupos/excel?grupoId=42');
+    expect(frequencia.request.responseType).toBe('blob');
+    frequencia.flush(new Blob([], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  });
 });

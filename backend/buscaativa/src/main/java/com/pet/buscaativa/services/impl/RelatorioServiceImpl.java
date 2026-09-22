@@ -1,6 +1,5 @@
 package com.pet.buscaativa.services.impl;
 
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
@@ -13,7 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,7 @@ import com.pet.buscaativa.repositories.SessaoGrupoRepository;
 import com.pet.buscaativa.repositories.UsuarioRepository;
 import com.pet.buscaativa.services.RelatorioService;
 import com.pet.buscaativa.services.PdfRendererService;
-import com.pet.buscaativa.services.exceptions.RelatorioException;
+import com.pet.buscaativa.services.ExcelRelatorioService;
 import com.pet.buscaativa.services.exceptions.ValidationException;
 
 import lombok.RequiredArgsConstructor;
@@ -50,11 +48,44 @@ public class RelatorioServiceImpl implements RelatorioService {
     private final UsuarioRepository usuarioRepository;
     private final Clock clock;
     private final PdfRendererService pdfRendererService;
+    private final ExcelRelatorioService excelRelatorioService;
 
     @Override
     @Transactional(readOnly = true)
     public byte[] gerarBuscaAtiva(LocalDate dataInicio, LocalDate dataFim, UUID profissionalId,
                                   TipoAcompanhamento tipoAcompanhamento) {
+        BuscaAtivaPreparada relatorio = prepararBuscaAtiva(dataInicio, dataFim, profissionalId, tipoAcompanhamento);
+        return pdfRendererService.renderizar("relatorio-busca-ativa", relatorio.parametros());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] gerarFrequenciaGrupos(LocalDate dataInicio, LocalDate dataFim, Long grupoId) {
+        FrequenciaPreparada relatorio = prepararFrequencia(dataInicio, dataFim, grupoId);
+        return pdfRendererService.renderizar("relatorio-frequencia-grupos", relatorio.parametros());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] gerarBuscaAtivaExcel(LocalDate dataInicio, LocalDate dataFim, UUID profissionalId,
+                                       TipoAcompanhamento tipoAcompanhamento) {
+        BuscaAtivaPreparada relatorio = prepararBuscaAtiva(dataInicio, dataFim, profissionalId, tipoAcompanhamento);
+        return excelRelatorioService.gerarBuscaAtiva(relatorio.dados(), (String) relatorio.parametros().get("PERIODO"),
+                (String) relatorio.parametros().get("PROFISSIONAL"),
+                (String) relatorio.parametros().get("TIPO_ACOMPANHAMENTO"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] gerarFrequenciaGruposExcel(LocalDate dataInicio, LocalDate dataFim, Long grupoId) {
+        FrequenciaPreparada relatorio = prepararFrequencia(dataInicio, dataFim, grupoId);
+        return excelRelatorioService.gerarFrequenciaGrupos(relatorio.dados(),
+                (String) relatorio.parametros().get("PERIODO"), relatorio.media(), relatorio.grupos());
+    }
+
+    private BuscaAtivaPreparada prepararBuscaAtiva(LocalDate dataInicio, LocalDate dataFim, UUID profissionalId,
+                                                    TipoAcompanhamento tipoAcompanhamento) {
+                                                        
         validarPeriodo(dataInicio, dataFim);
         List<BuscaAtivaRelatorioDTO> dados = pacienteRepository.findParaRelatorioBuscaAtiva(
                         StatusPaciente.ATIVO, ClassificacaoRisco.VERMELHO, dataInicio, dataFim,
@@ -67,12 +98,10 @@ public class RelatorioServiceImpl implements RelatorioService {
         parametros.put("TIPO_ACOMPANHAMENTO", descricaoFiltro(tipoAcompanhamento));
         parametros.put("TOTAL", dados.size());
         parametros.put("pacientes", dados);
-        return pdfRendererService.renderizar("relatorio-busca-ativa", parametros);
+        return new BuscaAtivaPreparada(dados, parametros);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public byte[] gerarFrequenciaGrupos(LocalDate dataInicio, LocalDate dataFim, Long grupoId) {
+    private FrequenciaPreparada prepararFrequencia(LocalDate dataInicio, LocalDate dataFim, Long grupoId) {
         LocalDate fim = dataFim == null ? LocalDate.now(clock) : dataFim;
         LocalDate inicio = dataInicio == null ? fim.minusMonths(6) : dataInicio;
         validarPeriodo(inicio, fim);
@@ -80,24 +109,18 @@ public class RelatorioServiceImpl implements RelatorioService {
         List<SessaoGrupo> sessoes = sessaoGrupoRepository
                 .findRealizadasParaRelatorio(inicio, fim, StatusSessaoGrupo.REALIZADA, grupoId);
 
-        List<FrequenciaGrupoRelatorioDTO> dados = sessoes.stream()
-                .map(this::paraFrequencia)
-                .toList();
-
-        int presentes = sessoes.stream()
-                .mapToInt(sessao -> contarPresencas(sessao, StatusPresencaGrupo.PRESENTE))
-                .sum();
-        int ausentes = sessoes.stream()
-                .mapToInt(sessao -> contarPresencas(sessao, StatusPresencaGrupo.FALTOU))
-                .sum();
+        List<FrequenciaGrupoRelatorioDTO> dados = sessoes.stream().map(this::paraFrequencia).toList();
+        int presentes = sessoes.stream().mapToInt(s -> contarPresencas(s, StatusPresencaGrupo.PRESENTE)).sum();
+        int ausentes = sessoes.stream().mapToInt(s -> contarPresencas(s, StatusPresencaGrupo.FALTOU)).sum();
 
         BigDecimal media = calcularTaxa(presentes, ausentes);
+        long grupos = dados.stream().map(FrequenciaGrupoRelatorioDTO::getGrupo).distinct().count();
         Map<String, Object> parametros = parametrosComuns(inicio, fim);
         parametros.put("SESSOES", dados.size());
         parametros.put("PRESENCA_MEDIA", percentual(media));
-        parametros.put("GRUPOS", dados.stream().map(FrequenciaGrupoRelatorioDTO::getGrupo).distinct().count());
+        parametros.put("GRUPOS", grupos);
         parametros.put("sessoes", dados);
-        return pdfRendererService.renderizar("relatorio-frequencia-grupos", parametros);
+        return new FrequenciaPreparada(dados, parametros, media, grupos);
     }
 
     BuscaAtivaRelatorioDTO paraBuscaAtiva(Paciente paciente) {
@@ -178,4 +201,8 @@ public class RelatorioServiceImpl implements RelatorioService {
     private String texto(String valor) {
         return valor == null || valor.isBlank() ? NAO_INFORMADO : valor.trim();
     }
+
+    private record BuscaAtivaPreparada(List<BuscaAtivaRelatorioDTO> dados, Map<String, Object> parametros) {}
+    private record FrequenciaPreparada(List<FrequenciaGrupoRelatorioDTO> dados, Map<String, Object> parametros,
+                                       BigDecimal media, long grupos) {}
 }

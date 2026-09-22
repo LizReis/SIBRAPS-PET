@@ -23,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO')")
 public class RelatorioController {
+    private static final MediaType XLSX = MediaType.parseMediaType(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     private final RelatorioService relatorioService;
 
     @GetMapping(value = "/busca-ativa/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
@@ -44,9 +46,36 @@ public class RelatorioController {
                 "relatorio-frequencia-grupos-" + LocalDate.now() + ".pdf");
     }
 
+    @GetMapping(value = "/busca-ativa/excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> buscaAtivaExcel(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) UUID profissionalId,
+            @RequestParam(required = false) TipoAcompanhamento tipoAcompanhamento) {
+        return excel(relatorioService.gerarBuscaAtivaExcel(dataInicio, dataFim, profissionalId, tipoAcompanhamento),
+                "relatorio-busca-ativa-" + LocalDate.now() + ".xlsx");
+    }
+
+    @GetMapping(value = "/frequencia-grupos/excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> frequenciaGruposExcel(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataFim,
+            @RequestParam(required = false) Long grupoId) {
+        return excel(relatorioService.gerarFrequenciaGruposExcel(dataInicio, dataFim, grupoId),
+                "relatorio-frequencia-grupos-" + LocalDate.now() + ".xlsx");
+    }
+
     private ResponseEntity<byte[]> pdf(byte[] conteudo, String nome) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.attachment().filename(nome).build());
+        headers.setContentLength(conteudo.length);
+        return ResponseEntity.ok().headers(headers).body(conteudo);
+    }
+
+    private ResponseEntity<byte[]> excel(byte[] conteudo, String nome) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(XLSX);
         headers.setContentDisposition(ContentDisposition.attachment().filename(nome).build());
         headers.setContentLength(conteudo.length);
         return ResponseEntity.ok().headers(headers).body(conteudo);

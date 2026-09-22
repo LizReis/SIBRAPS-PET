@@ -82,12 +82,13 @@
         <div class="table-wrap">
             <table>
                 <colgroup>
-                    <col style="width:18%" />
-                    <col style="width:19%" />
-                    <col style="width:14%" />
-                    <col style="width:15%" />
-                    <col style="width:18%" />
                     <col style="width:16%" />
+                    <col style="width:15%" />
+                    <col style="width:12%" />
+                    <col style="width:12%" />
+                    <col style="width:15%" />
+                    <col style="width:17%" />
+                    <col style="width:13%" />
                 </colgroup>
                 <thead>
                 <tr>
@@ -96,6 +97,7 @@
                     <th>Último<br />atendimento</th>
                     <th>Faltas<br />consecutivas</th>
                     <th>Tipo de<br />acompanhamento</th>
+                    <th>Profissional de<br />referência</th>
                     <th>Contato telefônico</th>
                 </tr>
                 </thead>
@@ -106,10 +108,11 @@
                     <td th:text="${paciente.dataUltimoAtendimentoFormatada}">12/06/2026</td>
                     <td class="center"><span class="missing" th:text="${paciente.faltasConsecutivas == null ? 0 : paciente.faltasConsecutivas}">4</span></td>
                     <td th:text="${paciente.tipoAcompanhamento}">Individual</td>
+                    <td th:text="${paciente.profissionalReferencia}">Dra. Marina Costa</td>
                     <td class="nowrap" th:text="${paciente.telefone}">(81) 99812-4471</td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(pacientes)}">
-                    <td colspan="6" class="center">Nenhum paciente encontrado para os filtros selecionados.</td>
+                    <td colspan="7" class="center">Nenhum paciente encontrado para os filtros selecionados.</td>
                 </tr>
                 </tbody>
             </table>

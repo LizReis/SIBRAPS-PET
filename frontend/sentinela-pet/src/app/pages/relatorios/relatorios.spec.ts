@@ -9,15 +9,31 @@ import { converterPeriodo, Relatorios } from './relatorios';
 describe('Relatorios', () => {
   let fixture: ComponentFixture<Relatorios>;
   let component: Relatorios;
-  let relatorioService: { baixarBuscaAtivaPdf: ReturnType<typeof vi.fn>; baixarFrequenciaGruposPdf: ReturnType<typeof vi.fn> };
-  const respostaPdf = new HttpResponse({
+let relatorioService: {
+    baixarBuscaAtivaPdf: ReturnType<typeof vi.fn>;
+    baixarFrequenciaGruposPdf: ReturnType<typeof vi.fn>;
+    baixarBuscaAtivaExcel: ReturnType<typeof vi.fn>;
+    baixarFrequenciaGruposExcel: ReturnType<typeof vi.fn>;
+  };  const respostaPdf = new HttpResponse({
     body: new Blob(['%PDF'], { type: 'application/pdf' }),
     headers: new HttpHeaders({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="servidor.pdf"' }),
   });
 
+  const respostaExcel = new HttpResponse({
+    body: new Blob(['xlsx'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+    headers: new HttpHeaders({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="servidor.xlsx"',
+    }),
+  });
+
   beforeEach(async () => {
-    relatorioService = { baixarBuscaAtivaPdf: vi.fn().mockReturnValue(of(respostaPdf)), baixarFrequenciaGruposPdf: vi.fn().mockReturnValue(of(respostaPdf)) };
-    await TestBed.configureTestingModule({
+    relatorioService = {
+      baixarBuscaAtivaPdf: vi.fn().mockReturnValue(of(respostaPdf)),
+      baixarFrequenciaGruposPdf: vi.fn().mockReturnValue(of(respostaPdf)),
+      baixarBuscaAtivaExcel: vi.fn().mockReturnValue(of(respostaExcel)),
+      baixarFrequenciaGruposExcel: vi.fn().mockReturnValue(of(respostaExcel)),
+    };    await TestBed.configureTestingModule({
       imports: [Relatorios],
       providers: [
         { provide: RelatorioService, useValue: relatorioService },
@@ -100,5 +116,17 @@ describe('Relatorios', () => {
     component.exportarPdf();
     expect(component.erroExportacao).toContain('Não foi possível');
     expect(HTMLAnchorElement.prototype.click).not.toHaveBeenCalled();
+  });
+
+  it('exporta Excel pela API da aba e respeita o nome do backend', () => {
+    component.abaAtiva = 'buscaAtiva';
+    component.selecionarFormato('Excel');
+    expect(relatorioService.baixarBuscaAtivaExcel).toHaveBeenCalledOnce();
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce();
+    expect(component.exportandoPdf).toBe(false);
+
+    component.abaAtiva = 'frequenciaGrupo';
+    component.selecionarFormato('Excel');
+    expect(relatorioService.baixarFrequenciaGruposExcel).toHaveBeenCalledOnce();
   });
 });
