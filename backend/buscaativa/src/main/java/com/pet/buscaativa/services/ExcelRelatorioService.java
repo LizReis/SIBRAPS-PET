@@ -186,7 +186,7 @@ public class ExcelRelatorioService {
 
         private Estilos(XSSFWorkbook workbook) {
             titulo = estilo(workbook, IndexedColors.DARK_BLUE, IndexedColors.WHITE, true);
-            workbook.getFontAt(titulo.getFontIndex()).setFontHeightInPoints((short) 16);
+            workbook.getFontAt(titulo.getFontIndex()).setFontHeightInPoints((short) 20);
             subtitulo = estilo(workbook, IndexedColors.DARK_BLUE, IndexedColors.WHITE, true);
             workbook.getFontAt(subtitulo.getFontIndex()).setFontHeightInPoints((short) 13);
             rotulo = estilo(workbook, IndexedColors.WHITE, IndexedColors.DARK_BLUE, true);

@@ -294,18 +294,18 @@ body {
     background: #e8f6fd;
     color: #2169ab;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 12px;
     text-align: left;
-    padding: 13px 10px;
+    padding: 13px 5px;
     line-height: 1.35;
     border-right: 1px solid #bdddf5;
 }
 
 .table-wrap td {
-    padding: 15px 10px;
+    padding: 15px 8px;
     color: #164c8c;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 10.5px !important;
     border-top: 1px solid #bdddf5;
     border-right: 1px solid #bdddf5;
     line-height: 1.35;
