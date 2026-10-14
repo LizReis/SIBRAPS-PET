@@ -173,6 +173,9 @@ public class DevConfig implements CommandLineRunner {
         );
 
         usfReferenciaRepository.saveAll(List.of(usfCentro, usfAndai, usfUrbis));
+        admin.setUsfAtuacao(usfCentro);
+        carla.setUsfAtuacao(usfAndai);
+        usuarioRepository.saveAll(List.of(admin, carla));
 
         // ---------------------------------------------------------------------
         // 3) PACIENTES

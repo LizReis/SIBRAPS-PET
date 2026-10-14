@@ -17,7 +17,7 @@ import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
 import com.pet.buscaativa.entities.enums.TurnoEnum;
 
 @Repository
-public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> {
+public interface AgendamentoRepository extends JpaRepository<Agendamento, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Agendamento> {
     Optional<Agendamento> findFirstByPacienteAndDataAgendamentoGreaterThanEqualAndSituacaoAtendimentoInOrderByDataAgendamentoAscHoraAtendimentoAsc(
             Paciente paciente, LocalDate data, List<SituacaoAtendimento> situacoes);
 

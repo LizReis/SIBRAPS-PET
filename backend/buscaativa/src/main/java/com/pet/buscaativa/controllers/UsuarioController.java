@@ -72,7 +72,8 @@ public class UsuarioController {
     @PutMapping("/{idPublico}")
     public ResponseEntity<UsuarioDTO> update(@PathVariable UUID idPublico, @Valid @RequestBody UsuarioDTO usuarioDTO) {
         UsuarioDTO usuarioAtualizar = new UsuarioDTO
-                (idPublico, usuarioDTO.nome(), usuarioDTO.email(), usuarioDTO.tipoUsuario(), usuarioDTO.unidadeAtuacao(), usuarioDTO.senha());
+                (idPublico, usuarioDTO.nome(), usuarioDTO.email(), usuarioDTO.tipoUsuario(), usuarioDTO.unidadeAtuacao(),
+                        usuarioDTO.usfAtuacaoId(), null, usuarioDTO.senha());
 
         return ResponseEntity.ok(usuarioService.save(usuarioAtualizar));
     }

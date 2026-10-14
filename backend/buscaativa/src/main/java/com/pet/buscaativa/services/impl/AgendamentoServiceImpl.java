@@ -66,6 +66,8 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     private final PacienteService pacienteService;
     private final HistoricoPacienteService historicoPacienteService;
     private final AgendaHorarioProperties agendaHorarioProperties;
+    private final EscopoUnidadeService escopoUnidadeService;
+
     private static final List<SituacaoAtendimento> SITUACOES_ATIVAS = List.of(
             SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO, SituacaoAtendimento.PRESENTE);
 
@@ -76,6 +78,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         Usuario usuario = usuarioRepository.findByIdPublicoForUpdate(agendamentoDTO.usuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
+        escopoUnidadeService.validarUsuario(usuario);
         if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL) {
             throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
         }
@@ -83,6 +86,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         Paciente paciente = pacienteRepository.findByIdPublico(agendamentoDTO.pacienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado"));
 
+        escopoUnidadeService.validarAcesso(paciente);
         if (paciente.getStatusPaciente() != StatusPaciente.ATIVO) {
             throw new ValidationException("Somente pacientes ativos podem ser agendados.");
         }
@@ -136,6 +140,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             var original = agendamentoRepository.findById(agendamentoDTO.agendamentoOriginalId())
                     .orElseThrow(() -> new ResourceNotFoundException("Agendamento original não encontrado"));
 
+            escopoUnidadeService.validarAgendamento(original);
             if (agendamentoDTO.id() != null && agendamentoDTO.id().equals(agendamentoDTO.agendamentoOriginalId())) {
                 throw new ValidationException("Um agendamento não pode ser vinculado a ele mesmo.");
             }
@@ -170,6 +175,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         var original = agendamentoRepository.findById(agendamento)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado"));
 
+        escopoUnidadeService.validarAgendamento(original);
         if (original.getPaciente() != null
                 && original.getPaciente().getTipoAcompanhamento() == TipoAcompanhamento.GRUPO_TERAPEUTICO) {
             throw new ValidationException(
@@ -185,6 +191,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         Usuario usuario = usuarioRepository.findByIdPublico(usuarioIdPublico)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado: " + usuarioIdPublico));
 
+        escopoUnidadeService.validarUsuario(usuario);
         Map<TurnoEnum, Integer> vagasPorTurno = new HashMap<>();
         vagasPorTurno.put(TurnoEnum.MANHA, 0);
         vagasPorTurno.put(TurnoEnum.TARDE, 0);
@@ -223,6 +230,8 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             throw new ValidationException("Não é permitido consultar horários em data passada.");
         Usuario usuario = usuarioRepository.findByIdPublico(usuarioIdPublico)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        
+        escopoUnidadeService.validarUsuario(usuario);
         if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL)
             throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
         if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, data))
@@ -266,13 +275,15 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
     @Override
     public List<AgendamentoDTO> findAll() {
-        var list = agendamentoRepository.findAll();
+        var list = agendamentoRepository.findAll(escopoUnidadeService.<Agendamento>specificationPaciente("paciente")
+                .and(escopoUnidadeService.specificationUsuario("usuario")));
         return list.stream().map(agendamentoMapper::toAgendamentoDTO).toList();
     }
 
     @Override
     public List<LocalDate> buscarProximasVagasDisponiveis(Usuario usuario, TurnoEnum turno, LocalDate dataInicio,
                                                           int quantidadeDesejada) {
+        escopoUnidadeService.validarUsuario(usuario);
         List<LocalDate> datasDisponiveis = new ArrayList<>();
 
         int limiteDiasBusca = 90;
@@ -399,11 +410,15 @@ public class AgendamentoServiceImpl implements AgendamentoService {
                     .orElseThrow(() -> new ResourceNotFoundException("Profissional não encontrado"));
         }
 
+        if (profissionalAlvo != null) escopoUnidadeService.validarUsuario(profissionalAlvo);
+        escopoUnidadeService.validarUnidadeConfigurada();
+
         List<Agendamento> agendamentos = profissionalAlvo != null
                 ? agendamentoRepository.findAgendaByUsuarioAndDataAgendamentoBetween(profissionalAlvo, dataInicio, dataFim)
                 : agendamentoRepository.findAgendaByDataAgendamentoBetween(dataInicio, dataFim);
 
         return agendamentos.stream()
+                .filter(escopoUnidadeService::agendamentoPertenceAoEscopo)
                 .filter(a -> a.getPaciente() != null && a.getPaciente().getStatusPaciente() == StatusPaciente.ATIVO)
                 .map(agendamentoMapper::toAgendamentoDTO)
                 .toList();
@@ -414,7 +429,8 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     public AgendamentoDTO atualizarStatus(Long id, SituacaoAtendimento novoStatus, Integer expectedVersion) {
         Agendamento agendamento = agendamentoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado para o id"));
-
+        
+        escopoUnidadeService.validarAgendamento(agendamento);
         LocalDate dataAgendamento = agendamento.getDataAgendamento();
         if (dataAgendamento != null && dataAgendamento.isAfter(LocalDate.now())) {
             throw new ValidationException(
@@ -484,6 +500,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário logado não encontrado"));
 
         Agendamento agendamento = agendamentoRepository.findByIdWithUsuarioAndPaciente(id)
+                .filter(escopoUnidadeService::agendamentoPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado"));
 
         if (usuarioLogado.getTipoUsuario() == TipoUsuario.PROFISSIONAL

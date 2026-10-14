@@ -50,6 +50,10 @@ public class Usuario extends AbstractEntities implements Serializable, UserDetai
     @Convert(converter = UnidadeAtuacaoConverter.class)
     private UnidadeAtuacao unidadeAtuacao;
 
+    @ManyToOne
+    @JoinColumn(name = "usf_atuacao_id")
+    private UsfReferencia usfAtuacao;
+
     @PrePersist
     public void prePersist() {
         if (this.idPublico == null) {

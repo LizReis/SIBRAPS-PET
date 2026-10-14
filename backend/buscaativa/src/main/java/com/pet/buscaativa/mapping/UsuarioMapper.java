@@ -10,9 +10,11 @@ import com.pet.buscaativa.entities.dto.UsuarioDTO;
 public interface UsuarioMapper {
 
     @Mapping(target = "senha", ignore = true)
+    @Mapping(target = "usfAtuacaoId", source = "usfAtuacao.id")
     public UsuarioDTO toUsuarioDTO(Usuario usuarioEntity);
 
     @Mapping(target = "idPublico", expression = "java(java.util.UUID.randomUUID())")
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "usfAtuacao", ignore = true)
     public Usuario toUsuarioEntity(UsuarioDTO usuarioDTO);
 }
