@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import {
   AbstractControl,
   FormControl,
@@ -10,6 +10,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { UnidadeSaudeService } from '../../services/unidade-saude-service';
 
 import {
   ProfissionalPayload,
@@ -40,7 +41,11 @@ enum UnidadeAtuacao {
 })
 export class CadastroProfissional implements OnInit {
   tipoUsuarioOptions = Object.values(TipoUsuario);
-  unidadeAtuacaoOptions = Object.values(UnidadeAtuacao);
+  unidadeAtuacaoOptions: { valor: string; label: string }[] = [
+    { valor: UnidadeAtuacao.CAPS_AD, label: 'CAPS AD' },
+    { valor: UnidadeAtuacao.CAPS_I, label: 'CAPS I' },
+    { valor: UnidadeAtuacao.CAPS_II, label: 'CAPS II' },
+  ];
 
   salvando = false;
   carregando = false;
@@ -71,11 +76,26 @@ export class CadastroProfissional implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private profissionalService: ProfissionalService,
+    private unidadeSaudeService: UnidadeSaudeService,
+    private changeDetector: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.idPublico = this.route.snapshot.paramMap.get('id');
     this.modoEdicao = !!this.idPublico;
+    this.unidadeSaudeService.listarUnidades().subscribe({
+      next: (unidades) => {
+        this.unidadeAtuacaoOptions = [
+          ...this.unidadeAtuacaoOptions,
+          ...unidades.map((usf) => ({ valor: `USF:${usf.id}`, label: usf.nomeUsf })),
+        ];
+        this.changeDetector.markForCheck();
+      },
+      error: () => {
+        this.erroGeral = 'Não foi possível carregar as USFs. Tente novamente.';
+        this.changeDetector.markForCheck();
+      },
+    });
 
     if (this.modoEdicao) {
       // Na edição, a senha é opcional — só valida se o usuário preencher algo
@@ -97,14 +117,18 @@ export class CadastroProfissional implements OnInit {
           nome: profissional.nome,
           email: profissional.email,
           tipoUsuario: profissional.tipoUsuario,
-          unidadeAtuacao: profissional.unidadeAtuacao,
+          unidadeAtuacao: profissional.unidadeAtuacao === UnidadeAtuacao.USF
+            ? profissional.usfAtuacaoId != null ? `USF:${profissional.usfAtuacaoId}` : null
+            : profissional.unidadeAtuacao,
         });
         this.carregando = false;
+        this.changeDetector.markForCheck();
       },
       error: (erro) => {
         console.error('Erro ao carregar profissional', erro);
         this.erroGeral = 'Não foi possível carregar os dados do profissional.';
         this.carregando = false;
+        this.changeDetector.markForCheck();
       },
     });
   }
@@ -129,7 +153,8 @@ export class CadastroProfissional implements OnInit {
       email: form.email?.trim().toLowerCase() ?? '',
       senha: senhaPreenchida ? form.senha!.trim() : null,
       tipoUsuario: form.tipoUsuario ?? '',
-      unidadeAtuacao: form.unidadeAtuacao ?? '',
+      unidadeAtuacao: form.unidadeAtuacao?.startsWith('USF:') ? UnidadeAtuacao.USF : form.unidadeAtuacao ?? '',
+      usfAtuacaoId: form.unidadeAtuacao?.startsWith('USF:') ? Number(form.unidadeAtuacao.substring(4)) : null,
     };
 
     const request$ = this.modoEdicao

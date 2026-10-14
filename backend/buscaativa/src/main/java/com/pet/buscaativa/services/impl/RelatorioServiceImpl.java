@@ -27,6 +27,8 @@ import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.repositories.SessaoGrupoRepository;
 import com.pet.buscaativa.repositories.UsuarioRepository;
+import com.pet.buscaativa.repositories.GrupoTerapeuticoRepository;
+import com.pet.buscaativa.services.exceptions.ResourceNotFoundException;
 import com.pet.buscaativa.services.RelatorioService;
 import com.pet.buscaativa.services.PdfRendererService;
 import com.pet.buscaativa.services.ExcelRelatorioService;
@@ -49,6 +51,8 @@ public class RelatorioServiceImpl implements RelatorioService {
     private final Clock clock;
     private final PdfRendererService pdfRendererService;
     private final ExcelRelatorioService excelRelatorioService;
+    private final EscopoUnidadeService escopoUnidadeService;
+    private final GrupoTerapeuticoRepository grupoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -87,10 +91,16 @@ public class RelatorioServiceImpl implements RelatorioService {
                                                     TipoAcompanhamento tipoAcompanhamento) {
                                                         
         validarPeriodo(dataInicio, dataFim);
+        // Os parâmetros de exportação apenas refinam o escopo autenticado.
+        escopoUnidadeService.validarUnidadeConfigurada();
+        if (profissionalId != null) {
+            escopoUnidadeService.validarUsuario(usuarioRepository.findByIdPublico(profissionalId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado.")));
+        }
         List<BuscaAtivaRelatorioDTO> dados = pacienteRepository.findParaRelatorioBuscaAtiva(
                         StatusPaciente.ATIVO, ClassificacaoRisco.VERMELHO, dataInicio, dataFim,
                         profissionalId, tipoAcompanhamento)
-                .stream().map(this::paraBuscaAtiva).toList();
+                .stream().filter(escopoUnidadeService::pacientePertenceAoEscopo).map(this::paraBuscaAtiva).toList();
 
         Map<String, Object> parametros = parametrosComuns(dataInicio, dataFim);
         parametros.put("PROFISSIONAL", profissionalId == null ? "Todos os profissionais" : usuarioRepository
@@ -105,9 +115,15 @@ public class RelatorioServiceImpl implements RelatorioService {
         LocalDate fim = dataFim == null ? LocalDate.now(clock) : dataFim;
         LocalDate inicio = dataInicio == null ? fim.minusMonths(6) : dataInicio;
         validarPeriodo(inicio, fim);
+        escopoUnidadeService.validarUnidadeConfigurada();
+        if (grupoId != null) {
+            escopoUnidadeService.validarGrupo(grupoRepository.findById(grupoId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado.")));
+        }
 
         List<SessaoGrupo> sessoes = sessaoGrupoRepository
-                .findRealizadasParaRelatorio(inicio, fim, StatusSessaoGrupo.REALIZADA, grupoId);
+                .findRealizadasParaRelatorio(inicio, fim, StatusSessaoGrupo.REALIZADA, grupoId).stream()
+                .filter(s -> escopoUnidadeService.grupoPertenceAoEscopo(s.getGrupo())).toList();
 
         List<FrequenciaGrupoRelatorioDTO> dados = sessoes.stream().map(this::paraFrequencia).toList();
         int presentes = sessoes.stream().mapToInt(s -> contarPresencas(s, StatusPresencaGrupo.PRESENTE)).sum();
@@ -146,11 +162,13 @@ public class RelatorioServiceImpl implements RelatorioService {
     private int contarPresencas(SessaoGrupo sessao, StatusPresencaGrupo status) {
         return (int) sessao.getParticipantes().stream()
                 .filter(participante -> participante.getStatusPresenca() == status)
+                .filter(participante -> escopoUnidadeService.pacientePertenceAoEscopo(participante.getPaciente()))
                 .count();
     }
 
     private List<String> nomes(SessaoGrupo sessao, StatusPresencaGrupo status) {
         return sessao.getParticipantes().stream().filter(p -> p.getStatusPresenca() == status)
+                .filter(p -> escopoUnidadeService.pacientePertenceAoEscopo(p.getPaciente()))
                 .map(p -> texto(p.getPaciente().getNome())).sorted().toList();
     }
 

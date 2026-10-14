@@ -11,6 +11,8 @@ export interface ProfissionalPayload {
 
   tipoUsuario: string;
   unidadeAtuacao: string;
+  usfAtuacaoId?: number | null;
+  usfAtuacao?: { id: number; cnes: string; nomeUsf: string } | null;
 }
 
 export interface ProfissionalSelecao {

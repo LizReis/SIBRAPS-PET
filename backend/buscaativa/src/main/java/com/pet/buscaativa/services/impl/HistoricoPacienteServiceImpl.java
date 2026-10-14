@@ -38,11 +38,13 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
     private final HistoricoPacienteRepository historicoRepository;
     private final PacienteRepository pacienteRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EscopoUnidadeService escopoUnidadeService;
 
     @Override
     @Transactional(readOnly = true)
     public HistoricoPacienteDTO consultar(UUID pacienteId) {
         Paciente paciente = pacienteRepository.findByIdPublico(pacienteId)
+                .filter(escopoUnidadeService::pacientePertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException(pacienteId));
 
         List<HistoricoPacienteEventoDTO> eventos = historicoRepository
@@ -75,6 +77,7 @@ public class HistoricoPacienteServiceImpl implements HistoricoPacienteService {
         }
 
         Paciente paciente = pacienteRepository.findByIdPublico(pacienteId)
+                .filter(escopoUnidadeService::pacientePertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException(pacienteId));
         salvar(paciente, null, usuarioLogado(), registro.tipo(), null,
                 registro.ocorridoEm() == null ? LocalDateTime.now() : registro.ocorridoEm(), registro.descricao());

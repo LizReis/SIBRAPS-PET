@@ -16,7 +16,7 @@ import java.util.UUID;
 
 
 @Repository
-public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+public interface UsuarioRepository extends JpaRepository<Usuario, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Usuario> {
 
     Optional<Usuario> findByEmail(String email);
 

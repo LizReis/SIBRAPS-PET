@@ -41,6 +41,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     private final InscricaoRetroativaGrupoAuditoriaRepository auditoriaRetroativaRepository;
     private final AgendamentoRepository agendamentoRepository;
     private final Clock clock;
+    private final EscopoUnidadeService escopoUnidadeService;
 
     @Override
     @Transactional
@@ -49,6 +50,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
         Usuario coordenador = usuarioRepository.findByIdPublico(dto.coordenadorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Coordenador não encontrado."));
 
+        escopoUnidadeService.validarUsuario(coordenador);
         if (coordenador.getTipoUsuario() != TipoUsuario.PROFISSIONAL
                 && coordenador.getTipoUsuario() != TipoUsuario.ADMINISTRADOR) {
             throw new ValidationException("O coordenador do grupo deve ser um profissional ou administrador.");
@@ -120,25 +122,26 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional(readOnly = true)
     public List<GrupoTerapeuticoDTO> listarGrupos() {
-        return grupoRepository.findByAtivoTrue().stream().map(this::toGrupoDTO).toList();
+        return grupoRepository.findByAtivoTrue().stream().filter(escopoUnidadeService::grupoPertenceAoEscopo).map(this::toGrupoDTO).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public GrupoTerapeuticoDTO buscarGrupo(Long grupoId) {
-        return toGrupoDTO(grupoRepository.findById(grupoId)
+        return toGrupoDTO(grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado.")));
     }
 
     @Override
     @Transactional
     public GrupoTerapeuticoDTO atualizarGrupo(Long grupoId, AtualizarGrupoTerapeuticoDTO dto) {
-        GrupoTerapeutico grupo = grupoRepository.findById(grupoId)
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
         if (!dto.version().equals(grupo.getVersion()))
             throw new OptimisticLockException("O grupo foi alterado por outro usuário.");
         Usuario coordenador = usuarioRepository.findByIdPublico(dto.coordenadorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Coordenador não encontrado."));
+        escopoUnidadeService.validarUsuario(coordenador);
         if (coordenador.getTipoUsuario() != TipoUsuario.PROFISSIONAL && coordenador.getTipoUsuario() != TipoUsuario.ADMINISTRADOR)
             throw new ValidationException("O coordenador deve ser profissional ou administrador.");
         List<SessaoGrupo> sessoes = sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo);
@@ -153,6 +156,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
         if (iniciado && estrutural)
             throw new ConflictException("Após o início do grupo, data, horário e recorrência não podem ser alterados.");
         if (!iniciado && estrutural) {
+            sessoes.forEach(escopoUnidadeService::validarSessaoCompleta);
             Set<UUID> participantes = sessoes.isEmpty() ? Set.of() : sessoes.get(0).getParticipantes().stream()
                     .map(p -> p.getPaciente().getIdPublico()).collect(java.util.stream.Collectors.toSet());
             boolean listasDiferentes = sessoes.stream().anyMatch(s -> !s.getParticipantes().stream()
@@ -177,7 +181,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional(readOnly = true)
     public LocalDate sugerirProximaData(Long grupoId) {
-        GrupoTerapeutico grupo = grupoRepository.findById(grupoId)
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
 
         LocalDate base = sessaoRepository.findFirstByGrupoOrderByDataSessaoDesc(grupo)
@@ -195,6 +199,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Transactional
     public SessaoGrupoDTO criarProximaSessao(NovaSessaoDTO dto) {
         GrupoTerapeutico grupo = grupoRepository.findById(dto.grupoId())
+                .filter(escopoUnidadeService::grupoPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
 
         if (!grupo.isAtivo())
@@ -220,7 +225,8 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     public List<SessaoGrupoDTO> listarSessoes(LocalDate inicio, LocalDate fim) {
         if (inicio.isAfter(fim))
             throw new ValidationException("A data inicial não pode ser posterior à data final.");
-        return sessaoRepository.findByDataSessaoBetween(inicio, fim).stream().map(this::toSessaoDTO).toList();
+        return sessaoRepository.findByDataSessaoBetween(inicio, fim).stream()
+                .filter(s -> escopoUnidadeService.grupoPertenceAoEscopo(s.getGrupo())).map(this::toSessaoDTO).toList();
     }
 
     @Override
@@ -283,6 +289,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     public SessaoGrupoDTO confirmarOcorrencia(Long sessaoId, ConfirmarOcorrenciaGrupoDTO dto) {
         SessaoGrupo sessao = sessaoRepository.findByIdForUpdate(sessaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        escopoUnidadeService.validarSessaoCompleta(sessao);
         if (sessao.getStatus() != StatusSessaoGrupo.AGENDADA)
             throw new ConflictException("Sessão já foi confirmada como " + sessao.getStatus() + ".");
         if (dto.version() != null && !dto.version().equals(sessao.getVersion()))
@@ -317,6 +324,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
         for (var p : participantes) {
             Paciente bloqueado = pacienteRepository.findByIdPublicoForUpdate(p.getPaciente().getIdPublico())
                     .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
+            escopoUnidadeService.validarAcesso(bloqueado);
             p.setPaciente(bloqueado);
             p.setStatusPresenca(mapa.getOrDefault(bloqueado.getIdPublico(), StatusPresencaGrupo.FALTOU));
             pacientes.add(bloqueado);
@@ -335,9 +343,9 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional
     public SessaoGrupoDTO inscreverRetroativamente(Long grupoId, InscricaoRetroativaGrupoDTO dto) {
-        GrupoTerapeutico grupo = grupoRepository.findById(grupoId)
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
-        Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(dto.pacienteId())
+        Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(dto.pacienteId()).filter(escopoUnidadeService::pacientePertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
         if (paciente.getStatusPaciente() != StatusPaciente.ATIVO)
             throw new ValidationException("Somente pacientes ativos podem ser inscritos.");
@@ -407,7 +415,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional(readOnly = true)
     public List<SessaoInscricaoRetroativaDTO> listarSessoesParaInscricaoRetroativa(Long grupoId) {
-        GrupoTerapeutico g = grupoRepository.findById(grupoId).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        GrupoTerapeutico g = grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
         return sessaoRepository.findByGrupoOrderByDataSessaoDesc(g).stream().map(s -> new SessaoInscricaoRetroativaDTO(
                 s.getId(), s.getDataSessao(), s.getHorario(), s.getStatus(), statusExibicao(s), s.getStatus() == StatusSessaoGrupo.REALIZADA)).toList();
     }
@@ -415,8 +423,8 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional
     public SessaoGrupoDTO inscreverEmSessoesFuturas(Long grupoId, InscricaoFuturaGrupoDTO dto) {
-        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
-        Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(dto.pacienteId()).orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        Paciente paciente = pacienteRepository.findByIdPublicoForUpdate(dto.pacienteId()).filter(escopoUnidadeService::pacientePertenceAoEscopo).orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
         if (paciente.getStatusPaciente() != StatusPaciente.ATIVO) throw new ValidationException("Somente pacientes ativos podem ser inscritos.");
         LocalDateTime agora = LocalDateTime.now(clock);
         List<SessaoGrupo> futuras = sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo).stream()
@@ -439,8 +447,8 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional
     public void removerParticipanteDoGrupo(Long grupoId, UUID pacienteId) {
-        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
-        Paciente paciente = pacienteRepository.findByIdPublico(pacienteId).orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        Paciente paciente = pacienteRepository.findByIdPublico(pacienteId).filter(escopoUnidadeService::pacientePertenceAoEscopo).orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
         LocalDateTime agora = LocalDateTime.now(clock);
         List<SessaoGrupoParticipante> remover = sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo).stream()
                 .filter(s -> s.getStatus() == StatusSessaoGrupo.AGENDADA && LocalDateTime.of(s.getDataSessao(), s.getHorario()).isAfter(agora))
@@ -453,9 +461,10 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional(readOnly = true)
     public List<ParticipanteGrupoDTO> listarParticipantesDoGrupo(Long grupoId) {
-        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
+        GrupoTerapeutico grupo = grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo).orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado."));
         LocalDateTime agora = LocalDateTime.now(clock);
         return sessaoRepository.findByGrupoOrderByDataSessaoDesc(grupo).stream().flatMap(s -> s.getParticipantes().stream())
+                .filter(p -> escopoUnidadeService.pacientePertenceAoEscopo(p.getPaciente()))
                 .collect(java.util.stream.Collectors.groupingBy(p -> p.getPaciente().getIdPublico())).values().stream().map(lista -> {
                     var paciente = lista.get(0).getPaciente();
                     var finais = lista.stream().filter(p -> p.getSessaoGrupo().getStatus() == StatusSessaoGrupo.REALIZADA
@@ -474,6 +483,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Transactional
     public SessaoGrupoDTO corrigirFrequencias(Long sessaoId, CorrigirFrequenciasGrupoDTO dto) {
         SessaoGrupo sessao = sessaoRepository.findByIdForUpdate(sessaoId).orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
+        escopoUnidadeService.validarGrupo(sessao.getGrupo());
         if (sessao.getStatus() != StatusSessaoGrupo.REALIZADA) throw new ValidationException("Somente sessões realizadas permitem correção de frequência.");
         if (dto.version() != null && !dto.version().equals(sessao.getVersion())) throw new OptimisticLockException("A sessão foi alterada por outro usuário.");
         Set<UUID> ids = new HashSet<>(); List<SessaoGrupoParticipante> alterados = new ArrayList<>();
@@ -498,7 +508,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     }
 
     private void adicionarParticipanteInterno(SessaoGrupo sessao, UUID pacienteId) {
-        Paciente paciente = pacienteRepository.findByIdPublico(pacienteId)
+        Paciente paciente = pacienteRepository.findByIdPublico(pacienteId).filter(escopoUnidadeService::pacientePertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
 
         if (paciente.getStatusPaciente() != StatusPaciente.ATIVO) {
@@ -533,11 +543,12 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
 
     private SessaoGrupo buscarSessao(Long id) {
         return sessaoRepository.findById(id)
+                .filter(s -> escopoUnidadeService.grupoPertenceAoEscopo(s.getGrupo()))
                 .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
     }
 
     private SessaoGrupoParticipante buscarParticipante(SessaoGrupo s, UUID id) {
-        Paciente p = pacienteRepository.findByIdPublico(id)
+        Paciente p = pacienteRepository.findByIdPublico(id).filter(escopoUnidadeService::pacientePertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
         return participanteRepository.findBySessaoGrupoAndPaciente(s, p)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente não é participante desta sessão."));
@@ -548,6 +559,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     }
 
     private GrupoTerapeuticoDTO toGrupoDTO(GrupoTerapeutico g) {
+        escopoUnidadeService.validarGrupo(g);
         List<SessaoGrupo> sessoes = sessaoRepository.findByGrupoOrderByDataSessaoDesc(g);
         LocalDate primeira = sessoes.stream().map(SessaoGrupo::getDataSessao).min(LocalDate::compareTo).orElse(null);
         LocalDateTime agora = LocalDateTime.now(clock);
@@ -558,12 +570,14 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     }
 
     private SessaoGrupoDTO toSessaoDTO(SessaoGrupo s) {
+        escopoUnidadeService.validarGrupo(s.getGrupo());
         List<ParticipanteSessaoDTO> ps = s.getParticipantes().stream()
+                .filter(p -> escopoUnidadeService.pacientePertenceAoEscopo(p.getPaciente()))
                 .map(p -> new ParticipanteSessaoDTO(p.getPaciente().getIdPublico(), p.getPaciente().getNome(),
                         p.getStatusPresenca()))
                 .toList();
-        int presencas = (int) s.getParticipantes().stream()
-                .filter(p -> p.getStatusPresenca() == StatusPresencaGrupo.PRESENTE).count();
+        int presencas = (int) ps.stream()
+                .filter(p -> p.statusPresenca() == StatusPresencaGrupo.PRESENTE).count();
         return new SessaoGrupoDTO(s.getId(), s.getGrupo().getId(), s.getGrupo().getTema(),
                 s.getGrupo().getCoordenador().getNome(), s.getDataSessao(), s.getHorario(), s.getStatus(),
                 statusExibicao(s), s.getMotivoCancelamento(), ps, ps.size(), presencas, s.getVersion());

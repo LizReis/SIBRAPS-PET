@@ -1,6 +1,7 @@
 package com.pet.buscaativa.entities.dto;
 
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.enums.TipoUsuario;
@@ -27,6 +28,12 @@ public record UsuarioDTO(
         @NotNull(message = "A unidade de atuação deve ser informada.")
         UnidadeAtuacao unidadeAtuacao,
 
+        Long usfAtuacaoId,
+
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        UsfAtuacaoDTO usfAtuacao,
+
+        @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
         @Size(min = 6, message = "A senha deve ter pelo menos 6 caracteres.")
         String senha) {
 
@@ -37,6 +44,8 @@ public record UsuarioDTO(
                 entity.getEmail(),
                 entity.getTipoUsuario(),
                 entity.getUnidadeAtuacao(),
+                entity.getUsfAtuacao() == null ? null : entity.getUsfAtuacao().getId(),
+                entity.getUsfAtuacao() == null ? null : new UsfAtuacaoDTO(entity.getUsfAtuacao()),
                 null
         );
     }

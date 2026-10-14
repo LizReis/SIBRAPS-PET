@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import com.pet.buscaativa.entities.Usuario;
+import com.pet.buscaativa.entities.UsfReferencia;
+import com.pet.buscaativa.entities.enums.UnidadeAtuacao;
+import com.pet.buscaativa.repositories.UsfReferenciaRepository;
 import com.pet.buscaativa.entities.dto.UsuarioDTO;
 import com.pet.buscaativa.entities.dto.ProfissionalSelecaoDTO;
 import com.pet.buscaativa.entities.dto.UsuarioReferenciaDTO;
@@ -30,9 +33,12 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioMapper usuarioMapper;
     private final PasswordEncoder passwordEncoder;
     private final PacienteRepository pacienteRepository;
+    private final UsfReferenciaRepository usfReferenciaRepository;
+    private final EscopoUnidadeService escopoUnidadeService;
 
     @Override
     public UsuarioDTO save(UsuarioDTO usuarioDTO) {
+        UsfReferencia usfAtuacao = resolverUsfAtuacao(usuarioDTO);
         validarEmailDuplicado(usuarioDTO.email(), usuarioDTO.idPublico());
 
         // Senha é obrigatória apenas no cadastro (idPublico == null)
@@ -65,9 +71,19 @@ public class UsuarioServiceImpl implements UsuarioService {
             usuarioSalvar.setSenha(passwordEncoder.encode(usuarioDTO.senha()));
         }
 
+        usuarioSalvar.setUsfAtuacao(usfAtuacao);
         usuarioSalvar = usuarioRepository.save(usuarioSalvar);
 
         return usuarioMapper.toUsuarioDTO(usuarioSalvar);
+    }
+
+    private UsfReferencia resolverUsfAtuacao(UsuarioDTO dto) {
+        if (dto.unidadeAtuacao() != UnidadeAtuacao.USF) return null;
+        if (dto.usfAtuacaoId() == null) {
+            throw new ValidationException("Selecione a USF específica do usuário.");
+        }
+        return usfReferenciaRepository.findById(dto.usfAtuacaoId())
+                .orElseThrow(() -> new ValidationException("A USF selecionada não existe."));
     }
 
     @Override
@@ -80,14 +96,18 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public List<ProfissionalSelecaoDTO> listarProfissionaisParaSelecao() {
-        return usuarioRepository.findAllByTipoUsuarioOrderByNome(TipoUsuario.PROFISSIONAL).stream()
+        return usuarioRepository.findAll(escopoUnidadeService.<Usuario>specificationUsuario()
+                .and((r, q, cb) -> cb.equal(r.get("tipoUsuario"), TipoUsuario.PROFISSIONAL)),
+                org.springframework.data.domain.Sort.by("nome")).stream()
                 .map(ProfissionalSelecaoDTO::new)
                 .toList();
     }
 
     @Override
     public List<UsuarioReferenciaDTO> listarUsuariosElegiveisParaReferencia() {
-        return usuarioRepository.findAllByTipoUsuarioNotOrderByNome(TipoUsuario.RECEPCAO).stream()
+        return usuarioRepository.findAll(escopoUnidadeService.<Usuario>specificationUsuario()
+                .and((r, q, cb) -> cb.notEqual(r.get("tipoUsuario"), TipoUsuario.RECEPCAO)),
+                org.springframework.data.domain.Sort.by("nome")).stream()
                 .map(UsuarioReferenciaDTO::new)
                 .toList();
     }

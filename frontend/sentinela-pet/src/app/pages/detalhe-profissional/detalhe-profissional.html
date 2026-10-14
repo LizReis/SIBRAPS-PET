@@ -15,7 +15,7 @@
           <h1>{{ profissional.nome }}</h1>
           <p>
             {{ labelEnum(profissional.tipoUsuario) }} <span>•</span>
-            {{ labelEnum(profissional.unidadeAtuacao) }}
+            {{ profissional.usfAtuacao?.nomeUsf || labelEnum(profissional.unidadeAtuacao) }}
           </p>
           <small>Dados profissionais e informações de acesso ao sistema.</small>
         </div>
@@ -55,7 +55,7 @@
           </div>
           <div>
             <dt>Unidade de atuação</dt>
-            <dd>{{ labelEnum(profissional.unidadeAtuacao) }}</dd>
+            <dd>{{ profissional.usfAtuacao?.nomeUsf || labelEnum(profissional.unidadeAtuacao) }}</dd>
           </div>
         </dl>
       </article>
@@ -68,7 +68,7 @@
           </div>
           <div>
             <dt>Unidade de atuação</dt>
-            <dd>{{ labelEnum(profissional.unidadeAtuacao) }}</dd>
+            <dd>{{ profissional.usfAtuacao?.nomeUsf || labelEnum(profissional.unidadeAtuacao) }}</dd>
           </div>
         </dl>
       </article>
