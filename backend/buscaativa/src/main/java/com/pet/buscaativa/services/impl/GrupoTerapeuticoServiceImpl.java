@@ -154,6 +154,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
                 || !grupo.getHorarioPadrao().equals(dto.horario()) || grupo.getRecorrencia() != dto.recorrencia()
                 || !java.util.Objects.equals(grupo.getDataFimRecorrencia(), dto.dataFimRecorrencia());
         if (iniciado && estrutural)
+            sessoes.forEach(escopoUnidadeService::validarSessaoCompleta);
             throw new ConflictException("Após o início do grupo, data, horário e recorrência não podem ser alterados.");
         if (!iniciado && estrutural) {
             sessoes.forEach(escopoUnidadeService::validarSessaoCompleta);
@@ -321,6 +322,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
         List<SessaoGrupoParticipante> participantes = sessao.getParticipantes().stream()
                 .sorted(Comparator.comparing(p -> p.getPaciente().getIdPublico())).toList();
         List<Paciente> pacientes = new ArrayList<>();
+
         for (var p : participantes) {
             Paciente bloqueado = pacienteRepository.findByIdPublicoForUpdate(p.getPaciente().getIdPublico())
                     .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
