@@ -43,7 +43,6 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     private final Clock clock;
     private final EscopoUnidadeService escopoUnidadeService;
 
-
     @Override
     @Transactional
     public GrupoTerapeuticoDTO criarGrupo(CriarGrupoDTO dto) {
@@ -129,7 +128,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     @Override
     @Transactional(readOnly = true)
     public GrupoTerapeuticoDTO buscarGrupo(Long grupoId) {
-        return toGrupoDTO(grupoRepository.findById(grupoId)
+        return toGrupoDTO(grupoRepository.findById(grupoId).filter(escopoUnidadeService::grupoPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo não encontrado.")));
     }
 
@@ -142,7 +141,6 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
             throw new OptimisticLockException("O grupo foi alterado por outro usuário.");
         Usuario coordenador = usuarioRepository.findByIdPublico(dto.coordenadorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Coordenador não encontrado."));
-
         escopoUnidadeService.validarUsuario(coordenador);
         if (coordenador.getTipoUsuario() != TipoUsuario.PROFISSIONAL && coordenador.getTipoUsuario() != TipoUsuario.ADMINISTRADOR)
             throw new ValidationException("O coordenador deve ser profissional ou administrador.");
@@ -159,6 +157,7 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
             sessoes.forEach(escopoUnidadeService::validarSessaoCompleta);
             throw new ConflictException("Após o início do grupo, data, horário e recorrência não podem ser alterados.");
         if (!iniciado && estrutural) {
+            sessoes.forEach(escopoUnidadeService::validarSessaoCompleta);
             Set<UUID> participantes = sessoes.isEmpty() ? Set.of() : sessoes.get(0).getParticipantes().stream()
                     .map(p -> p.getPaciente().getIdPublico()).collect(java.util.stream.Collectors.toSet());
             boolean listasDiferentes = sessoes.stream().anyMatch(s -> !s.getParticipantes().stream()
@@ -291,7 +290,6 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
     public SessaoGrupoDTO confirmarOcorrencia(Long sessaoId, ConfirmarOcorrenciaGrupoDTO dto) {
         SessaoGrupo sessao = sessaoRepository.findByIdForUpdate(sessaoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sessão não encontrada."));
-
         escopoUnidadeService.validarSessaoCompleta(sessao);
         if (sessao.getStatus() != StatusSessaoGrupo.AGENDADA)
             throw new ConflictException("Sessão já foi confirmada como " + sessao.getStatus() + ".");

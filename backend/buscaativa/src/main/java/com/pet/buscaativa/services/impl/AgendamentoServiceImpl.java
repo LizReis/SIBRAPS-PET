@@ -67,7 +67,6 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     private final HistoricoPacienteService historicoPacienteService;
     private final AgendaHorarioProperties agendaHorarioProperties;
     private final EscopoUnidadeService escopoUnidadeService;
-
     private static final List<SituacaoAtendimento> SITUACOES_ATIVAS = List.of(
             SituacaoAtendimento.AGENDADO, SituacaoAtendimento.REMARCADO, SituacaoAtendimento.PRESENTE);
 
@@ -230,7 +229,6 @@ public class AgendamentoServiceImpl implements AgendamentoService {
             throw new ValidationException("Não é permitido consultar horários em data passada.");
         Usuario usuario = usuarioRepository.findByIdPublico(usuarioIdPublico)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
-        
         escopoUnidadeService.validarUsuario(usuario);
         if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL)
             throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
@@ -412,7 +410,6 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
         if (profissionalAlvo != null) escopoUnidadeService.validarUsuario(profissionalAlvo);
         escopoUnidadeService.validarUnidadeConfigurada();
-
         List<Agendamento> agendamentos = profissionalAlvo != null
                 ? agendamentoRepository.findAgendaByUsuarioAndDataAgendamentoBetween(profissionalAlvo, dataInicio, dataFim)
                 : agendamentoRepository.findAgendaByDataAgendamentoBetween(dataInicio, dataFim);
@@ -429,7 +426,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     public AgendamentoDTO atualizarStatus(Long id, SituacaoAtendimento novoStatus, Integer expectedVersion) {
         Agendamento agendamento = agendamentoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado para o id"));
-        
+
         escopoUnidadeService.validarAgendamento(agendamento);
         LocalDate dataAgendamento = agendamento.getDataAgendamento();
         if (dataAgendamento != null && dataAgendamento.isAfter(LocalDate.now())) {

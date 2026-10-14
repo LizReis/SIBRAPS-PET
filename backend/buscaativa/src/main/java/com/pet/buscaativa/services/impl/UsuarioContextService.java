@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioContextService {
 
     private final UsuarioRepository usuarioRepository;
+    private final EscopoUnidadeService escopoUnidadeService;
 
     public Usuario determinarUsuarioAlvo(UUID usuarioIdPublico, String emailLogado) {
         if (emailLogado == null || emailLogado.isBlank()) {
@@ -37,6 +38,7 @@ public class UsuarioContextService {
             if (alvo.getTipoUsuario() != TipoUsuario.PROFISSIONAL) {
                 throw new ValidationException("O usuário informado não é um profissional.");
             }
+            escopoUnidadeService.validarUsuario(alvo);
             return alvo;
         }
 
@@ -44,10 +46,12 @@ public class UsuarioContextService {
             throw new AccessDeniedException("Acesso a recurso de outro profissional.");
         }
         
+        escopoUnidadeService.validarUsuario(logado);
         return logado;
     }
 
     public void validarAlteracao(Usuario proprietario, String emailLogado) {
+        escopoUnidadeService.validarUsuario(proprietario);
         Usuario logado = usuarioRepository.findByEmail(emailLogado)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário autenticado não encontrado."));
         boolean gestorDeAgenda = (logado.getTipoUsuario() == TipoUsuario.ADMINISTRADOR

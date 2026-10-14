@@ -18,7 +18,6 @@ import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
 import com.pet.buscaativa.entities.enums.StatusPaciente;
 import com.pet.buscaativa.entities.enums.TipoAcompanhamento;
 import com.pet.buscaativa.repositories.PacienteRepository;
-import com.pet.buscaativa.repositories.UsfReferenciaRepository;
 import com.pet.buscaativa.services.PainelHistoricoService;
 import com.pet.buscaativa.services.PainelService;
 
@@ -29,8 +28,8 @@ import lombok.RequiredArgsConstructor;
 public class PainelServiceImpl implements PainelService {
     private static final List<Integer> PERIODOS_VALIDOS = List.of(3, 6, 12);
     private final PacienteRepository pacienteRepository;
-    private final UsfReferenciaRepository usfReferenciaRepository;
     private final PainelHistoricoService historicoService;
+    private final EscopoUnidadeService escopoUnidadeService;
 
     @Override
     @Transactional(readOnly = true)
@@ -38,7 +37,8 @@ public class PainelServiceImpl implements PainelService {
             TipoAcompanhamento tipoAcompanhamento, Boolean situacaoRua) {
         if (!PERIODOS_VALIDOS.contains(periodoMeses)) periodoMeses = 6;
 
-        List<Paciente> ativosSemFiltro = pacienteRepository.findByStatusPaciente(StatusPaciente.ATIVO);
+        List<Paciente> ativosSemFiltro = pacienteRepository.findAll(escopoUnidadeService.<Paciente>specificationPaciente()
+                .and((r,q,cb)->cb.equal(r.get("statusPaciente"),StatusPaciente.ATIVO)));
         List<UnidadePainelDTO> unidades = unidadesDisponiveis();
         List<Paciente> ativos = ativosSemFiltro.stream()
                 .filter(p -> historicoService.correspondeAosFiltros(p, unidade, tipoAcompanhamento, situacaoRua)).toList();
@@ -89,10 +89,6 @@ public class PainelServiceImpl implements PainelService {
     }
 
     private List<UnidadePainelDTO> unidadesDisponiveis() {
-        return usfReferenciaRepository.findAllByOrderByNomeUsfAsc().stream()
-                .filter(usf -> usf.getCnes() != null && !usf.getCnes().isBlank())
-                .filter(usf -> usf.getNomeUsf() != null && !usf.getNomeUsf().isBlank())
-                .map(usf -> new UnidadePainelDTO("USF:" + usf.getCnes(), usf.getNomeUsf()))
-                .toList();
+        return List.of(escopoUnidadeService.unidadePainel());
     }
 }

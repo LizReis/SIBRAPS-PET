@@ -30,12 +30,14 @@ import lombok.RequiredArgsConstructor;
 public class PainelHistoricoServiceImpl implements PainelHistoricoService {
     private static final DateTimeFormatter ROTULO = DateTimeFormatter.ofPattern("MMM/yy", Locale.forLanguageTag("pt-BR"));
     private final EntityManager entityManager;
+    private final EscopoUnidadeService escopoUnidadeService;
 
     @Override
     @Transactional(readOnly = true)
     public List<EvolucaoMensalDTO> reconstruir(List<YearMonth> meses, String unidade,
             TipoAcompanhamento tipoAcompanhamento, Boolean situacaoRua) {
         AuditReader reader = AuditReaderFactory.get(entityManager);
+        escopoUnidadeService.validarUnidadeConfigurada();
         return meses.stream().map(mes -> reconstruirMes(reader, mes, unidade, tipoAcompanhamento, situacaoRua)).toList();
     }
 
@@ -52,6 +54,7 @@ public class PainelHistoricoServiceImpl implements PainelHistoricoService {
         List<Paciente> pacientes = reader.createQuery()
                 .forEntitiesAtRevision(Paciente.class, revisao)
                 .add(AuditEntity.property("statusPaciente").eq(StatusPaciente.ATIVO))
+                .add(escopoUnidadeService.criterioPacienteAuditoria())
                 .getResultList();
         long verdes = pacientes.stream().filter(p -> correspondeAosFiltros(p, unidade, tipoAcompanhamento, situacaoRua))
                 .filter(p -> p.getClassificacaoRisco() == ClassificacaoRisco.VERDE).count();

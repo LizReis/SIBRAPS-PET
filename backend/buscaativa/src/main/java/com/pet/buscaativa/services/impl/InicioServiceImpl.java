@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pet.buscaativa.entities.dto.PacientePrioritarioDTO;
+import com.pet.buscaativa.entities.Paciente;
+import com.pet.buscaativa.entities.Agendamento;
+import org.springframework.data.domain.Sort;
 import com.pet.buscaativa.entities.dto.ResumoInicioDTO;
 import com.pet.buscaativa.entities.enums.ClassificacaoRisco;
 import com.pet.buscaativa.entities.enums.SituacaoAtendimento;
@@ -24,6 +27,7 @@ public class InicioServiceImpl implements InicioService {
 
     private final PacienteRepository pacienteRepository;
     private final AgendamentoRepository agendamentoRepository;
+    private final EscopoUnidadeService escopoUnidadeService;
 
     @Override
     @Transactional(readOnly = true)
@@ -31,17 +35,25 @@ public class InicioServiceImpl implements InicioService {
         LocalDate hoje = LocalDate.now();
         LocalDate seteDiasAtras = hoje.minusDays(6);
 
-        long totalAtivos = pacienteRepository.countByStatusPaciente(StatusPaciente.ATIVO);
+        var pacientesAtivos = escopoUnidadeService.<Paciente>specificationPaciente()
+                .and((r,q,cb)->cb.equal(r.get("statusPaciente"), StatusPaciente.ATIVO));
+        long totalAtivos = pacienteRepository.count(pacientesAtivos);
 
-        long agendamentosHoje = agendamentoRepository.countByDataAgendamentoAndSituacaoAtendimento(hoje, SituacaoAtendimento.AGENDADO);
+        long agendamentosHoje = agendamentoRepository.count(escopoUnidadeService.<Agendamento>specificationPaciente("paciente")
+                .and((r,q,cb)->cb.and(cb.equal(r.get("dataAgendamento"), hoje),
+                        cb.equal(r.get("situacaoAtendimento"), SituacaoAtendimento.AGENDADO))));
 
-        long faltasUltimosSeteDias = agendamentoRepository.countBySituacaoAtendimentoAndDataAgendamentoBetween(SituacaoAtendimento.FALTOU, seteDiasAtras, hoje);
+        long faltasUltimosSeteDias = agendamentoRepository.count(escopoUnidadeService.<Agendamento>specificationPaciente("paciente")
+                .and((r,q,cb)->cb.and(cb.equal(r.get("situacaoAtendimento"), SituacaoAtendimento.FALTOU),
+                        cb.between(r.get("dataAgendamento"), seteDiasAtras, hoje))));
 
-        long pacientesAtencao = pacienteRepository.countByStatusPacienteAndClassificacaoRiscoIn(StatusPaciente.ATIVO, List.of(ClassificacaoRisco.AMARELO, ClassificacaoRisco.VERMELHO));
+        var atencao = pacientesAtivos.and((r,q,cb)->r.get("classificacaoRisco")
+                .in(List.of(ClassificacaoRisco.AMARELO, ClassificacaoRisco.VERMELHO)));
+        long pacientesAtencao = pacienteRepository.count(atencao);
 
         List<PacientePrioritarioDTO> prioritarios = pacienteRepository
-                .findPacientesPrioritarios(StatusPaciente.ATIVO,
-                        List.of(ClassificacaoRisco.VERMELHO, ClassificacaoRisco.AMARELO), PageRequest.of(0, 5))
+                .findAll(atencao, PageRequest.of(0, 5, Sort.by(Sort.Order.desc("classificacaoRisco"),
+                        Sort.Order.desc("countFaltas"), Sort.Order.asc("nome")))).getContent()
                 .stream()
                 .map(p -> new PacientePrioritarioDTO(
                         p.getIdPublico(),

@@ -137,8 +137,8 @@
           <label for="unidadeAtuacao">Unidade de atuação <b>*</b></label>
           <select id="unidadeAtuacao" formControlName="unidadeAtuacao">
             <option [ngValue]="null" disabled>Selecione a unidade</option>
-            <option *ngFor="let unidade of unidadeAtuacaoOptions" [value]="unidade">
-              {{ labelEnum(unidade) }}
+            <option *ngFor="let unidade of unidadeAtuacaoOptions" [value]="unidade.valor">
+              {{ unidade.label }}
             </option>
           </select>
           <small *ngIf="campoInvalido('unidadeAtuacao') || errosPorCampo['unidadeAtuacao']">
