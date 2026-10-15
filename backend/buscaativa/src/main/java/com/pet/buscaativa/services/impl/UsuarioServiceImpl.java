@@ -15,7 +15,6 @@ import com.pet.buscaativa.mapping.UsuarioMapper;
 import com.pet.buscaativa.repositories.UsuarioRepository;
 import com.pet.buscaativa.repositories.PacienteRepository;
 import com.pet.buscaativa.services.UsuarioService;
-import com.pet.buscaativa.services.exceptions.DatabaseException;
 import com.pet.buscaativa.services.exceptions.RecursoDuplicadoException;
 import com.pet.buscaativa.services.exceptions.ResourceNotFoundException;
 
@@ -38,6 +37,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public UsuarioDTO save(UsuarioDTO usuarioDTO) {
+        Usuario usuarioSalvar = null;
+        if (usuarioDTO.idPublico() != null) {
+            usuarioSalvar = usuarioRepository.findByIdPublico(usuarioDTO.idPublico())
+                    .filter(escopoUnidadeService::usuarioPertenceAoEscopo)
+                    .orElseThrow(() -> new ResourceNotFoundException(usuarioDTO.idPublico()));
+        }
+
         UsfReferencia usfAtuacao = resolverUsfAtuacao(usuarioDTO);
         validarEmailDuplicado(usuarioDTO.email(), usuarioDTO.idPublico());
 
@@ -48,12 +54,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new ValidationException("O campo de senha não pode ficar vazio.");
         }
 
-        Usuario usuarioSalvar;
-
-        if (usuarioDTO.idPublico() != null) {
-            usuarioSalvar = usuarioRepository.findByIdPublico(usuarioDTO.idPublico())
-                    .orElseThrow(() -> new DatabaseException("Usuário não encontrado!"));
-
+        if (usuarioSalvar != null) {
             usuarioSalvar.setNome(usuarioDTO.nome());
             usuarioSalvar.setEmail(usuarioDTO.email());
             usuarioSalvar.setTipoUsuario(usuarioDTO.tipoUsuario());
@@ -88,7 +89,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public List<UsuarioDTO> findAll() {
-        List<Usuario> list = usuarioRepository.findAll();
+        List<Usuario> list = usuarioRepository.findAll(escopoUnidadeService.<Usuario>specificationUsuario(),
+                org.springframework.data.domain.Sort.by("nome"));
         return list.stream()
                 .map(UsuarioDTO::new)
                 .toList();
@@ -115,6 +117,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public UsuarioDTO findById(UUID idPublic) {
         Usuario usuario = usuarioRepository.findByIdPublico(idPublic)
+                .filter(escopoUnidadeService::usuarioPertenceAoEscopo)
                 .orElseThrow(() -> new ResourceNotFoundException(idPublic));
         return new UsuarioDTO(usuario);
     }
@@ -142,10 +145,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public void removerUsuario(UUID idPublico) {
-        var usuarioEntity = usuarioRepository.findByIdPublico(idPublico).orElse(null);
-        if (usuarioEntity == null) {
-            throw new DatabaseException("Usuário não encontrado para remoção.");
-        }else if (pacienteRepository.existsByProfissionalReferenciaId(usuarioEntity.getId())) {
+        var usuarioEntity = usuarioRepository.findByIdPublico(idPublico)
+                .filter(escopoUnidadeService::usuarioPertenceAoEscopo)
+                .orElseThrow(() -> new ResourceNotFoundException(idPublico));
+        if (pacienteRepository.existsByProfissionalReferenciaId(usuarioEntity.getId())) {
             throw new ValidationException("Usuário vinculado como profissional de referência não pode ser removido."); 
         }else {
             usuarioRepository.deleteById(usuarioEntity.getId());

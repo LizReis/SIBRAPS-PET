@@ -358,30 +358,145 @@ class IsolamentoUnidadeTests {
         }
     }
 
+    // Complementa a cobertura AD/I existente com CAPS II e as duas USFs específicas.
+    private Usuario atorAdicional(int escopo) {
+        return switch (escopo) {
+            case 0 -> ad;
+            case 1 -> usuario(UnidadeAtuacao.CAPS_II, null, TipoUsuario.ADMINISTRADOR);
+            case 2 -> usfA;
+            default -> usuario(UnidadeAtuacao.USF, usfB.getUsfAtuacao(), TipoUsuario.ADMINISTRADOR);
+        };
+    }
+
+    private Usuario coordenadorExterno(int escopo) {
+        return switch (escopo) {
+            case 0 -> usuario(UnidadeAtuacao.CAPS_II, null, TipoUsuario.PROFISSIONAL);
+            case 1 -> coordenadorAd;
+            case 2 -> usuario(UnidadeAtuacao.USF, usfB.getUsfAtuacao(), TipoUsuario.PROFISSIONAL);
+            default -> usuario(UnidadeAtuacao.USF, usfA.getUsfAtuacao(), TipoUsuario.PROFISSIONAL);
+        };
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3})
+    void gruposContinuamIsoladosParaCapsIIEUsfsDistintas(int escopo) throws Exception {
+        Usuario ator = atorAdicional(escopo);
+        Usuario proprio = usuario(ator.getUnidadeAtuacao(), ator.getUsfAtuacao(), TipoUsuario.PROFISSIONAL);
+        var local = grupo(proprio, "Autorizado adicional");
+        var outro = grupo(coordenadorExterno(escopo), "Externo adicional");
+        var sessaoLocal = sessao(local, LocalDate.now().plusDays(1), StatusSessaoGrupo.AGENDADA);
+        var sessaoExterna = sessao(outro, LocalDate.now().plusDays(1), StatusSessaoGrupo.AGENDADA);
+        var ids = ok(ator, "/api/grupos").valueStream().map(g -> g.get("id").asLong()).toList();
+        assertTrue(ids.contains(local.getId()));
+        assertFalse(ids.contains(outro.getId()));
+        assertEquals(200, getAs(ator, "/api/grupos/" + local.getId()).getStatus());
+        assertEquals(404, getAs(ator, "/api/grupos/" + outro.getId()).getStatus());
+        assertEquals(404, getAs(ator, "/api/grupos/" + outro.getId() + "/participantes").getStatus());
+        String periodo = "/api/grupos/sessoes?dataInicio=" + LocalDate.now() + "&dataFim=" + LocalDate.now().plusDays(2);
+        var sessoesVisiveis = ok(ator, periodo).valueStream().map(s -> s.get("id").asLong()).toList();
+        assertTrue(sessoesVisiveis.contains(sessaoLocal.getId()));
+        assertFalse(sessoesVisiveis.contains(sessaoExterna.getId()));
+        assertEquals(404, postAs(ator, "/api/grupos/sessoes/" + sessaoExterna.getId()
+                + "/confirmacao-ocorrencia", "{\"ocorreu\":false,\"motivoCancelamento\":\"Teste\"}").getStatus());
+        assertEquals(StatusSessaoGrupo.AGENDADA, sessaoExterna.getStatus());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3})
+    void agendaContinuaIsoladaParaCapsIIEUsfsDistintas(int escopo) throws Exception {
+        Usuario ator = atorAdicional(escopo);
+        Usuario proprio = usuario(ator.getUnidadeAtuacao(), ator.getUsfAtuacao(), TipoUsuario.PROFISSIONAL);
+        Usuario externo = coordenadorExterno(escopo);
+        Paciente permitido = List.of(pAd, pII, pIA, pI).get(escopo);
+        Paciente proibido = List.of(pII, pAd, pI, pIA).get(escopo);
+        var local = agenda(permitido, proprio, SituacaoAtendimento.AGENDADO, LocalDate.now());
+        var outro = agenda(proibido, externo, SituacaoAtendimento.AGENDADO, LocalDate.now());
+        String periodo = "/api/agendamentos/agenda?dataInicio=" + LocalDate.now() + "&dataFim=" + LocalDate.now();
+        var ids = ok(ator, periodo).valueStream().map(a -> a.get("id").asLong()).toList();
+        assertTrue(ids.contains(local.getId()));
+        assertFalse(ids.contains(outro.getId()));
+        assertEquals(404, getAs(ator, periodo + "&profissionalId=" + externo.getIdPublico()).getStatus());
+        assertEquals(404, getAs(ator, "/api/agendamentos/" + outro.getId()).getStatus());
+        assertEquals(404, getAs(ator, "/api/agendamentos/" + outro.getId() + "/remarcacao").getStatus());
+        String parametros = "?usuarioId=" + externo.getIdPublico() + "&data=" + LocalDate.now();
+        assertEquals(404, getAs(ator, "/api/agendamentos/vagas" + parametros).getStatus());
+        assertEquals(404, getAs(ator, "/api/agendamentos/horarios-disponiveis" + parametros + "&turno=MANHA").getStatus());
+        var alteracao = mvc.perform(patch("/api/agendamentos/" + outro.getId() + "/status")
+                .param("novoStatus", "CANCELADO").header("Authorization", "Bearer " + tokens.gerarToken(ator)))
+                .andReturn().getResponse();
+        assertEquals(404, alteracao.getStatus());
+        assertEquals(SituacaoAtendimento.AGENDADO, outro.getSituacaoAtendimento());
+    }
+
+    @Test
+    void profissionalContinuaVendoSomenteSuaAgendaMesmoNaMesmaUnidade() throws Exception {
+        Usuario colega = usuario(UnidadeAtuacao.CAPS_AD, null, TipoUsuario.PROFISSIONAL);
+        var outraAgenda = agenda(pAdB, colega, SituacaoAtendimento.AGENDADO, LocalDate.now());
+        String url = "/api/agendamentos/agenda/" + LocalDate.now();
+        var lista = ok(profissionalAd, url);
+        assertTrue(lista.valueStream().anyMatch(a -> a.get("id").asLong() == agendaAd.getId()));
+        assertTrue(lista.valueStream().allMatch(a -> a.get("usuarioId").asString().equals(profissionalAd.getIdPublico().toString())));
+        assertEquals(422, getAs(profissionalAd, url + "?profissionalId=" + colega.getIdPublico()).getStatus());
+        assertEquals(422, getAs(profissionalAd, "/api/agendamentos/" + outraAgenda.getId()).getStatus());
+        for (Usuario ator : List.of(ad, recepcaoAd)) {
+            assertTrue(ok(ator, url).valueStream().anyMatch(a -> a.get("id").asLong() == outraAgenda.getId()));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3})
+    void relatoriosContinuamIsoladosParaCapsIIEUsfsDistintas(int escopo) throws Exception {
+        Usuario ator = atorAdicional(escopo);
+        Usuario proprio = usuario(ator.getUnidadeAtuacao(), ator.getUsfAtuacao(), TipoUsuario.PROFISSIONAL);
+        Usuario externo = coordenadorExterno(escopo);
+        Paciente permitido = List.of(pAd, pII, pIA, pI).get(escopo);
+        Paciente proibido = List.of(pII, pAd, pI, pIA).get(escopo);
+        var local = grupo(proprio, "Relatório autorizado");
+        var outro = grupo(externo, "Relatório externo");
+        participante(sessao(local, LocalDate.now().minusDays(2), StatusSessaoGrupo.REALIZADA), permitido, StatusPresencaGrupo.PRESENTE);
+        participante(sessao(outro, LocalDate.now().minusDays(2), StatusSessaoGrupo.REALIZADA), proibido, StatusPresencaGrupo.PRESENTE);
+        for (String formato : List.of("pdf", "excel")) {
+            for (String tipo : List.of("busca-ativa", "frequencia-grupos")) {
+                String url = "/api/relatorios/" + tipo + "/" + formato;
+                var response = getAs(ator, url);
+                assertEquals(200, response.getStatus());
+                String texto = extrair(response.getContentAsByteArray(), formato).replaceAll("\\s+", " ");
+                assertFalse(texto.contains(proibido.getNome()));
+                assertFalse(texto.contains(outro.getTema()));
+                if (tipo.equals("frequencia-grupos") && formato.equals("pdf")) {
+                    assertTrue(texto.contains(local.getTema()));
+                } else {
+                    assertTrue(texto.contains(permitido.getNome()), url);
+                }
+            }
+            assertEquals(404, getAs(ator, "/api/relatorios/busca-ativa/" + formato + "?profissionalId=" + externo.getIdPublico()).getStatus());
+            assertEquals(404, getAs(ator, "/api/relatorios/frequencia-grupos/" + formato + "?grupoId=" + outro.getId()).getStatus());
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"/api/pacientes", "/api/pacientes/pesquisa", "/api/painel/resumo",
-            "/api/inicio/resumo", "/api/grupos", "/api/usuarios/profissionais-selecao", "/api/relatorios/busca-ativa/excel"})
+            "/api/inicio/resumo", "/api/grupos", "/api/usuarios", "/api/usuarios/profissionais-selecao", "/api/relatorios/busca-ativa/excel"})
     void usfLegadaSemAssociacaoFalhaFechada(String url) throws Exception {
         var r = getAs(legado, url);
         assertEquals(422, r.getStatus(), url);
         assertTrue(r.getContentAsString().contains("A unidade USF específica deste usuário ainda não foi configurada."));
         assertFalse(r.getContentAsString().contains(pAd.getNome()));
         assertEquals(200, getAs(legado, "/api/usuarios/me").getStatus());
-        // A administração geral permanece disponível para corrigir o usuário antigo.
-        assertEquals(200, getAs(legado, "/api/usuarios").getStatus());
     }
 
     @Test
-    void edicaoAdministrativaCorrigeUsfLegadaPelaApi() throws Exception {
+    void edicaoAdministrativaNaoAssociaLegadoDeOutraUnidade() throws Exception {
         String body = json.writeValueAsString(java.util.Map.of(
                 "nome", legado.getNome(), "email", legado.getEmail(), "tipoUsuario", "ADMINISTRADOR",
                 "unidadeAtuacao", "USF", "usfAtuacaoId", usfA.getUsfAtuacao().getId()));
         var response = mvc.perform(put("/api/usuarios/" + legado.getIdPublico())
                 .header("Authorization", "Bearer " + tokens.gerarToken(ad))
                 .contentType("application/json").content(body)).andReturn().getResponse();
-        assertEquals(200, response.getStatus());
-        assertEquals(usfA.getUsfAtuacao().getId(), json.readTree(response.getContentAsString()).get("usfAtuacaoId").asLong());
-        assertEquals(200, getAs(legado, "/api/pacientes/pesquisa").getStatus());
+        assertEquals(404, response.getStatus());
+        assertNull(usuarios.findByIdPublico(legado.getIdPublico()).orElseThrow().getUsfAtuacao());
+        assertEquals(422, getAs(legado, "/api/pacientes/pesquisa").getStatus());
+        assertEquals(200, getAs(legado, "/api/usuarios/me").getStatus());
         assertFalse(response.getContentAsString().contains("senha"));
     }
 

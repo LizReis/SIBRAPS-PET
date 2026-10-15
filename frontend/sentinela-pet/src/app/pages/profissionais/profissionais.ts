@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
@@ -9,6 +9,14 @@ import {
 } from '../../services/profissional/profissional-service';
 
 import { UsuarioLogadoService } from '../../services/usuario-logado-service';
+import { UnidadeSaudeService } from '../../services/unidade-saude-service';
+
+interface UnidadeFiltro {
+  valor: string;
+  label: string;
+  tipo: 'CAPS' | 'USF';
+  cnes?: string;
+}
 
 @Component({
   selector: 'app-profissionais',
@@ -22,6 +30,11 @@ export class Profissionais implements OnInit {
   tipoUsuarioSelecionado = '';
 
   unidadeSelecionada = '';
+  unidadesDisponiveis: UnidadeFiltro[] = [
+    { valor: 'CAPS_AD', label: 'CAPS AD', tipo: 'CAPS' },
+    { valor: 'CAPS_I', label: 'CAPS I', tipo: 'CAPS' },
+    { valor: 'CAPS_II', label: 'CAPS II', tipo: 'CAPS' },
+  ];
   readonly tipoUsuarioOptions = ['ADMINISTRADOR', 'PROFISSIONAL', 'RECEPCAO'];
   readonly itensPorPagina = 10;
   paginaAtual = 1;
@@ -36,6 +49,8 @@ export class Profissionais implements OnInit {
     private router: Router,
     private profissionalService: ProfissionalService,
     private usuarioLogadoService: UsuarioLogadoService,
+    private unidadeSaudeService: UnidadeSaudeService,
+    private changeDetector: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -43,6 +58,21 @@ export class Profissionais implements OnInit {
       .obterUsuarioLogado()
       .subscribe((usuario) => (this.podeGerenciar = usuario.tipoUsuario === 'ADMINISTRADOR'));
     this.carregarProfissionais();
+    this.unidadeSaudeService.listarUnidades().subscribe({
+      next: (unidades) => {
+        this.unidadesDisponiveis = [
+          ...this.unidadesDisponiveis,
+          ...unidades.map((usf): UnidadeFiltro => ({
+            valor: `USF:${usf.cnes}`, label: usf.nomeUsf, tipo: 'USF', cnes: usf.cnes,
+          })),
+        ];
+        this.changeDetector.markForCheck();
+      },
+      error: () => {
+        this.erro = 'Não foi possível carregar as unidades de saúde.';
+        this.changeDetector.markForCheck();
+      },
+    });
   }
 
   carregarProfissionais(): void {
@@ -53,11 +83,13 @@ export class Profissionais implements OnInit {
       next: (profissionais) => {
         this.profissionais = profissionais;
         this.carregando = false;
+        this.changeDetector.markForCheck();
       },
       error: (erro) => {
         console.error('Erro ao carregar profissionais', erro);
         this.erro = 'Não foi possível carregar os profissionais.';
         this.carregando = false;
+        this.changeDetector.markForCheck();
       },
     });
   }
@@ -68,12 +100,6 @@ export class Profissionais implements OnInit {
   quantidadePorTipo(tipo: string): number {
     return this.profissionais.filter((item) => item.tipoUsuario === tipo).length;
   }
-  get unidadesDisponiveis(): string[] {
-    return [
-      ...new Set(this.profissionais.map((item) => item.unidadeAtuacao).filter(Boolean)),
-    ].sort();
-  }
-
   get profissionaisFiltrados(): ProfissionalPayload[] {
     const termo = this.termoPesquisa.trim().toLowerCase();
     return this.profissionais.filter((item) => {
@@ -84,7 +110,9 @@ export class Profissionais implements OnInit {
 
       const tipoOk =
         !this.tipoUsuarioSelecionado || item.tipoUsuario === this.tipoUsuarioSelecionado;
-      const unidadeOk = !this.unidadeSelecionada || item.unidadeAtuacao === this.unidadeSelecionada;
+      const unidadeOk = !this.unidadeSelecionada || (this.unidadeSelecionada.startsWith('USF:')
+        ? item.unidadeAtuacao === 'USF' && item.usfAtuacao?.cnes === this.unidadeSelecionada.substring(4)
+        : item.unidadeAtuacao === this.unidadeSelecionada);
       return buscaOk && tipoOk && unidadeOk;
     });
   }

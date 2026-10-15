@@ -78,8 +78,8 @@
       aria-label="Filtrar por unidade"
     >
       <option value="">Todas as unidades</option>
-      <option *ngFor="let unidade of unidadesDisponiveis" [value]="unidade">
-        {{ labelEnum(unidade) }}
+      <option *ngFor="let unidade of unidadesDisponiveis" [value]="unidade.valor">
+        {{ unidade.label }}
       </option>
     </select>
   </section>
