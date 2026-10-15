@@ -35,7 +35,8 @@ public class UsuarioContextService {
             }
             Usuario alvo = usuarioRepository.findByIdPublico(usuarioIdPublico)
                     .orElseThrow(() -> new ResourceNotFoundException("Usuário alvo não encontrado para id: " + usuarioIdPublico));
-            if (alvo.getTipoUsuario() != TipoUsuario.PROFISSIONAL) {
+            if (alvo.getTipoUsuario() != TipoUsuario.PROFISSIONAL
+                    && alvo.getTipoUsuario() != TipoUsuario.ADMINISTRADOR) {
                 throw new ValidationException("O usuário informado não é um profissional.");
             }
             escopoUnidadeService.validarUsuario(alvo);
@@ -56,7 +57,8 @@ public class UsuarioContextService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário autenticado não encontrado."));
         boolean gestorDeAgenda = (logado.getTipoUsuario() == TipoUsuario.ADMINISTRADOR
                 || logado.getTipoUsuario() == TipoUsuario.RECEPCAO)
-                && proprietario.getTipoUsuario() == TipoUsuario.PROFISSIONAL;
+                && (proprietario.getTipoUsuario() == TipoUsuario.PROFISSIONAL
+                || proprietario.getTipoUsuario() == TipoUsuario.ADMINISTRADOR);
         boolean profissionalProprietario = logado.getTipoUsuario() == TipoUsuario.PROFISSIONAL
                 && logado.getId().equals(proprietario.getId());
         if (!gestorDeAgenda && !profissionalProprietario) {

@@ -1,6 +1,7 @@
 package com.pet.buscaativa.services.impl;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.pet.buscaativa.entities.Usuario;
@@ -22,6 +23,7 @@ import com.pet.buscaativa.services.exceptions.ValidationException;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -45,6 +47,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         UsfReferencia usfAtuacao = resolverUsfAtuacao(usuarioDTO);
+        validarUnidadeDestino(usuarioDTO);
         validarEmailDuplicado(usuarioDTO.email(), usuarioDTO.idPublico());
 
         // Senha é obrigatória apenas no cadastro (idPublico == null)
@@ -78,6 +81,18 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioMapper.toUsuarioDTO(usuarioSalvar);
     }
 
+    private void validarUnidadeDestino(UsuarioDTO dto) {
+        // Carga inicial e fixtures sem autenticação não passam pelo fluxo HTTP administrativo.
+        if (SecurityContextHolder.getContext().getAuthentication() == null) return;
+        escopoUnidadeService.validarUnidadeConfigurada();
+        Usuario logado = escopoUnidadeService.usuarioLogado();
+        if (dto.unidadeAtuacao() != logado.getUnidadeAtuacao()
+                || dto.unidadeAtuacao() == UnidadeAtuacao.USF
+                && !Objects.equals(dto.usfAtuacaoId(), logado.getUsfAtuacao().getId())) {
+            throw new ValidationException("Só é possível salvar usuários para a sua própria unidade.");
+        }
+    }
+
     private UsfReferencia resolverUsfAtuacao(UsuarioDTO dto) {
         if (dto.unidadeAtuacao() != UnidadeAtuacao.USF) return null;
         if (dto.usfAtuacaoId() == null) {
@@ -99,7 +114,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public List<ProfissionalSelecaoDTO> listarProfissionaisParaSelecao() {
         return usuarioRepository.findAll(escopoUnidadeService.<Usuario>specificationUsuario()
-                .and((r, q, cb) -> cb.equal(r.get("tipoUsuario"), TipoUsuario.PROFISSIONAL)),
+                .and((r, q, cb) -> r.get("tipoUsuario").in(TipoUsuario.PROFISSIONAL, TipoUsuario.ADMINISTRADOR)),
                 org.springframework.data.domain.Sort.by("nome")).stream()
                 .map(ProfissionalSelecaoDTO::new)
                 .toList();

@@ -93,30 +93,30 @@ class UsuarioUnidadeTests {
     }
 
     @Test
-    void editaUsfAParaUsfB() {
+    void rejeitaEdicaoDeUsfAParaUsfB() {
         UsuarioDTO a = service.save(dto(null, UnidadeAtuacao.USF, usf()));
         autenticar(a);
         Long b = usf();
-        UsuarioDTO salvo = service.save(dto(a.idPublico(), UnidadeAtuacao.USF, b));
-        assertEquals(b, salvo.usfAtuacaoId());
-        assertEquals(b, usuarios.findByIdPublico(a.idPublico()).orElseThrow().getUsfAtuacao().getId());
+        assertThrows(ValidationException.class, () -> service.save(dto(a.idPublico(), UnidadeAtuacao.USF, b)));
+        assertEquals(a.usfAtuacaoId(), usuarios.findByIdPublico(a.idPublico()).orElseThrow().getUsfAtuacao().getId());
     }
 
     @Test
-    void editaUsfParaCapsRemoveAssociacao() {
+    void rejeitaEdicaoDeUsfParaCaps() {
         UsuarioDTO a = service.save(dto(null, UnidadeAtuacao.USF, usf()));
         autenticar(a);
-        UsuarioDTO salvo = service.save(dto(a.idPublico(), UnidadeAtuacao.CAPS_AD, a.usfAtuacaoId()));
-        assertNull(salvo.usfAtuacao());
-        assertNull(usuarios.findByIdPublico(a.idPublico()).orElseThrow().getUsfAtuacao());
+        assertThrows(ValidationException.class, () -> service.save(dto(a.idPublico(), UnidadeAtuacao.CAPS_AD, a.usfAtuacaoId())));
+        assertEquals(a.usfAtuacaoId(), usuarios.findByIdPublico(a.idPublico()).orElseThrow().getUsfAtuacao().getId());
     }
 
     @Test
-    void editaCapsParaUsf() {
+    void rejeitaEdicaoDeCapsParaUsf() {
         UsuarioDTO a = service.save(dto(null, UnidadeAtuacao.CAPS_I, null));
         autenticar(a);
         Long id = usf();
-        assertEquals(id, service.save(dto(a.idPublico(), UnidadeAtuacao.USF, id)).usfAtuacaoId());
+        assertThrows(ValidationException.class, () -> service.save(dto(a.idPublico(), UnidadeAtuacao.USF, id)));
+        assertEquals(UnidadeAtuacao.CAPS_I, usuarios.findByIdPublico(a.idPublico()).orElseThrow().getUnidadeAtuacao());
+        assertNull(usuarios.findByIdPublico(a.idPublico()).orElseThrow().getUsfAtuacao());
     }
 
     @Test

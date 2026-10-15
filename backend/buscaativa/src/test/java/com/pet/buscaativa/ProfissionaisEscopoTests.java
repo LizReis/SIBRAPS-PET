@@ -20,6 +20,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.pet.buscaativa.entities.Usuario;
 import com.pet.buscaativa.entities.UsfReferencia;
@@ -42,6 +43,7 @@ class ProfissionaisEscopoTests {
     @Autowired TokenService tokens;
     @Autowired UsuarioRepository usuarios;
     @Autowired UsfReferenciaRepository usfs;
+    @Autowired PasswordEncoder senhas;
     List<Usuario> admins, profissionais, recepcoes;
 
     @BeforeEach
@@ -210,10 +212,17 @@ class ProfissionaisEscopoTests {
                 var lista = ok(ator, "/api/usuarios/" + selecao);
                 assertTrue(lista.valueStream().anyMatch(u -> u.get("idPublico").asString()
                         .equals(profissionais.get(escopo).getIdPublico().toString())));
+                assertTrue(lista.valueStream().anyMatch(u -> u.get("idPublico").asString()
+                        .equals(admins.get(escopo).getIdPublico().toString())));
+                var nomes = lista.valueStream().map(u -> u.get("nome").asString()).toList();
+                assertEquals(nomes.stream().sorted().toList(), nomes);
                 for (var u : lista) {
                     assertEquals(ator.getUnidadeAtuacao().name(), u.get("unidadeAtuacao").asString());
                     for (int i = 0; i < profissionais.size(); i++) {
-                        if (i != escopo) assertNotEquals(profissionais.get(i).getIdPublico().toString(), u.get("idPublico").asString());
+                        if (i != escopo) {
+                            assertNotEquals(profissionais.get(i).getIdPublico().toString(), u.get("idPublico").asString());
+                            assertNotEquals(admins.get(i).getIdPublico().toString(), u.get("idPublico").asString());
+                        }
                     }
                     assertNotEquals(recepcoes.get(escopo).getIdPublico().toString(), u.get("idPublico").asString());
                 }
@@ -230,5 +239,72 @@ class ProfissionaisEscopoTests {
         var lista = getAs(legado, "/api/usuarios");
         assertEquals(422, lista.getStatus());
         assertTrue(lista.getContentAsString().contains("A unidade USF específica deste usuário ainda não foi configurada."));
+    }
+
+    private String cadastro(Usuario unidade, TipoUsuario tipo, String email, String senha) {
+        var dados = json.readValue(payload(unidade, unidade, "Novo usuário"), HashMap.class);
+        dados.put("email", email);
+        dados.put("tipoUsuario", tipo);
+        dados.put("senha", senha);
+        return json.writeValueAsString(dados);
+    }
+
+    private MockHttpServletResponse criar(Usuario ator, String body) throws Exception {
+        return mvc.perform(post("/api/usuarios").header("Authorization", bearer(ator))
+                .contentType("application/json").content(body)).andReturn().getResponse();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3, 4})
+    void cadastroDaPropriaInstituicaoAceitaOsTresRolesEPreservaSenha(int escopo) throws Exception {
+        Usuario ator = admins.get(escopo);
+        for (TipoUsuario tipo : TipoUsuario.values()) {
+            String email = UUID.randomUUID() + "@test.local";
+            var response = criar(ator, cadastro(ator, tipo, email, "senha-nova"));
+            assertEquals(201, response.getStatus(), response.getContentAsString());
+            assertFalse(json.readTree(response.getContentAsString()).has("senha"));
+            Usuario salvo = usuarios.findByEmail(email).orElseThrow();
+            assertEquals(tipo, salvo.getTipoUsuario());
+            assertEquals(ator.getUnidadeAtuacao(), salvo.getUnidadeAtuacao());
+            assertEquals(ator.getUsfAtuacao(), salvo.getUsfAtuacao());
+            assertTrue(senhas.matches("senha-nova", salvo.getSenha()));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3, 4})
+    void payloadManualNaoCriaNemMoveUsuarioParaOutraInstituicao(int escopo) throws Exception {
+        Usuario ator = admins.get(escopo), alvo = profissionais.get(escopo);
+        for (int i = 0; i < admins.size(); i++) {
+            if (i == escopo) continue;
+            String email = UUID.randomUUID() + "@test.local";
+            var response = criar(ator, cadastro(admins.get(i), TipoUsuario.PROFISSIONAL, email, "senha-nova"));
+            assertEquals(422, response.getStatus());
+            assertTrue(response.getContentAsString().contains("Só é possível salvar usuários para a sua própria unidade."));
+            assertTrue(usuarios.findByEmail(email).isEmpty());
+            var editado = mvc.perform(put("/api/usuarios/" + alvo.getIdPublico())
+                    .header("Authorization", bearer(ator)).contentType("application/json")
+                    .content(payload(alvo, admins.get(i), "Mudança indevida"))).andReturn().getResponse();
+            assertEquals(422, editado.getStatus());
+            assertEquals(ator.getUnidadeAtuacao(), alvo.getUnidadeAtuacao());
+            assertEquals(ator.getUsfAtuacao(), alvo.getUsfAtuacao());
+            assertEquals("Profissional " + escopo, alvo.getNome());
+        }
+    }
+
+    @Test
+    void cadastroMantemValidacaoDeSenhaEmailEPermissoesHttp() throws Exception {
+        assertEquals(422, criar(admins.get(0), cadastro(admins.get(0), TipoUsuario.PROFISSIONAL,
+                "sem-senha@test.local", "")).getStatus());
+        assertEquals(409, criar(admins.get(0), cadastro(admins.get(0), TipoUsuario.PROFISSIONAL,
+                profissionais.get(0).getEmail(), "senha-nova")).getStatus());
+        for (Usuario ator : List.of(profissionais.get(0), recepcoes.get(0))) {
+            assertEquals(403, criar(ator, cadastro(ator, TipoUsuario.PROFISSIONAL,
+                    UUID.randomUUID() + "@test.local", "senha-nova")).getStatus());
+        }
+        var anonimo = mvc.perform(post("/api/usuarios").contentType("application/json")
+                .content(cadastro(admins.get(0), TipoUsuario.PROFISSIONAL,
+                        UUID.randomUUID() + "@test.local", "senha-nova"))).andReturn().getResponse();
+        assertEquals(401, anonimo.getStatus());
     }
 }
