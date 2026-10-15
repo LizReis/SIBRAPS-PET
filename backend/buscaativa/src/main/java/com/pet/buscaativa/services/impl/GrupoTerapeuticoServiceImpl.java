@@ -153,9 +153,10 @@ public class GrupoTerapeuticoServiceImpl implements GrupoTerapeuticoService {
         boolean estrutural = !primeira.getDataSessao().equals(dto.dataPrimeiraSessao())
                 || !grupo.getHorarioPadrao().equals(dto.horario()) || grupo.getRecorrencia() != dto.recorrencia()
                 || !java.util.Objects.equals(grupo.getDataFimRecorrencia(), dto.dataFimRecorrencia());
-        if (iniciado && estrutural)
+        if (iniciado && estrutural) {
             sessoes.forEach(escopoUnidadeService::validarSessaoCompleta);
             throw new ConflictException("Após o início do grupo, data, horário e recorrência não podem ser alterados.");
+        }
         if (!iniciado && estrutural) {
             sessoes.forEach(escopoUnidadeService::validarSessaoCompleta);
             Set<UUID> participantes = sessoes.isEmpty() ? Set.of() : sessoes.get(0).getParticipantes().stream()
