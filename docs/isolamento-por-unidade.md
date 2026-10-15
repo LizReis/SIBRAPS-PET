@@ -1,3 +1,51 @@
+# Complemento: escopo de Profissionais
+
+Esta revisão partiu de `origin/main` em `786dd62`. O relato histórico abaixo descreve a implementação anterior; suas referências à administração global e à correção de USF legada por outro administrador foram substituídas pelas restrições desta revisão.
+
+`GET /api/usuarios` vazava usuários porque `UsuarioServiceImpl.findAll()` chamava `usuarioRepository.findAll()` sem escopo. A consulta agora reutiliza `EscopoUnidadeService.specificationUsuario()` e ordena por nome: CAPS compara a categoria; USF compara a associação específica persistida. ADMINISTRADOR e RECEPCAO, quando autorizados pelo controller, recebem somente usuários da própria instituição.
+
+O acesso por UUID aplica `usuarioPertenceAoEscopo` antes de devolver o DTO. PUT valida a unidade **atual do alvo**, antes de validar o conteúdo recebido ou alterar a entidade; enviar a unidade do administrador no payload não permite capturar um usuário externo. DELETE valida o alvo antes das verificações de vínculo e da remoção. UUID externo e inexistente recebem o mesmo padrão de 404, sem nome ou email do alvo. As regras existentes de cadastro, senha, destino da edição e vínculo como referência permanecem iguais. `/me`, `findByEmail`, JWT e os dois endpoints de seleção não foram modificados. Usuário USF legado sem associação mantém `/me`, mas a listagem falha fechada; um administrador de outra instituição também não pode editar esse legado.
+
+O filtro da listagem oferece “Todas as unidades”, CAPS AD, CAPS I, CAPS II e os nomes reais retornados por `UnidadeSaudeService.listarUnidades()` (`GET /api/unidades-saude`). As opções são tipadas com valor, label, tipo e CNES quando USF. Não há opção genérica “USF”. `USF:<cnes>` filtra por `unidadeAtuacao === 'USF'` **e** `usfAtuacao.cnes`, preservando zeros iniciais. O enum interno `UnidadeAtuacao.USF` não foi alterado. “Todas” remove apenas o filtro local: nunca amplia a resposta autorizada. Selecionar outra instituição resulta em zero linhas, sem uma nova consulta de usuários. Cards contam a lista autorizada original; busca por nome/email, cargo, paginação e layout foram preservados. A atualização assíncrona sinaliza a detecção de mudanças do Angular.
+
+| Área revisada | Resultado |
+| --- | --- |
+| Grupos Terapêuticos | Já protegidos pela unidade do coordenador, incluindo IDs diretos, sessões, participantes e contagens de grupos legados mistos. Nenhuma alteração em produção. O bloco condicional corrigido anteriormente em `GrupoTerapeuticoServiceImpl` mantém chaves e fluxo válido. |
+| Agenda | Já valida unidade de profissional e paciente, consulta diária/período, IDs, status, remarcação, vagas e horários. PROFISSIONAL continua limitado à própria agenda, inclusive contra colega da mesma unidade; ADMIN/RECEP mantêm acesso aos atendimentos autorizados da unidade. Nenhuma alteração em produção. |
+| Relatórios | Busca ativa usa pacientes autorizados; frequência usa grupos/coordenadores e participantes autorizados. “Todos os profissionais” permanece limitado à unidade. Profissional/grupo externo recebe 404. PDF/XLSX foram lidos nos testes para confirmar exclusões. Nenhuma alteração em serviço, template ou renderizador. |
+
+Arquivos analisados nesta revisão (caminhos relativos ao repositório):
+
+- `backend/buscaativa/src/main/java/com/pet/buscaativa/`: `services/impl/{UsuarioServiceImpl,EscopoUnidadeService,GrupoTerapeuticoServiceImpl,AgendamentoServiceImpl,RelatorioServiceImpl,UsuarioContextService}.java`; controllers de usuários, grupos, agenda e relatórios; repositórios, DTOs e regras de segurança utilizados nesses fluxos.
+- `frontend/sentinela-pet/src/app/`: tela `pages/profissionais`, serviços de profissionais e unidades de saúde e consumidores de seleção em agenda, grupos e relatórios.
+- Testes existentes de usuários, isolamento, relatórios e telas de profissionais; configuração Maven e Angular para executar as verificações sem alterar seus limites.
+
+Arquivos efetivamente alterados nesta revisão:
+
+- `backend/buscaativa/src/main/java/com/pet/buscaativa/services/impl/UsuarioServiceImpl.java`.
+- `backend/buscaativa/src/test/java/com/pet/buscaativa/ProfissionaisEscopoTests.java` (novo).
+- `backend/buscaativa/src/test/java/com/pet/buscaativa/UsuarioUnidadeTests.java`.
+- `backend/buscaativa/src/test/java/com/pet/buscaativa/IsolamentoUnidadeTests.java`.
+- `frontend/sentinela-pet/src/app/pages/profissionais/profissionais.ts`.
+- `frontend/sentinela-pet/src/app/pages/profissionais/profissionais.html`.
+- `frontend/sentinela-pet/src/app/pages/profissionais/profissionais.spec.ts`.
+- Este relatório.
+
+Cobertura acrescentada: cinco instituições (CAPS AD/I/II e duas USFs) para listagem ADMIN/RECEP, UUID externo/inexistente, PUT com payload disfarçado, DELETE, edição/remoção permitidas, `/me`, seleções e permissões de PROFISSIONAL. Os testes anteriores de edição agora autenticam um usuário da mesma unidade; a antiga expectativa de edição global de legado foi substituída por bloqueio e persistência intacta. A cobertura existente de grupos/agenda/relatórios foi complementada com CAPS II, duas USFs distintas, parâmetros externos, exportações reais e própria agenda. No frontend, os testes validam o catálogo dinâmico, CNES, CAPS, filtros combinados, cards, paginação e falha de carregamento. Nenhum teste foi desativado.
+
+| Validação desta revisão | Resultado |
+| --- | --- |
+| Maven Wrapper: `bash ./mvnw -s <settings-do-ambiente> -Dmaven.repo.local=<cache-do-ambiente> -B -ntp clean test` | BUILD SUCCESS: 100 testes; zero falhas, erros ou ignorados. Wrapper executado com bash porque o arquivo existente não tem permissão de execução; modo do arquivo preservado. |
+| Angular: `CI=true npm test -- --watch=false` com `--include` das telas profissionais, cadastro-profissional e detalhe-profissional | 27 testes passaram em 3 arquivos (11 da listagem, 11 do cadastro, 5 dos detalhes). |
+| Angular: `npm run build` | Sucesso. Bundle inicial 845,18 kB; aviso de orçamento de 500 kB, abaixo do limite de erro existente de 1 MB. Limites preservados. |
+| Revisão completa do diff e `git diff --check` | Apenas os oito arquivos relacionados acima; sem erros de espaços ou formatação. |
+
+O teste de contexto geral ainda registra a indisponibilidade de resolução de rede da sincronização opcional SUS, tratada pelo código existente; ele passou. Os testes de escopo substituem somente essa fronteira externa por mock, exercitando JWT, controllers, serviços, H2 e exportadores reais. A suíte Angular completa não foi reexecutada nesta revisão; as falhas anteriores fora destas três telas constam no histórico abaixo.
+
+Confirmações: administrador e recepção não recebem usuários externos; USF Centro não enxerga USF Andaiá; CAPS AD não enxerga CAPS I/II. Grupos, agenda e relatórios permanecem isolados. A regra mais restritiva da própria agenda de PROFISSIONAL foi preservada. Nenhuma funcionalidade sem relação com a tarefa foi modificada: `EscopoUnidadeService`, enums, roles, JWT, regras assistenciais, CSS, sidebar, header e layouts PDF/Excel permanecem intactos.
+
+## Histórico da implementação anterior
+
 O isolamento foi implementado em duas etapas: primeiro a USF específica do usuário e o formulário; depois o escopo das APIs assistenciais. A análise inicial usou o checkout atual de main, sem alterações prévias.
 
 O modelo de Usuario recebeu ManyToOne para UsfReferencia, pela coluna usf_atuacao_id, sem cascatas de remoção ou criação. UsuarioServiceImpl resolve exclusivamente usfAtuacaoId no repositório: USF exige um ID existente; CAPS normaliza a relação para null. O DevConfig liga apenas os dois usuários USF de demonstração às USFs sintéticas já criadas.

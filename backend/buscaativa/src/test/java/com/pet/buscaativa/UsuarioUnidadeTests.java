@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.pet.buscaativa.services.impl.SusApiAdapter;
 
@@ -32,6 +35,17 @@ class UsuarioUnidadeTests {
     @Autowired UsuarioRepository usuarios;
     @Autowired UsfReferenciaRepository usfs;
     @Autowired ObjectMapper json;
+
+    private void autenticar(UsuarioDTO dto) {
+        var usuario = usuarios.findByIdPublico(dto.idPublico()).orElseThrow();
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(usuario, null, usuario.getAuthorities()));
+    }
+
+    @AfterEach
+    void limparAutenticacao() {
+        SecurityContextHolder.clearContext();
+    }
 
     private UsuarioDTO dto(UUID id, UnidadeAtuacao unidade, Long usfId) {
         return new UsuarioDTO(id, "Usuário teste", "unidade-" + (id == null ? UUID.randomUUID() : id) + "@test.local",
@@ -63,6 +77,7 @@ class UsuarioUnidadeTests {
         assertEquals(id, usuarios.findByIdPublico(salvo.idPublico()).orElseThrow().getUsfAtuacao().getId());
         assertEquals(id, salvo.usfAtuacaoId());
         assertEquals("USF teste", salvo.usfAtuacao().nomeUsf());
+        autenticar(salvo);
         assertEquals(id, service.findById(salvo.idPublico()).usfAtuacao().id());
         assertEquals(id, service.findByEmail(salvo.email()).usfAtuacaoId());
     }
@@ -80,6 +95,7 @@ class UsuarioUnidadeTests {
     @Test
     void editaUsfAParaUsfB() {
         UsuarioDTO a = service.save(dto(null, UnidadeAtuacao.USF, usf()));
+        autenticar(a);
         Long b = usf();
         UsuarioDTO salvo = service.save(dto(a.idPublico(), UnidadeAtuacao.USF, b));
         assertEquals(b, salvo.usfAtuacaoId());
@@ -89,6 +105,7 @@ class UsuarioUnidadeTests {
     @Test
     void editaUsfParaCapsRemoveAssociacao() {
         UsuarioDTO a = service.save(dto(null, UnidadeAtuacao.USF, usf()));
+        autenticar(a);
         UsuarioDTO salvo = service.save(dto(a.idPublico(), UnidadeAtuacao.CAPS_AD, a.usfAtuacaoId()));
         assertNull(salvo.usfAtuacao());
         assertNull(usuarios.findByIdPublico(a.idPublico()).orElseThrow().getUsfAtuacao());
@@ -97,6 +114,7 @@ class UsuarioUnidadeTests {
     @Test
     void editaCapsParaUsf() {
         UsuarioDTO a = service.save(dto(null, UnidadeAtuacao.CAPS_I, null));
+        autenticar(a);
         Long id = usf();
         assertEquals(id, service.save(dto(a.idPublico(), UnidadeAtuacao.USF, id)).usfAtuacaoId());
     }
@@ -107,6 +125,7 @@ class UsuarioUnidadeTests {
         assertFalse(json.writeValueAsString(entrada).contains("senha"));
         UsuarioDTO salvo = service.save(entrada);
         assertNull(salvo.senha());
+        autenticar(salvo);
         assertFalse(json.writeValueAsString(service.findById(salvo.idPublico())).contains("senha"));
     }
 
@@ -135,6 +154,7 @@ class UsuarioUnidadeTests {
     void removerUsuarioNaoRemoveUsfIndependente() {
         Long id = usf();
         UsuarioDTO salvo = service.save(dto(null, UnidadeAtuacao.USF, id));
+        autenticar(salvo);
         service.removerUsuario(salvo.idPublico());
         usuarios.flush();
         assertTrue(usfs.existsById(id));
