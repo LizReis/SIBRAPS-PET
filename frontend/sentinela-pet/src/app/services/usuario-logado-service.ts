@@ -8,6 +8,8 @@ export interface UsuarioLogadoDTO {
   email: string;
   tipoUsuario: string;
   unidadeAtuacao: string;
+  usfAtuacaoId?: number | null;
+  usfAtuacao?: { id: number; cnes: string; nomeUsf: string } | null;
 }
 
 @Injectable({

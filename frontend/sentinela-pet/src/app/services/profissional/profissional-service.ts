@@ -19,7 +19,7 @@ export interface ProfissionalSelecao {
   idPublico: string;
   nome: string;
   unidadeAtuacao: string;
-  tipoUsuario: 'PROFISSIONAL';
+  tipoUsuario: 'PROFISSIONAL' | 'ADMINISTRADOR';
 }
 
 export interface UsuarioReferencia {

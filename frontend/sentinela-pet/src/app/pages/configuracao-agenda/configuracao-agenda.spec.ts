@@ -8,6 +8,8 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
   let disponibilidade: any;
   let bloqueio: any;
   let excecao: any;
+  let usuarioLogado: any;
+  let profissionais: any;
 
   beforeEach(() => {
     disponibilidade = {
@@ -26,9 +28,14 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
       remover: vi.fn(() => of(void 0)),
     };
 
+    usuarioLogado = { obterUsuarioLogado: vi.fn(() => of({ tipoUsuario: 'ADMINISTRADOR', nome: 'Admin' })) };
+    profissionais = { listarParaSelecao: vi.fn(() => of([
+      { idPublico: 'admin', nome: 'Admin', tipoUsuario: 'ADMINISTRADOR' },
+      { idPublico: 'prof', nome: 'Profissional', tipoUsuario: 'PROFISSIONAL' },
+    ])) };
     component = new ConfiguracaoAgenda(
-      { obterUsuarioLogado: vi.fn() } as any,
-      { listar: vi.fn() } as any,
+      usuarioLogado,
+      profissionais,
       disponibilidade,
       bloqueio,
       excecao,
@@ -37,6 +44,18 @@ describe('ConfiguracaoAgenda - formulários inline', () => {
     component.isAdmin = true;
     component.profissionalSelecionadoId =
       '61e45a3c-f6df-4f54-8c56-6b46f874e092';
+  });
+
+  it('recebe administrador e profissional pelo endpoint de seleção e configura a própria agenda', () => {
+    component.ngOnInit();
+    expect(profissionais.listarParaSelecao).toHaveBeenCalledOnce();
+    expect(component.profissionais.map(p => p.idPublico)).toEqual(['admin', 'prof']);
+    component.profissionalSelecionadoId = 'admin';
+    component.onProfissionalSelecionado();
+    expect(disponibilidade.listar).toHaveBeenCalledWith('admin');
+    component.disponibilidadeForm = { diaSemana: 'MONDAY', turno: 'MANHA', capacidade: 3 };
+    component.salvarHorario();
+    expect(disponibilidade.salvar).toHaveBeenCalledWith(expect.objectContaining({ usuarioId: 'admin' }));
   });
 
   it('envia horário com idPublico do profissional e capacidade numérica', () => {

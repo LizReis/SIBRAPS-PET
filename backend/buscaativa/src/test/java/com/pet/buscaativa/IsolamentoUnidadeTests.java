@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -34,6 +35,11 @@ import com.pet.buscaativa.services.TokenService;
 import com.pet.buscaativa.services.PacienteService;
 import com.pet.buscaativa.services.PoliticaClassificacaoPaciente;
 import com.pet.buscaativa.entities.dto.PacienteDTO;
+import com.pet.buscaativa.entities.dto.DisponibilidadeDTO;
+import com.pet.buscaativa.entities.dto.DisponibilidadeExcecaoDTO;
+import com.pet.buscaativa.entities.dto.BloqueioAgendaDTO;
+import com.pet.buscaativa.entities.dto.CriarGrupoDTO;
+import com.pet.buscaativa.entities.dto.AtualizarGrupoTerapeuticoDTO;
 import com.pet.buscaativa.services.exceptions.RecursoDuplicadoException;
 import com.pet.buscaativa.services.impl.SusApiAdapter;
 import tools.jackson.databind.JsonNode;
@@ -323,10 +329,11 @@ class IsolamentoUnidadeTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"pdf", "excel"})
-    void exportacoesMantemSomenteDadosAutorizados(String formato) throws Exception {
+    @CsvSource({"pdf,0", "excel,0", "pdf,1", "excel,1", "pdf,2", "excel,2"})
+    void exportacoesMantemSomenteDadosAutorizados(String formato, int perfil) throws Exception {
+        Usuario ator = List.of(ad, profissionalAd, recepcaoAd).get(perfil);
         for (String tipo : List.of("busca-ativa", "frequencia-grupos")) {
-            var response = getAs(ad, "/api/relatorios/" + tipo + "/" + formato);
+            var response = getAs(ator, "/api/relatorios/" + tipo + "/" + formato);
             assertEquals(200, response.getStatus());
             String texto = extrair(response.getContentAsByteArray(), formato).replaceAll("\\s+", " ");
             if (tipo.equals("busca-ativa") || formato.equals("excel")) {
@@ -339,9 +346,9 @@ class IsolamentoUnidadeTests {
             assertFalse(texto.contains(pI.getNome()));
             assertFalse(texto.contains(pII.getNome()));
         }
-        assertEquals(404, getAs(ad, "/api/relatorios/busca-ativa/" + formato
+        assertEquals(404, getAs(ator, "/api/relatorios/busca-ativa/" + formato
                 + "?profissionalId=" + coordenadorI.getIdPublico()).getStatus());
-        assertEquals(404, getAs(ad, "/api/relatorios/frequencia-grupos/" + formato
+        assertEquals(404, getAs(ator, "/api/relatorios/frequencia-grupos/" + formato
                 + "?grupoId=" + estrangeira.getGrupo().getId()).getStatus());
     }
 
@@ -537,6 +544,164 @@ class IsolamentoUnidadeTests {
         pacientes.saveAndFlush(pAdB);
         assertEquals(1, ok(ad, "/api/pacientes/pesquisa?q=Isolamento&classificacao=VERMELHO").get("totalRegistros").asInt());
         assertEquals(1, ok(ad, "/api/pacientes/pesquisa?q=Isolamento&tipoAcompanhamento=AMBOS").get("totalRegistros").asInt());
+    }
+
+
+    private JsonNode configurar(Usuario ator, String url, Object dto) throws Exception {
+        var response = postAs(ator, url, json.writeValueAsString(dto));
+        assertEquals(200, response.getStatus(), response.getContentAsString());
+        return json.readTree(response.getContentAsString());
+    }
+
+    private void excluirComo(Usuario ator, String url, long id) throws Exception {
+        var response = mvc.perform(delete(url + "/" + id)
+                .header("Authorization", "Bearer " + tokens.gerarToken(ator))).andReturn().getResponse();
+        assertEquals(204, response.getStatus(), response.getContentAsString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2})
+    void administradorEProfissionalPossuemAgendaEGestoresContinuamGerenciando(int alvoIndice) throws Exception {
+        Usuario alvo = List.of(ad, profissionalAd,
+                usuario(UnidadeAtuacao.CAPS_AD, null, TipoUsuario.ADMINISTRADOR)).get(alvoIndice);
+        LocalDate data = LocalDate.now().plusDays(10);
+        String disponibilidade = "/api/disponibilidade-config/disponibilidade";
+        String bloqueio = "/api/bloqueioAgenda-config";
+        String excecao = "/api/disponibilidade-config/excecoes";
+        for (Usuario ator : List.of(ad, recepcaoAd, alvo)) {
+            var d = configurar(ator, disponibilidade, new DisponibilidadeDTO(
+                    null, alvo.getIdPublico(), data.getDayOfWeek(), TurnoEnum.MANHA, 2));
+            long dId = d.get("id").asLong();
+            assertEquals(alvo.getIdPublico().toString(), d.get("usuarioId").asString());
+            assertEquals(3, configurar(ator, disponibilidade, new DisponibilidadeDTO(
+                    dId, alvo.getIdPublico(), data.getDayOfWeek(), TurnoEnum.MANHA, 3)).get("capacidade").asInt());
+            assertTrue(ok(ator, disponibilidade + "?usuarioId=" + alvo.getIdPublico()).valueStream()
+                    .anyMatch(item -> item.get("id").asLong() == dId));
+            var b = configurar(ator, bloqueio, new BloqueioAgendaDTO(
+                    null, alvo.getIdPublico(), data, data, "Férias"));
+            long bId = b.get("id").asLong();
+            assertEquals("Curso", configurar(ator, bloqueio, new BloqueioAgendaDTO(
+                    bId, alvo.getIdPublico(), data, data, "Curso")).get("motivoBloqueio").asString());
+            excluirComo(ator, bloqueio, bId);
+            var e = configurar(ator, excecao, new DisponibilidadeExcecaoDTO(
+                    null, alvo.getIdPublico(), data, TurnoEnum.MANHA, 1));
+            long eId = e.get("id").asLong();
+            assertEquals(2, configurar(ator, excecao, new DisponibilidadeExcecaoDTO(
+                    eId, alvo.getIdPublico(), data, TurnoEnum.MANHA, 2)).get("capacidade").asInt());
+            excluirComo(ator, excecao, eId);
+            excluirComo(ator, disponibilidade, dId);
+        }
+    }
+
+    @Test
+    void configuracaoDeAgendaRejeitaRecepcaoComoDonaEUsuariosExternos() throws Exception {
+        LocalDate data = LocalDate.now().plusDays(10);
+        for (Usuario alvo : List.of(recepcaoAd, capsI, coordenadorI)) {
+            int esperado = alvo == recepcaoAd ? 422 : 404;
+            for (String url : List.of("/api/disponibilidade-config/disponibilidade", "/api/bloqueioAgenda-config",
+                    "/api/disponibilidade-config/excecoes")) {
+                var dto = java.util.Map.of("usuarioId", alvo.getIdPublico(), "diaSemana", data.getDayOfWeek(),
+                        "turno", "MANHA", "capacidade", 2, "data", data,
+                        "dataInicio", data, "dataFim", data, "motivoBloqueio", "Teste");
+                assertEquals(esperado, postAs(ad, url, json.writeValueAsString(dto)).getStatus(), url);
+                assertEquals(esperado, getAs(ad, url + "?usuarioId=" + alvo.getIdPublico()).getStatus(), url);
+            }
+        }
+    }
+
+    private String novoAtendimento(Usuario alvo, Paciente paciente, LocalDate data, String hora) {
+        return json.writeValueAsString(java.util.Map.of("usuarioId", alvo.getIdPublico(),
+                "pacienteId", paciente.getIdPublico(), "dataAgendamento", data,
+                "turnoAgendamento", "MANHA", "horaAtendimento", hora));
+    }
+
+    private JsonNode horarios(Usuario alvo, LocalDate data) throws Exception {
+        return ok(ad, "/api/agendamentos/horarios-disponiveis?usuarioId=" + alvo.getIdPublico()
+                + "&data=" + data + "&turno=MANHA");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1})
+    void administradorEProfissionalRecebemAtendimentosComConflitosECapacidadePreservados(int alvoIndice) throws Exception {
+        Usuario alvo = List.of(ad, profissionalAd).get(alvoIndice);
+        LocalDate data = LocalDate.now().plusDays(10);
+        String disponibilidade = "/api/disponibilidade-config/disponibilidade";
+        var d = configurar(ad, disponibilidade, new DisponibilidadeDTO(
+                null, alvo.getIdPublico(), data.getDayOfWeek(), TurnoEnum.MANHA, 1));
+        assertEquals(1, horarios(alvo, data).get("vagasRestantesTurno").asInt());
+        var criado = postAs(ad, "/api/agendamentos", novoAtendimento(alvo, pAd, data, "08:00:00"));
+        assertEquals(201, criado.getStatus(), criado.getContentAsString());
+        assertEquals(alvo.getIdPublico().toString(), json.readTree(criado.getContentAsString()).get("usuarioId").asString());
+        assertEquals(409, postAs(ad, "/api/agendamentos", novoAtendimento(alvo, pAdB, data, "08:00:00")).getStatus());
+        assertEquals(409, postAs(ad, "/api/agendamentos", novoAtendimento(alvo, pAdB, data, "08:30:00")).getStatus());
+        assertEquals("CAPACIDADE_ESGOTADA", horarios(alvo, data).get("motivoIndisponibilidade").asString());
+        var bloqueio = postAs(ad, "/api/bloqueioAgenda-config", json.writeValueAsString(
+                new BloqueioAgendaDTO(null, alvo.getIdPublico(), data, data, "Teste")));
+        assertEquals(409, bloqueio.getStatus());
+        var zero = postAs(ad, "/api/disponibilidade-config/excecoes", json.writeValueAsString(
+                new DisponibilidadeExcecaoDTO(null, alvo.getIdPublico(), data, TurnoEnum.MANHA, 0)));
+        assertEquals(409, zero.getStatus());
+        assertEquals(409, mvc.perform(delete(disponibilidade + "/" + d.get("id").asLong())
+                .header("Authorization", "Bearer " + tokens.gerarToken(ad))).andReturn().getResponse().getStatus());
+    }
+
+    @Test
+    void administradorRespeitaBloqueiosExcecoesEPacienteDaUnidade() throws Exception {
+        LocalDate data = LocalDate.now().plusDays(10);
+        assertEquals("TURNO_NAO_CONFIGURADO", horarios(ad, data).get("motivoIndisponibilidade").asString());
+        assertEquals(409, postAs(ad, "/api/agendamentos", novoAtendimento(ad, pAd, data, "08:00:00")).getStatus());
+        configurar(ad, "/api/disponibilidade-config/excecoes", new DisponibilidadeExcecaoDTO(
+                null, ad.getIdPublico(), data, TurnoEnum.MANHA, 2));
+        var bloqueio = configurar(ad, "/api/bloqueioAgenda-config", new BloqueioAgendaDTO(
+                null, ad.getIdPublico(), data, data, "Curso"));
+        assertEquals("AGENDA_BLOQUEADA", horarios(ad, data).get("motivoIndisponibilidade").asString());
+        assertEquals(409, postAs(ad, "/api/agendamentos", novoAtendimento(ad, pAd, data, "08:00:00")).getStatus());
+        excluirComo(ad, "/api/bloqueioAgenda-config", bloqueio.get("id").asLong());
+        assertEquals(2, horarios(ad, data).get("vagasRestantesTurno").asInt());
+        assertEquals(404, postAs(ad, "/api/agendamentos", novoAtendimento(ad, pI, data, "08:00:00")).getStatus());
+        assertEquals(201, postAs(ad, "/api/agendamentos", novoAtendimento(ad, pAd, data, "08:00:00")).getStatus());
+        var restantes = horarios(ad, data);
+        assertEquals(1, restantes.get("vagasRestantesTurno").asInt());
+        assertFalse(restantes.get("horarios").valueStream().filter(h -> h.get("hora").asString().equals("08:00:00"))
+                .findFirst().orElseThrow().get("disponivel").asBoolean());
+    }
+
+    @Test
+    void recepcaoEUsuariosExternosNaoPodemReceberAtendimento() throws Exception {
+        LocalDate data = LocalDate.now().plusDays(10);
+        for (Usuario alvo : List.of(recepcaoAd, capsI, coordenadorI)) {
+            int esperado = alvo == recepcaoAd ? 422 : 404;
+            assertEquals(esperado, postAs(ad, "/api/agendamentos",
+                    novoAtendimento(alvo, pAd, data, "08:00:00")).getStatus());
+            assertEquals(esperado, getAs(ad, "/api/agendamentos/horarios-disponiveis?usuarioId="
+                    + alvo.getIdPublico() + "&data=" + data + "&turno=MANHA").getStatus());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3, 4})
+    void coordenadorAdministradorOuProfissionalFuncionaSemAceitarRecepcaoOuExternos(int indice) throws Exception {
+        Usuario coordenador = List.of(ad, profissionalAd, recepcaoAd, capsI, coordenadorI).get(indice);
+        LocalDate data = LocalDate.now().plusDays(10);
+        var dto = new CriarGrupoDTO("Grupo assistencial", coordenador.getIdPublico(),
+                RecorrenciaGrupo.UNICA, data, null, LocalTime.of(9, 0), List.of());
+        var criado = postAs(ad, "/api/grupos", json.writeValueAsString(dto));
+        int esperado = indice < 2 ? 200 : indice == 2 ? 422 : 404;
+        assertEquals(esperado, criado.getStatus(), criado.getContentAsString());
+        var local = futura.getGrupo();
+        var editado = mvc.perform(put("/api/grupos/" + local.getId())
+                .header("Authorization", "Bearer " + tokens.gerarToken(ad)).contentType("application/json")
+                .content(json.writeValueAsString(new AtualizarGrupoTerapeuticoDTO(
+                        "Tema atualizado", coordenador.getIdPublico(), realizada.getDataSessao(),
+                        realizada.getHorario(), local.getRecorrencia(), local.getDataFimRecorrencia(), local.getVersion()))))
+                .andReturn().getResponse();
+        assertEquals(esperado, editado.getStatus(), editado.getContentAsString());
+        if (esperado == 200) {
+            assertEquals(coordenador.getIdPublico().toString(),
+                    json.readTree(criado.getContentAsString()).get("coordenadorId").asString());
+            assertEquals(coordenador.getIdPublico().toString(),
+                    json.readTree(editado.getContentAsString()).get("coordenadorId").asString());
+        }
     }
 
     @Test

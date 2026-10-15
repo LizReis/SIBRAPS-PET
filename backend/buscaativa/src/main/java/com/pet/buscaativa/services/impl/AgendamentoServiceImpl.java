@@ -78,7 +78,8 @@ public class AgendamentoServiceImpl implements AgendamentoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
         escopoUnidadeService.validarUsuario(usuario);
-        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL) {
+        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL
+                && usuario.getTipoUsuario() != TipoUsuario.ADMINISTRADOR) {
             throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
         }
 
@@ -230,8 +231,10 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         Usuario usuario = usuarioRepository.findByIdPublico(usuarioIdPublico)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         escopoUnidadeService.validarUsuario(usuario);
-        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL)
+        if (usuario.getTipoUsuario() != TipoUsuario.PROFISSIONAL
+                && usuario.getTipoUsuario() != TipoUsuario.ADMINISTRADOR) {
             throw new ValidationException("O usuário selecionado não é um profissional habilitado para atendimento.");
+        }
         if (bloqueioAgendaRepository.isDataBloqueadaParaUsuario(usuario, data))
             return new HorariosDisponiveisDTO(turno, 0, "AGENDA_BLOQUEADA", List.of());
         Integer capacidade = resolverCapacidade(usuario, data, data.getDayOfWeek(), turno);

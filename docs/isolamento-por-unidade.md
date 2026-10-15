@@ -1,5 +1,7 @@
 # Complemento: escopo de Profissionais
 
+Atualização posterior: [Administrador assistencial e cadastro na própria unidade](administrador-assistencial.md). Essa revisão inclui ADMINISTRADOR nas seleções assistenciais e restringe também o destino do cadastro/edição; substitui as afirmações históricas abaixo sobre exclusividade de PROFISSIONAL na seleção e liberdade de transferência entre instituições.
+
 Esta revisão partiu de `origin/main` em `786dd62`. O relato histórico abaixo descreve a implementação anterior; suas referências à administração global e à correção de USF legada por outro administrador foram substituídas pelas restrições desta revisão.
 
 `GET /api/usuarios` vazava usuários porque `UsuarioServiceImpl.findAll()` chamava `usuarioRepository.findAll()` sem escopo. A consulta agora reutiliza `EscopoUnidadeService.specificationUsuario()` e ordena por nome: CAPS compara a categoria; USF compara a associação específica persistida. ADMINISTRADOR e RECEPCAO, quando autorizados pelo controller, recebem somente usuários da própria instituição.

@@ -11,6 +11,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UnidadeSaudeService } from '../../services/unidade-saude-service';
+import { UsuarioLogadoService } from '../../services/usuario-logado-service';
 
 import {
   ProfissionalPayload,
@@ -78,11 +79,38 @@ export class CadastroProfissional implements OnInit {
     private profissionalService: ProfissionalService,
     private unidadeSaudeService: UnidadeSaudeService,
     private changeDetector: ChangeDetectorRef,
+    private usuarioLogadoService: UsuarioLogadoService,
   ) {}
 
   ngOnInit(): void {
     this.idPublico = this.route.snapshot.paramMap.get('id');
     this.modoEdicao = !!this.idPublico;
+    if (!this.modoEdicao) {
+      this.unidadeAtuacaoOptions = [];
+      this.carregando = true;
+      this.usuarioLogadoService.obterUsuarioLogado().subscribe({
+        next: (usuario) => {
+          const usf = usuario.unidadeAtuacao === UnidadeAtuacao.USF;
+          if (!usuario.unidadeAtuacao || (usf && !usuario.usfAtuacaoId)) {
+            this.erroGeral = 'A unidade de atuação do usuário logado ainda não foi configurada.';
+          } else {
+            const valor = usf ? `USF:${usuario.usfAtuacaoId}` : usuario.unidadeAtuacao;
+            this.unidadeAtuacaoOptions = [{ valor, label: usf
+              ? usuario.usfAtuacao?.nomeUsf ?? 'USF da sua unidade' : this.labelEnum(valor).toUpperCase() }];
+            this.profissionalForm.controls.unidadeAtuacao.setValue(valor);
+            this.profissionalForm.controls.unidadeAtuacao.disable();
+          }
+          this.carregando = false;
+          this.changeDetector.markForCheck();
+        },
+        error: () => {
+          this.erroGeral = 'Não foi possível identificar a unidade do usuário logado.';
+          this.carregando = false;
+          this.changeDetector.markForCheck();
+        },
+      });
+      return;
+    }
     this.unidadeSaudeService.listarUnidades().subscribe({
       next: (unidades) => {
         this.unidadeAtuacaoOptions = [
